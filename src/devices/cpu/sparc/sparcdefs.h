@@ -7,10 +7,10 @@
 //
 //================================================================
 
-#pragma once
+#ifndef MAME_CPU_SPARC_SPARCDEFS_H
+#define MAME_CPU_SPARC_SPARCDEFS_H
 
-#ifndef CPU_SPARC_SPARC_DEFS_H
-#define CPU_SPARC_SPARC_DEFS_H
+#pragma once
 
 #define PSR_CWP_MASK        0x0000001f
 #define PSR_ET_SHIFT        5
@@ -99,7 +99,7 @@
 #define DISP30  (int32_t(op << 2))
 #define DISP22  util::sext(op << 2, 24)
 #define DISP19  util::sext(op << 2, 21)
-#define DISP16  (int32_t(((op << 10) & 0xc0000000) | ((op << 16) & 0x3fff0000)) >> 14)
+#define DISP16  util::sext((op & 0x300000) >> 4 | (op & 0x3fff) << 2, 18)
 #define IMM22   (op << 10)
 #define CONST22 (op & 0x3fffff)
 #define SIMM13  util::sext(op, 13)
@@ -485,4 +485,4 @@
 #define FPOP_FCMPED         0x056
 #define FPOP_FCMPEX         0x057
 
-#endif // CPU_SPARC_SPARC_DEFS_H
+#endif // MAME_CPU_SPARC_SPARCDEFS_H

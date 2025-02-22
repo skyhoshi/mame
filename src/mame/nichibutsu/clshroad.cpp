@@ -85,9 +85,9 @@ public:
 	void clshroad(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 	required_device<cpu_device> m_maincpu;
 	required_device<cpu_device> m_audiocpu;
@@ -111,8 +111,8 @@ protected:
 	tilemap_t *m_tilemap_1 = nullptr;
 
 	u8 input_r(offs_t offset);
-	DECLARE_WRITE_LINE_MEMBER(main_irq_mask_w);
-	DECLARE_WRITE_LINE_MEMBER(sound_irq_mask_w);
+	void main_irq_mask_w(int state);
+	void sound_irq_mask_w(int state);
 	void vram_0_w(offs_t offset, u8 data);
 	void vram_1_w(offs_t offset, u8 data);
 
@@ -130,8 +130,8 @@ protected:
 	INTERRUPT_GEN_MEMBER(vblank_irq);
 	INTERRUPT_GEN_MEMBER(half_vblank_irq);
 	INTERRUPT_GEN_MEMBER(sound_timer_irq);
-	void main_map(address_map &map);
-	void sound_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
 };
 
 class firebatl_state : public clshroad_state
@@ -146,15 +146,13 @@ public:
 	void init_firebatl();
 
 protected:
-	virtual void video_start() override;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	TILE_GET_INFO_MEMBER(get_tile_info_1);
 	void palette(palette_device &palette) const;
 };
 
-
-// video
 
 /***************************************************************************
 
@@ -480,8 +478,6 @@ u32 clshroad_state::screen_update(screen_device &screen, bitmap_ind16 &bitmap, c
 }
 
 
-// machine
-
 void clshroad_state::machine_start()
 {
 	save_item(NAME(m_main_irq_mask));
@@ -510,12 +506,12 @@ u8 clshroad_state::input_r(offs_t offset)
 
 // irq/reset controls like in wiping.cpp
 
-WRITE_LINE_MEMBER(clshroad_state::main_irq_mask_w)
+void clshroad_state::main_irq_mask_w(int state)
 {
 	m_main_irq_mask = state;
 }
 
-WRITE_LINE_MEMBER(clshroad_state::sound_irq_mask_w)
+void clshroad_state::sound_irq_mask_w(int state)
 {
 	m_sound_irq_mask = state;
 }

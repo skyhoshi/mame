@@ -33,8 +33,7 @@
 #include "screen.h"
 #include "softlist.h"
 
-#include "formats/mfi_dsk.h"
-#include "formats/pc_dsk.h"
+#include "formats/flopimg.h"
 
 
 uint32_t next_state::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)
@@ -718,72 +717,72 @@ void next_state::timer_start()
 	timer_tm->adjust(attotime::from_usec(timer_vbase));
 }
 
-WRITE_LINE_MEMBER(next_state::scc_irq)
+void next_state::scc_irq(int state)
 {
 	irq_set(17, state);
 }
 
-WRITE_LINE_MEMBER(next_state::keyboard_irq)
+void next_state::keyboard_irq(int state)
 {
 	irq_set(3, state);
 }
 
-WRITE_LINE_MEMBER(next_state::power_irq)
+void next_state::power_irq(int state)
 {
 	irq_set(2, state);
 }
 
-WRITE_LINE_MEMBER(next_state::nmi_irq)
+void next_state::nmi_irq(int state)
 {
 	irq_set(31, state);
 }
 
-WRITE_LINE_MEMBER(next_state::fdc_irq)
+void next_state::fdc_irq(int state)
 {
 	irq_set(7, state);
 }
 
-WRITE_LINE_MEMBER(next_state::fdc_drq)
+void next_state::fdc_drq(int state)
 {
 	dma_drq_w(1, state);
 }
 
-WRITE_LINE_MEMBER(next_state::net_tx_irq)
+void next_state::net_tx_irq(int state)
 {
 	irq_set(10, state);
 }
 
-WRITE_LINE_MEMBER(next_state::net_rx_irq)
+void next_state::net_rx_irq(int state)
 {
 	irq_set(9, state);
 }
 
-WRITE_LINE_MEMBER(next_state::net_tx_drq)
+void next_state::net_tx_drq(int state)
 {
 	dma_drq_w(17, state);
 }
 
-WRITE_LINE_MEMBER(next_state::net_rx_drq)
+void next_state::net_rx_drq(int state)
 {
 	dma_drq_w(21, state);
 }
 
-WRITE_LINE_MEMBER(next_state::mo_irq)
+void next_state::mo_irq(int state)
 {
 	irq_set(13, state);
 }
 
-WRITE_LINE_MEMBER(next_state::mo_drq)
+void next_state::mo_drq(int state)
 {
 	dma_drq_w(5, state);
 }
 
-WRITE_LINE_MEMBER(next_state::scsi_irq)
+void next_state::scsi_irq(int state)
 {
 	irq_set(12, state);
 }
 
-WRITE_LINE_MEMBER(next_state::scsi_drq)
+void next_state::scsi_drq(int state)
 {
 	dma_drq_w(1, state);
 }
@@ -877,7 +876,7 @@ void next_state::machine_reset()
 	dma_drq_w(4, true); // soundout
 }
 
-WRITE_LINE_MEMBER(next_state::vblank_w)
+void next_state::vblank_w(int state)
 {
 	if(vbl_enabled) {
 		if(screen_color)
@@ -909,7 +908,7 @@ void next_state::next_mem(address_map &map)
 	map(0x02014020, 0x02014023).mirror(0x300000).rw(FUNC(next_state::scsictrl_r), FUNC(next_state::scsictrl_w));
 	map(0x02016000, 0x02016003).mirror(0x300000).rw(FUNC(next_state::timer_data_r), FUNC(next_state::timer_data_w));
 	map(0x02016004, 0x02016007).mirror(0x300000).rw(FUNC(next_state::timer_ctrl_r), FUNC(next_state::timer_ctrl_w));
-	map(0x02018000, 0x02018003).mirror(0x300000).rw(scc, FUNC(scc8530_legacy_device::reg_r), FUNC(scc8530_legacy_device::reg_w));
+	map(0x02018000, 0x02018003).mirror(0x300000).rw(scc, FUNC(scc8530_device::dc_ab_r), FUNC(scc8530_device::dc_ab_w));
 //  map(0x02018004, 0x02018007).mirror(0x300000); SCC CLK
 //  map(0x02018190, 0x02018197).mirror(0x300000); warp 9c DRAM timing
 //  map(0x02018198, 0x0201819f).mirror(0x300000); warp 9c VRAM timing
@@ -1037,7 +1036,7 @@ void next_state::next_base(machine_config &config)
 	MCCS1850(config, rtc, XTAL(32'768));
 
 	SCC8530(config, scc, XTAL(25'000'000));
-	scc->intrq_callback().set(FUNC(next_state::scc_irq));
+	scc->out_int_callback().set(FUNC(next_state::scc_irq));
 
 	NEXTKBD(config, keyboard, 0);
 	keyboard->int_change_wr_callback().set(FUNC(next_state::keyboard_irq));

@@ -186,6 +186,7 @@ public:
 		CLONES,
 		MANUFACTURER,
 		YEAR,
+		SOURCE_FILE,
 		SAVE,
 		NOSAVE,
 		CHD,
@@ -276,10 +277,13 @@ class machine_filter_data
 public:
 	std::vector<std::string> const &manufacturers()     const { return m_manufacturers; }
 	std::vector<std::string> const &years()             const { return m_years; }
+	std::vector<std::string> const &source_files()      const { return m_source_files; }
 
 	// adding entries
 	void add_manufacturer(std::string const &manufacturer);
 	void add_year(std::string const &year);
+	void add_source_file(std::string_view path);
+
 	void finalise();
 
 	// use heuristics to extract meaningful parts from machine metadata
@@ -306,6 +310,7 @@ private:
 
 	std::vector<std::string>    m_manufacturers;
 	std::vector<std::string>    m_years;
+	std::vector<std::string>    m_source_files;
 
 	machine_filter::type        m_current_filter = machine_filter::ALL;
 	filter_map                  m_filters;
@@ -357,40 +362,10 @@ private:
 
 enum
 {
-	RP_FIRST = 0,
-	RP_IMAGES = RP_FIRST,
-	RP_INFOS,
-	RP_LAST = RP_INFOS
-};
-
-enum
-{
 	SHOW_PANELS = 0,
 	HIDE_LEFT_PANEL,
 	HIDE_RIGHT_PANEL,
 	HIDE_BOTH
-};
-
-enum
-{
-	HOVER_DAT_UP = -1000,
-	HOVER_DAT_DOWN,
-	HOVER_UI_LEFT,
-	HOVER_UI_RIGHT,
-	HOVER_ARROW_UP,
-	HOVER_ARROW_DOWN,
-	HOVER_B_FAV,
-	HOVER_B_EXPORT,
-	HOVER_B_AUDIT,
-	HOVER_B_DATS,
-	HOVER_BACKTRACK,
-	HOVER_RPANEL_ARROW,
-	HOVER_LPANEL_ARROW,
-	HOVER_FILTER_FIRST,
-	HOVER_FILTER_LAST = HOVER_FILTER_FIRST + std::max<int>(ui::machine_filter::COUNT, ui::software_filter::COUNT),
-	HOVER_RP_FIRST,
-	HOVER_RP_LAST = HOVER_RP_FIRST + 1 + RP_LAST,
-	HOVER_INFO_TEXT
 };
 
 // FIXME: this stuff shouldn't all be globals

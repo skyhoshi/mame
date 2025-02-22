@@ -1,5 +1,5 @@
 // license:BSD-3-Clause
-// copyright-holders:Ivan Vangelista
+// copyright-holders:
 /*
     Uniana PC hardware (shared by other Korean companies)
 
@@ -10,7 +10,7 @@
     Intel Celeron CPU, 1.70GHz
     MSI MS-6566E VER: 2 motherboard
     Samsung 256MB DDR PC2100 CL2.5 RAM
-    Inside TNC 128MB(?) VGA Graphics Video Card E-G012-01-1247
+    Inside TNC 128MB(?) VGA Graphics Video Card E-G012-01-1247 <- seems to be a Korean OEM for nVidia GeForce2 MX400 (NV11) -AS
     Dynamic 4281 Rev. A sound card by Jin Information Technology with Crystal CS4281 sound chip
     DM Storage DM2560V00 IDE flash storage device
     IO board
@@ -47,7 +47,7 @@ public:
 private:
 	required_device<cpu_device> m_maincpu;
 
-	void unianapc_map(address_map &map);
+	void unianapc_map(address_map &map) ATTR_COLD;
 };
 
 void unianapc_state::unianapc_map(address_map &map)
@@ -102,5 +102,5 @@ ROM_END
 } // anonymous namespace
 
 
-GAME( 2002, dhunting,  0,   unianapc, unianapc, unianapc_state, empty_init, ROT0, "Game Box Entertainment", "Dream Hunting (US)",  MACHINE_IS_SKELETON ) // Ver 1007?
-GAME( 2003, hogwild,   0,   unianapc, unianapc, unianapc_state, empty_init, ROT0, "Uniana",                 "Hog Wild (US)",       MACHINE_IS_SKELETON ) // Ver.00.26.b?
+GAME( 2002, dhunting,  0,   unianapc, unianapc, unianapc_state, empty_init, ROT0, "Game Box Entertainment", "Dream Hunting (US)",  MACHINE_NO_SOUND | MACHINE_NOT_WORKING ) // Ver 1007?
+GAME( 2003, hogwild,   0,   unianapc, unianapc, unianapc_state, empty_init, ROT0, "Uniana",                 "Hog Wild (US)",       MACHINE_NO_SOUND | MACHINE_NOT_WORKING ) // Ver.00.26.b?

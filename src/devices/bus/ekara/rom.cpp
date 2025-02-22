@@ -117,12 +117,32 @@ void ekara_rom_i2c_base_device::write_bus_control(offs_t offset, uint8_t data)
 
 void ekara_rom_i2c_base_device::write_rom(offs_t offset, uint8_t data)
 {
-	logerror("ekara_rom_i2c_base_device::write_rom %08x %02x\n", offset, data);
+	if (is_write_access_not_rom())
+	{
+		if (offset == 0x3fffff)
+			write_extra(offset,data);
+		else
+			logerror("ekara_rom_i2c_base_device::write_rom %08x %02x\n", offset, data);
+	}
+	else
+	{
+		logerror("ekara_rom_i2c_base_device::write_rom %08x %02x\n", offset, data);
+	}
 }
 
 uint8_t ekara_rom_i2c_base_device::read_rom(offs_t offset)
 {
-	return m_rom[offset & (m_rom_size - 1)];
+	if (is_read_access_not_rom())
+	{
+		if (offset == 0x5fffff)
+			return read_extra(offset);
+		else
+			return m_rom[offset & (m_rom_size - 1)];
+	}
+	else
+	{
+		return m_rom[offset & (m_rom_size - 1)];
+	}
 }
 
 uint8_t ekara_rom_i2c_base_device::read_extra(offs_t offset)
@@ -198,17 +218,17 @@ void ekara_rom_i2c_24lc02_gc0010_device::write_extra(offs_t offset, uint8_t data
 }
 
 
-WRITE_LINE_MEMBER(ekara_rom_i2c_24lc02_gc0010_device::write_sda)
+void ekara_rom_i2c_24lc02_gc0010_device::write_sda(int state)
 {
 	m_i2cmem->write_sda(state);
 }
 
-WRITE_LINE_MEMBER(ekara_rom_i2c_24lc02_gc0010_device::write_scl)
+void ekara_rom_i2c_24lc02_gc0010_device::write_scl(int state)
 {
 	m_i2cmem->write_scl(state);
 }
 
-READ_LINE_MEMBER(ekara_rom_i2c_24lc02_gc0010_device::read_sda )
+int ekara_rom_i2c_24lc02_gc0010_device::read_sda()
 {
 	return m_i2cmem->read_sda();
 }

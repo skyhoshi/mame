@@ -151,7 +151,8 @@
 
     The ROMs contain a stripped-down version of TI BASIC, but without
     the specific graphics subprograms. Programs written on the 99/2 should
-    run on the 99/4A, but the opposite is not true.
+    run on the 99/4A, but the opposite is not true. The 24K version is
+    buggy and incomplete: OPEN and SAVE cause the CPU to restart itself.
 
     Original implementation: Raphael Nabet; December 1999, 2000
 
@@ -174,9 +175,9 @@
 #define TI992_ROM          "rom_region"
 #define TI992_SCREEN_TAG   "screen"
 
-#define LOG_WARN           (1U<<1)   // Warnings
-#define LOG_CRU            (1U<<2)   // CRU activities
-#define LOG_SIGNALS        (1U<<3)   // Signals like HOLD/HOLDA
+#define LOG_WARN           (1U << 1)   // Warnings
+#define LOG_CRU            (1U << 2)   // CRU activities
+#define LOG_SIGNALS        (1U << 3)   // Signals like HOLD/HOLDA
 
 // Minimum log should be config and warnings
 #define VERBOSE ( LOG_GENERAL | LOG_WARN )
@@ -217,15 +218,15 @@ private:
 	uint8_t mem_read(offs_t offset);
 	void mem_write(offs_t offset, uint8_t data);
 
-	DECLARE_WRITE_LINE_MEMBER(hold);
-	DECLARE_WRITE_LINE_MEMBER(holda);
-	DECLARE_WRITE_LINE_MEMBER(interrupt);
-	DECLARE_WRITE_LINE_MEMBER(cassette_output);
+	void hold(int state);
+	void holda(int state);
+	void interrupt(int state);
+	void cassette_output(int state);
 
-	DECLARE_WRITE_LINE_MEMBER( rombank_set );
+	void rombank_set(int state);
 
-	void crumap(address_map &map);
-	void memmap(address_map &map);
+	void crumap(address_map &map) ATTR_COLD;
+	void memmap(address_map &map) ATTR_COLD;
 
 	required_device<tms9995_device> m_maincpu;
 	required_device<bus::ti99::internal::video992_device> m_videoctrl;
@@ -260,7 +261,7 @@ void ti99_2_state::driver_reset()
 	m_maincpu->reset_line(ASSERT_LINE);
 }
 
-WRITE_LINE_MEMBER( ti99_2_state::rombank_set )
+void ti99_2_state::rombank_set(int state)
 {
 	m_otherbank = (state==ASSERT_LINE);
 }
@@ -383,7 +384,7 @@ void ti99_2_state::mem_write(offs_t offset, uint8_t data)
 /*
     Called by the VDC as a vblank interrupt
 */
-WRITE_LINE_MEMBER(ti99_2_state::interrupt)
+void ti99_2_state::interrupt(int state)
 {
 	LOGMASKED(LOG_SIGNALS, "Interrupt: %d\n", state);
 	m_maincpu->set_input_line(INT_9995_INT4, state);
@@ -392,7 +393,7 @@ WRITE_LINE_MEMBER(ti99_2_state::interrupt)
 /*
     Called by the VDC to HOLD the CPU
 */
-WRITE_LINE_MEMBER(ti99_2_state::hold)
+void ti99_2_state::hold(int state)
 {
 	LOGMASKED(LOG_SIGNALS, "HOLD: %d\n", state);
 	m_maincpu->hold_line(state);
@@ -401,7 +402,7 @@ WRITE_LINE_MEMBER(ti99_2_state::hold)
 /*
     Called by the CPU to ack the HOLD
 */
-WRITE_LINE_MEMBER(ti99_2_state::holda)
+void ti99_2_state::holda(int state)
 {
 	LOGMASKED(LOG_SIGNALS, "HOLDA: %d\n", state);
 }

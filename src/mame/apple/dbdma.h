@@ -13,12 +13,13 @@ class dbdma_device :  public device_t
 {
 public:
 	// construction/destruction
-	dbdma_device(const machine_config &mconfig, const char *tag, device_t *owner)
-		: dbdma_device(mconfig, tag, owner, (uint32_t)0)
+	dbdma_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock, address_space *space)
+		: dbdma_device(mconfig, tag, owner, clock)
 	{
+		set_address_space(space);
 	}
 
-	dbdma_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
+	dbdma_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock);
 
 	u32 dma_read(u32 offset);
 	void dma_write(u32 offset, u32 data);
@@ -27,12 +28,12 @@ public:
 
 	void set_address_space(address_space *space) { m_pci_memory = space; }
 
-	void map(address_map &map);
+	void map(address_map &map) ATTR_COLD;
 
 protected:
 	// device-level overrides
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 private:
 	devcb_write_line write_irq;

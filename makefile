@@ -20,6 +20,7 @@
 # TARGET = mame
 # SUBTARGET = tiny
 # TOOLS = 1
+# EMULATOR = 1
 # TESTS = 1
 # BENCHMARKS = 1
 # OSD = sdl
@@ -65,6 +66,7 @@
 # USE_SYSTEM_LIB_ASIO = 1
 # USE_SYSTEM_LIB_EXPAT = 1
 # USE_SYSTEM_LIB_ZLIB = 1
+# USE_SYSTEM_LIB_ZSTD = 1
 # USE_SYSTEM_LIB_JPEG = 1
 # USE_SYSTEM_LIB_FLAC = 1
 # USE_SYSTEM_LIB_LUA = 1
@@ -103,7 +105,7 @@
 
 # QT_HOME = /usr/lib64/qt48/
 
-# SOURCES = src/mame/atari/asteroid.cpp,src/mame/cinemat/cchasm.cpp
+# SOURCES = src/mame/atari/asteroid.cpp,src/mame/cinematronics/cchasm.cpp
 
 # SOURCEFILTER = mydrivers.flt
 
@@ -236,7 +238,7 @@ endif
 
 #-------------------------------------------------
 # specify core target: mame, ldplayer
-# specify subtarget: mame, arcade, mess, tiny, etc.
+# specify subtarget: mame, tiny, etc.
 # build scripts will be run from
 # scripts/target/$(TARGET)/$(SUBTARGET).lua
 #-------------------------------------------------
@@ -388,16 +390,15 @@ endif
 
 ifeq ($(findstring arm,$(UNAME)),arm)
 ARCHITECTURE :=
-ifndef FORCE_DRC_C_BACKEND
-	FORCE_DRC_C_BACKEND := 1
+ifneq ($(PLATFORM),arm64)
+	ifndef FORCE_DRC_C_BACKEND
+		FORCE_DRC_C_BACKEND := 1
+	endif
 endif
 endif
 
 ifeq ($(findstring aarch64,$(UNAME)),aarch64)
 ARCHITECTURE :=
-ifndef FORCE_DRC_C_BACKEND
-	FORCE_DRC_C_BACKEND := 1
-endif
 endif
 
 ifeq ($(findstring s390x,$(UNAME)),s390x)
@@ -509,6 +510,10 @@ endif
 
 ifdef USE_SYSTEM_LIB_ZLIB
 PARAMS += --with-system-zlib='$(USE_SYSTEM_LIB_ZLIB)'
+endif
+
+ifdef USE_SYSTEM_LIB_ZSTD
+PARAMS += --with-system-zstd='$(USE_SYSTEM_LIB_ZSTD)'
 endif
 
 ifdef USE_SYSTEM_LIB_JPEG
@@ -641,6 +646,14 @@ endif
 ifdef TOOLS
 ifneq '$(TOOLS)' '0'
 PARAMS += --with-tools
+endif
+endif
+
+ifndef EMULATOR
+PARAMS += --with-emulator
+else
+ifeq '$(EMULATOR)' '1'
+PARAMS += --with-emulator
 endif
 endif
 
@@ -983,8 +996,6 @@ SRC = src
 3RDPARTY = 3rdparty
 ifeq ($(SUBTARGET_FULL),mame)
 PROJECT_NAME := $(SUBTARGET_FULL)
-else ifeq ($(SUBTARGET_FULL),mess)
-PROJECT_NAME := $(SUBTARGET_FULL)
 else
 PROJECT_NAME := $(TARGET)$(SUBTARGET_FULL)
 endif
@@ -1148,28 +1159,28 @@ windows_x86_clang: generate $(PROJECTDIR)/$(MAKETYPE)-mingw-clang/Makefile
 	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/$(MAKETYPE)-mingw-clang config=$(CONFIG)32 WINDRES=$(WINDRES)
 
 #-------------------------------------------------
-# Visual Studio 2019
+# Visual Studio 2022
 #-------------------------------------------------
 
-.PHONY: vs2019
-vs2019: generate
-	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) vs2019
+.PHONY: vs2022
+vs2022: generate
+	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) vs2022
 ifdef MSBUILD
-	$(SILENT) msbuild.exe $(PROJECTDIR_WIN)/vs2019/$(PROJECT_NAME).sln $(MSBUILD_PARAMS)
+	$(SILENT) msbuild.exe $(PROJECTDIR_WIN)/vs2022/$(PROJECT_NAME).sln $(MSBUILD_PARAMS)
 endif
 
-.PHONY: vs2019_clang
-vs2019_clang: generate
-	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) --vs=clangcl --NO_USE_PORTAUDIO=1 vs2019
+.PHONY: vs2022_clang
+vs2022_clang: generate
+	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) --vs=clangcl vs2022
 ifdef MSBUILD
-	$(SILENT) msbuild.exe $(PROJECTDIR_WIN)/vs2019-clang/$(PROJECT_NAME).sln $(MSBUILD_PARAMS)
+	$(SILENT) msbuild.exe $(PROJECTDIR_WIN)/vs2022-clang/$(PROJECT_NAME).sln $(MSBUILD_PARAMS)
 endif
 
-.PHONY: vs2019_intel
-vs2019_intel: generate
-	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) --vs=intel-15 vs2019
+.PHONY: vs2022_intel
+vs2022_intel: generate
+	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) --vs=intel-15 vs2022
 ifdef MSBUILD
-	$(SILENT) msbuild.exe $(PROJECTDIR_WIN)/vs2019-intel/$(PROJECT_NAME).sln $(MSBUILD_PARAMS)
+	$(SILENT) msbuild.exe $(PROJECTDIR_WIN)/vs2022-intel/$(PROJECT_NAME).sln $(MSBUILD_PARAMS)
 endif
 
 #-------------------------------------------------
@@ -1561,7 +1572,7 @@ endif
 
 ifeq (posix,$(SHELLTYPE))
 $(GENDIR)/version.cpp: makefile $(GENDIR)/git_desc | $(GEN_FOLDERS)
-	@echo '#define BARE_BUILD_VERSION "0.254"' > $@
+	@echo '#define BARE_BUILD_VERSION "0.274"' > $@
 	@echo '#define BARE_VCS_REVISION "$(NEW_GIT_VERSION)"' >> $@
 	@echo 'extern const char bare_build_version[];' >> $@
 	@echo 'extern const char bare_vcs_revision[];' >> $@
@@ -1571,7 +1582,7 @@ $(GENDIR)/version.cpp: makefile $(GENDIR)/git_desc | $(GEN_FOLDERS)
 	@echo 'const char build_version[] = BARE_BUILD_VERSION " (" BARE_VCS_REVISION ")";' >> $@
 else
 $(GENDIR)/version.cpp: makefile $(GENDIR)/git_desc | $(GEN_FOLDERS)
-	@echo #define BARE_BUILD_VERSION "0.254" > $@
+	@echo #define BARE_BUILD_VERSION "0.274" > $@
 	@echo #define BARE_VCS_REVISION "$(NEW_GIT_VERSION)" >> $@
 	@echo extern const char bare_build_version[]; >> $@
 	@echo extern const char bare_vcs_revision[]; >> $@
@@ -1614,18 +1625,18 @@ tests: $(REGTESTS)
 cleansrc:
 	@echo Cleaning up tabs/spaces/end of lines....
 ifeq (posix,$(SHELLTYPE))
-	$(SILENT) find src \( \
+	$(SILENT)- find src \( \
 		-name \*.c -o -name \*.cpp -o \
 		-name \*.h -o -name \*.hpp -o -name \*.hxx -o \
 		-name \*.ipp -o \
 		-name \*.mm -o \
 		-name \*.lay -o \
 		-name \*.lst \
-		\) -exec ./srcclean {} \; >&2
-	$(SILENT) find hash    \( -name \*.hsi -o -name \*.xml  \) -exec ./srcclean {} \; >&2
-	$(SILENT) find bgfx    \( -name \*.json                 \) -exec ./srcclean {} \; >&2
-	$(SILENT) find plugins \( -name \*.lua -o -name \*.json \) -exec ./srcclean {} \; >&2
-	$(SILENT) find scripts \( -name \*.lua                  \) -exec ./srcclean {} \; >&2
+		\) -print0 | xargs -0 -n 20 ./srcclean >&2
+	$(SILENT)- find hash    \( -name \*.hsi -o -name \*.xml  \) -print0 | xargs -0 -n 20 ./srcclean >&2
+	$(SILENT)- find bgfx    \( -name \*.json                 \) -print0 | xargs -0 -n 20 ./srcclean >&2
+	$(SILENT)- find plugins \( -name \*.lua -o -name \*.json \) -print0 | xargs -0 -n 20 ./srcclean >&2
+	$(SILENT)- find scripts \( -name \*.lua                  \) -print0 | xargs -0 -n 20 ./srcclean >&2
 else
 	$(shell for /r src     %%i in (*.c, *.cpp, *.h, *.hpp, *.hxx, *.ipp, *.mm, *.lay, *.lst) do srcclean %%i >&2 )
 	$(shell for /r hash    %%i in (*.hsi, *.xml)  do srcclean %%i >&2 )
@@ -1669,7 +1680,6 @@ CPPCHECK_PARAMS += -I3rdparty/bx/include
 CPPCHECK_PARAMS += -I$(BUILDDIR)/generated/emu
 CPPCHECK_PARAMS += -I$(BUILDDIR)/generated/emu/layout
 CPPCHECK_PARAMS += -I$(BUILDDIR)/generated/mame/layout
-CPPCHECK_PARAMS += -DX64_WINDOWS_ABI
 CPPCHECK_PARAMS += -DPTR64=1
 CPPCHECK_PARAMS += -DMAME_DEBUG
 CPPCHECK_PARAMS += -DMAME_PROFILER

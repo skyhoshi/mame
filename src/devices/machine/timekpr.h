@@ -12,6 +12,9 @@
         - MK48T08
         - MK48T12
 
+    Dallas clones that have the same functional interface:
+        - DS1643
+
 ***************************************************************************/
 
 #ifndef MAME_MACHINE_TIMEKPR_H
@@ -44,8 +47,8 @@ protected:
 	timekeeper_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, u32 clock, u32 size);
 
 	// device-level overrides
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 	// device_nvram_interface overrides
 	virtual void nvram_default() override;
@@ -82,6 +85,7 @@ private:
 
 	emu_timer* m_watchdog_timer;
 	attotime m_watchdog_delay;
+
 protected:
 	u32 const m_size;
 	s32 m_offset_watchdog;
@@ -119,6 +123,15 @@ class m48t58_device : public timekeeper_device
 {
 public:
 	m48t58_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock = 0);
+
+protected:
+	m48t58_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, u32 clock);
+};
+
+class ds1643_device : public m48t58_device
+{
+public:
+	ds1643_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock = 0);
 };
 
 class mk48t08_device : public timekeeper_device
@@ -140,5 +153,6 @@ DECLARE_DEVICE_TYPE(M48T37,  m48t37_device)
 DECLARE_DEVICE_TYPE(M48T58,  m48t58_device)
 DECLARE_DEVICE_TYPE(MK48T08, mk48t08_device)
 DECLARE_DEVICE_TYPE(MK48T12, mk48t12_device)
+DECLARE_DEVICE_TYPE(DS1643,  ds1643_device)
 
 #endif // MAME_MACHINE_TIMEKPR_H

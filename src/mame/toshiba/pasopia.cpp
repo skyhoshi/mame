@@ -58,8 +58,8 @@ public:
 	void pasopia(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	void pasopia_ctrl_w(u8 data);
@@ -76,12 +76,12 @@ private:
 	u8 rombank_r();
 	u8 keyb_r();
 	void mux_w(u8 data);
-	DECLARE_WRITE_LINE_MEMBER(speaker_w);
+	void speaker_w(int state);
 	MC6845_UPDATE_ROW(crtc_update_row);
 	TIMER_CALLBACK_MEMBER(pio_timer);
 
-	void pasopia_io(address_map &map);
-	void pasopia_map(address_map &map);
+	void pasopia_io(address_map &map) ATTR_COLD;
+	void pasopia_map(address_map &map) ATTR_COLD;
 
 	u8 m_hblank = 0;
 	u16 m_vram_addr = 0;
@@ -309,7 +309,7 @@ void pasopia_state::portc_2_w(u8 data)
 	m_rs232->write_txd(BIT(data, 4));
 }
 
-WRITE_LINE_MEMBER( pasopia_state::speaker_w )
+void pasopia_state::speaker_w(int state)
 {
 	if (state)
 	{

@@ -8,8 +8,10 @@
 
 *********************************************************************/
 
-#ifndef MAME_DEVICES_IMAGEDEV_CASSETTE_H
-#define MAME_DEVICES_IMAGEDEV_CASSETTE_H
+#ifndef MAME_IMAGEDEV_CASSETTE_H
+#define MAME_IMAGEDEV_CASSETTE_H
+
+#pragma once
 
 #include "formats/cassimg.h"
 
@@ -107,7 +109,7 @@ public:
 protected:
 	// device_t implementation
 	virtual void device_config_complete() override;
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 	virtual bool use_software_list_file_extension_for_filetype() const noexcept override { return true; }
 
 	// device_image_interface implementation
@@ -131,6 +133,7 @@ private:
 	const char *                    m_interface;
 
 	std::error_condition internal_load(bool is_create);
+	bool has_any_extension(std::string_view candidate_extensions) const;
 	bool            m_stereo;
 	std::vector<s16> m_samples;
 };
@@ -141,4 +144,4 @@ DECLARE_DEVICE_TYPE(CASSETTE, cassette_image_device)
 // device iterator
 typedef device_type_enumerator<cassette_image_device> cassette_device_enumerator;
 
-#endif // MAME_DEVICES_IMAGEDEV_CASSETTE_H
+#endif // MAME_IMAGEDEV_CASSETTE_H

@@ -41,9 +41,9 @@ public:
 	void bsktball(machine_config &config);
 
 protected:
-	DECLARE_WRITE_LINE_MEMBER(nmion_w);
-	DECLARE_WRITE_LINE_MEMBER(ld1_w);
-	DECLARE_WRITE_LINE_MEMBER(ld2_w);
+	void nmion_w(int state);
+	void ld1_w(int state);
+	void ld2_w(int state);
 	uint8_t bsktball_in0_r();
 	void bsktball_videoram_w(offs_t offset, uint8_t data);
 	TILE_GET_INFO_MEMBER(get_bg_tile_info);
@@ -55,10 +55,10 @@ protected:
 	void draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
-	void main_map(address_map &map);
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
+	void main_map(address_map &map) ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;

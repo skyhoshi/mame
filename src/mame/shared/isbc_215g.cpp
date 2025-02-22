@@ -9,6 +9,8 @@
 #include "emu.h"
 #include "isbc_215g.h"
 
+#include "multibyte.h"
+
 DEFINE_DEVICE_TYPE(ISBC_215G, isbc_215g_device, "isbc_215g", "ISBC 215G Winchester Disk Controller")
 
 isbc_215g_device::isbc_215g_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
@@ -32,7 +34,7 @@ void isbc_215g_device::find_sector()
 	// 1:     cyl low
 	// 2:     head
 	// 3:     sector
-	uint16_t cyl = ((m_idcompare[0] & 0xf) << 8) | m_idcompare[1];
+	uint16_t cyl = get_u16be(&m_idcompare[0]) & 0xfff;
 	uint16_t bps = 128 << ((m_idcompare[0] >> 4) & 3);
 
 	if(!m_geom[m_drive])
@@ -280,13 +282,11 @@ void isbc_215g_device::io_w(offs_t offset, uint16_t data)
 			break;
 		case 0x18:
 			//sector id/format
-			m_idcompare[1] = data & 0xff;
-			m_idcompare[0] = data >> 8;
+			put_u16be(&m_idcompare[0], data);
 			break;
 		case 0x1c:
 			//sector id low
-			m_idcompare[3] = data & 0xff;
-			m_idcompare[2] = data >> 8;
+			put_u16be(&m_idcompare[2], data);
 			break;
 		default:
 			logerror("isbc_215g: invalid port write 0x80%02x\n", offset*2);
@@ -334,22 +334,22 @@ void isbc_215g_device::isbc_215g_io(address_map &map)
 	map(0xc0e0, 0xc0ef).rw("sbx2", FUNC(isbx_slot_device::mcs1_r), FUNC(isbx_slot_device::mcs1_w)).umask16(0x00ff);
 }
 
-WRITE_LINE_MEMBER(isbc_215g_device::isbx_irq_00_w)
+void isbc_215g_device::isbx_irq_00_w(int state)
 {
 	m_isbx_irq[0] = state ? true : false;
 }
 
-WRITE_LINE_MEMBER(isbc_215g_device::isbx_irq_01_w)
+void isbc_215g_device::isbx_irq_01_w(int state)
 {
 	m_isbx_irq[1] = state ? true : false;
 }
 
-WRITE_LINE_MEMBER(isbc_215g_device::isbx_irq_10_w)
+void isbc_215g_device::isbx_irq_10_w(int state)
 {
 	m_isbx_irq[2] = state ? true : false;
 }
 
-WRITE_LINE_MEMBER(isbc_215g_device::isbx_irq_11_w)
+void isbc_215g_device::isbx_irq_11_w(int state)
 {
 	m_isbx_irq[3] = state ? true : false;
 }
@@ -416,8 +416,6 @@ void isbc_215g_device::device_start()
 	m_wrgate = false;
 	m_rdgate = false;
 	m_format_bytes = 0;
-	m_out_irq_func.resolve_safe();
-
 }
 
 void isbc_215g_device::write(offs_t offset, uint8_t data)

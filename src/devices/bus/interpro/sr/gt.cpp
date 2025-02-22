@@ -113,7 +113,6 @@
 #include "bus/interpro/keyboard/keyboard.h"
 #include "bus/interpro/mouse/mouse.h"
 
-#define LOG_GENERAL (1U << 0)
 #define LOG_LINE    (1U << 1)
 #define LOG_BLIT    (1U << 2)
 
@@ -310,7 +309,7 @@ void gtdb_device::device_add_mconfig(machine_config &config)
 {
 	gt_device_base::device_add_mconfig(config);
 
-	SCC8530N(config, m_scc, 4.9152_MHz_XTAL);
+	SCC8530(config, m_scc, 4.9152_MHz_XTAL);
 
 	interpro_keyboard_port_device &keyboard(INTERPRO_KEYBOARD_PORT(config, "kbd", interpro_keyboard_devices, "lle_en_us"));
 	keyboard.rxd_handler_cb().set(m_scc, FUNC(z80scc_device::rxa_w));
@@ -1391,7 +1390,7 @@ void gtdb_device::srx_mapping_w(u32 data)
 	m_bus->install_map(*this, srx_base, srx_base | 0xffffff, &gtdb_device::map_dynamic);
 }
 
-WRITE_LINE_MEMBER(gtdb_device::serial_irq)
+void gtdb_device::serial_irq(int state)
 {
 	if (state)
 		m_mouse_int |= SERIAL;

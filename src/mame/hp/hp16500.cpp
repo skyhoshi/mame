@@ -76,7 +76,7 @@ public:
 	void hp1650(machine_config &config);
 
 private:
-	virtual void video_start() override;
+	virtual void video_start() override ATTR_COLD;
 	uint32_t screen_update_hp16500(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	[[maybe_unused]] uint32_t screen_update_hp16500a(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
@@ -103,15 +103,15 @@ private:
 	void pal_b_w(uint8_t data);
 
 	void maskval_w(uint16_t data);
-	DECLARE_WRITE_LINE_MEMBER(irq_2);
-	DECLARE_WRITE_LINE_MEMBER(vsync_changed);
+	void irq_2(int state);
+	void vsync_changed(int state);
 	MC6845_UPDATE_ROW(crtc_update_row);
 	MC6845_UPDATE_ROW(crtc_update_row_1650);
 
-	void hp16500_map(address_map &map);
-	void hp16500a_map(address_map &map);
-	void hp1650_map(address_map &map);
-	void hp1651_map(address_map &map);
+	void hp16500_map(address_map &map) ATTR_COLD;
+	void hp16500a_map(address_map &map) ATTR_COLD;
+	void hp1650_map(address_map &map) ATTR_COLD;
+	void hp1651_map(address_map &map) ATTR_COLD;
 
 	uint32_t m_palette[256]{}, m_colors[3]{}, m_count = 0, m_clutoffs = 0;
 };
@@ -137,7 +137,7 @@ void hp16500_state::vbl_ack16_w(uint16_t data)
 	m_maincpu->set_input_line(M68K_IRQ_1, CLEAR_LINE);
 }
 
-WRITE_LINE_MEMBER( hp16500_state::vsync_changed )
+void hp16500_state::vsync_changed(int state)
 {
 	if (state)
 	{
@@ -219,7 +219,7 @@ void hp16500_state::maskval_w(uint16_t data)
 	m_mask = (data & 0xff) ^ 0xff;
 }
 
-WRITE_LINE_MEMBER(hp16500_state::irq_2)
+void hp16500_state::irq_2(int state)
 {
 	m_maincpu->set_input_line(M68K_IRQ_2, state);
 }

@@ -60,9 +60,9 @@ TODO: is sound emulation complete? there's data in audio ROM at 0xe000, and whil
 
 
 // configurable logging
-#define LOG_MEMBANK     (1U <<  1)
-#define LOG_PALBANK     (1U <<  2)
-#define LOG_VIDBANK     (1U <<  3)
+#define LOG_MEMBANK     (1U << 1)
+#define LOG_PALBANK     (1U << 2)
+#define LOG_VIDBANK     (1U << 3)
 
 //#define VERBOSE (LOG_GENERAL | LOG_MEMBANK | LOG_PALBANK | LOG_VIDBANK)
 
@@ -99,8 +99,8 @@ public:
 	void init_hotbody();
 
 protected:
-	virtual void video_start() override;
-	virtual void machine_start() override;
+	virtual void video_start() override ATTR_COLD;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -139,9 +139,9 @@ private:
 
 	TILE_GET_INFO_MEMBER(get_fg_tile_info);
 
-	void main_program_map(address_map &map);
-	void main_port_map(address_map &map);
-	void sound_program_map(address_map &map);
+	void main_program_map(address_map &map) ATTR_COLD;
+	void main_port_map(address_map &map) ATTR_COLD;
+	void sound_program_map(address_map &map) ATTR_COLD;
 
 	void decode_cpu();
 	void decode_sprites();

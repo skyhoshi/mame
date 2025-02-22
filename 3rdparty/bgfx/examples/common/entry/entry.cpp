@@ -767,6 +767,7 @@ restart:
 						handle  = size->m_handle;
 						_width  = size->m_width;
 						_height = size->m_height;
+						BX_TRACE("Window resize event: %d: %dx%d", handle, _width, _height);
 
 						needReset = true;
 					}
@@ -800,6 +801,7 @@ restart:
 		&&  needReset)
 		{
 			_reset = s_reset;
+			BX_TRACE("bgfx::reset(%d, %d, 0x%x)", _width, _height, _reset)
 			bgfx::reset(_width, _height, _reset);
 			inputSetMouseResolution(uint16_t(_width), uint16_t(_height) );
 		}
@@ -979,6 +981,7 @@ restart:
 		if (needReset)
 		{
 			_reset = s_reset;
+			BX_TRACE("bgfx::reset(%d, %d, 0x%x)", s_window[0].m_width, s_window[0].m_height, _reset)
 			bgfx::reset(s_window[0].m_width, s_window[0].m_height, _reset);
 			inputSetMouseResolution(uint16_t(s_window[0].m_width), uint16_t(s_window[0].m_height) );
 		}
@@ -1036,4 +1039,9 @@ extern "C" void* entry_get_default_native_window_handle()
 extern "C" void* entry_get_native_display_handle()
 {
 	return entry::getNativeDisplayHandle();
+}
+
+extern "C" bgfx::NativeWindowHandleType::Enum entry_get_native_window_handle_type()
+{
+	return entry::getNativeWindowHandleType(entry::kDefaultWindowHandle);
 }

@@ -52,15 +52,15 @@ public:
 	void cpzodiac(machine_config &config);
 
 private:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 	required_device<z80_device> m_maincpu;
 	required_device<cpu_device> m_audiocpu;
 	required_memory_bank m_bank;
 
-	void main_map(address_map &map);
-	void main_io_map(address_map &map);
-	void sound_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void main_io_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
 };
 
 
@@ -201,8 +201,8 @@ void cpzodiac_state::cpzodiac(machine_config &config)
 	ymsnd.add_route(2, "rspeaker", 1.0);
 
 	tc0140syt_device &syt(TC0140SYT(config, "syt", 0));
-	syt.set_master_tag(m_maincpu);
-	syt.set_slave_tag(m_audiocpu);
+	syt.nmi_callback().set_inputline(m_audiocpu, INPUT_LINE_NMI);
+	syt.reset_callback().set_inputline(m_audiocpu, INPUT_LINE_RESET);
 }
 
 

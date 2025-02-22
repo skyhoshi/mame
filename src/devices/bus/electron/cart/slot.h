@@ -91,8 +91,8 @@
    22      0V - Zero volts.
 
 **********************************************************************/
-#ifndef MAME_BUS_ELECTRON_CARTSLOT_H
-#define MAME_BUS_ELECTRON_CARTSLOT_H
+#ifndef MAME_BUS_ELECTRON_CART_SLOT_H
+#define MAME_BUS_ELECTRON_CART_SLOT_H
 
 #pragma once
 
@@ -154,14 +154,14 @@ public:
 
 	virtual bool present() { return is_loaded() || loaded_through_softlist(); }
 
-	DECLARE_WRITE_LINE_MEMBER(irq_w) { m_irq_handler(state); }
-	DECLARE_WRITE_LINE_MEMBER(nmi_w) { m_nmi_handler(state); }
+	void irq_w(int state) { m_irq_handler(state); }
+	void nmi_w(int state) { m_nmi_handler(state); }
 
 protected:
 	electron_cartslot_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock);
 
 	// device_t implementation
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	device_electron_cart_interface *m_cart;
 
@@ -211,5 +211,4 @@ DECLARE_DEVICE_TYPE(ELECTRON_CARTSLOT, electron_cartslot_device)
 
 void electron_cart(device_slot_interface &device);
 
-
-#endif // MAME_BUS_ELECTRON_CARTSLOT_H
+#endif // MAME_BUS_ELECTRON_CART_SLOT_H

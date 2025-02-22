@@ -8,8 +8,6 @@
 
     Copyright Nicola Salmoria, Andreas Naive, and Charles MacDonald.
 
-    All rights reserved.
-
 ***************************************************************************/
 
 #ifndef MAME_SEGA_FD1094_H
@@ -86,13 +84,13 @@ public:
 		STATE_RTE = 0x300
 	};
 
-	void decrypted_opcodes_map(address_map &map);
+	void decrypted_opcodes_map(address_map &map) ATTR_COLD;
 protected:
 	required_memory_bank m_decrypted_opcodes_bank;
 
 	// device overrides
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 	virtual void device_postload();
 
 	// internal helpers
@@ -103,7 +101,7 @@ protected:
 
 	// static helpers
 	void cmp_callback(offs_t offset, uint32_t data);
-	DECLARE_WRITE_LINE_MEMBER(rte_callback);
+	void rte_callback(int state);
 
 	// internal state
 	uint8_t                   m_state;

@@ -105,7 +105,7 @@ This chip *ALWAYS* has a bypass capacitor (ceramic, 104, 0.10 uF) soldered on to
 #include "emu.h"
 #include "taitocchip.h"
 
-#include "cpu/upd7810/upd7811.h"
+#include "cpu/upd7810/upd7810.h"
 
 //#define VERBOSE 1
 #include "logmacro.h"
@@ -119,10 +119,10 @@ taito_cchip_device::taito_cchip_device(const machine_config &mconfig, const char
 	m_upd4464_bank(*this, "upd4464_bank"),
 	m_upd4464_bank68(*this, "upd4464_bank68"),
 	m_sharedram(*this, "upd4464", 0x2000, ENDIANNESS_LITTLE),
-	m_in_pa_cb(*this),
-	m_in_pb_cb(*this),
-	m_in_pc_cb(*this),
-	m_in_ad_cb(*this),
+	m_in_pa_cb(*this, 0),
+	m_in_pb_cb(*this, 0),
+	m_in_pc_cb(*this, 0),
+	m_in_ad_cb(*this, 0),
 	m_out_pa_cb(*this),
 	m_out_pb_cb(*this),
 	m_out_pc_cb(*this)
@@ -145,7 +145,7 @@ u8 taito_cchip_device::asic_r(offs_t offset)
 {
 	if ((offset != 0x001) && (!machine().side_effects_disabled())) // prevent logerror spam for now
 		logerror("%s: asic_r %04x\n", machine().describe_context(), offset);
-	if (offset<0x200) // 400-5ff is asic 'ram'
+	if (offset < 0x200) // 400-5ff is asic 'ram'
 		return m_asic_ram[offset&3];
 	return 0x00; // 600-7ff is write-only(?) asic banking reg, may read as open bus or never assert /DTACK on read?
 }
@@ -209,17 +209,6 @@ void taito_cchip_device::device_add_mconfig(machine_config &config)
 	upd.an7_func().set([this] { return BIT(m_in_ad_cb(), 7) ? 0xff : 0; });
 }
 
-void taito_cchip_device::device_resolve_objects()
-{
-	m_in_pa_cb.resolve_safe(0);
-	m_in_pb_cb.resolve_safe(0);
-	m_in_pc_cb.resolve_safe(0);
-	m_in_ad_cb.resolve_safe(0);
-	m_out_pa_cb.resolve_safe();
-	m_out_pb_cb.resolve_safe();
-	m_out_pc_cb.resolve_safe();
-}
-
 void taito_cchip_device::device_start()
 {
 	m_upd4464_bank->configure_entries(0, m_sharedram.length() / 0x400, &m_sharedram[0], 0x400);
@@ -229,8 +218,8 @@ void taito_cchip_device::device_start()
 	m_upd4464_bank68->configure_entries(0, m_sharedram.length() / 0x400, &m_sharedram[0], 0x400);
 	m_upd4464_bank68->set_entry(0);
 
-	save_item(NAME(m_asic_ram));
 	m_asic_ram[0] = m_asic_ram[1] = m_asic_ram[2] = m_asic_ram[3] = 0;
+	save_item(NAME(m_asic_ram));
 }
 
 const tiny_rom_entry *taito_cchip_device::device_rom_region() const

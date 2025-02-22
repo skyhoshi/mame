@@ -7,7 +7,7 @@ Gottlieb System 80B
 
 Same as system 80, except that the displays are 20-digit alphanumeric driven by Rockwell 10939/10941 chips.
 
-The test rom says U4 is faulty. Using MOS6532_NEW fixes this error, but the games ramdomly slam-tilt instead.
+The test rom says U4 is faulty. Using MOS6532 fixes this error, but the games ramdomly slam-tilt instead.
 
 PinMAME used for the display character generator.
 
@@ -106,6 +106,10 @@ public:
 	DECLARE_INPUT_CHANGED_MEMBER(slam_w);
 	void init_s80c() { m_slam_low = true; }
 
+protected:
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void machine_start() override ATTR_COLD;
+
 private:
 	u8 port1a_r();
 	u8 port2a_r();
@@ -114,8 +118,8 @@ private:
 	void port2b_w(u8 data);
 	void port3a_w(u8 data);
 	void port3b_w(u8 data);
-	void gts80b_map(address_map &map);
-	void master_map(address_map &map);
+	void gts80b_map(address_map &map) ATTR_COLD;
+	void master_map(address_map &map) ATTR_COLD;
 
 	u8 m_segment = 0U;
 	u8 m_lamprow = 0U;
@@ -127,12 +131,10 @@ private:
 	u8 m_digit[2]{};
 	bool m_slam_low = false;
 
-	virtual void machine_reset() override;
-	virtual void machine_start() override;
 	required_device<m6502_device> m_maincpu;
-	required_device<riot6532_device> m_riot1;
-	required_device<riot6532_device> m_riot2;
-	required_device<riot6532_device> m_riot3;
+	required_device<mos6532_device> m_riot1;
+	required_device<mos6532_device> m_riot2;
+	required_device<mos6532_device> m_riot3;
 	required_ioport_array<4> m_io_dips;
 	required_ioport_array<9> m_io_keyboard;
 	optional_device<gottlieb_sound_p3_device> m_p3_sound;
@@ -147,11 +149,13 @@ private:
 void gts80b_state::gts80b_map(address_map &map)
 {
 	map.global_mask(0xbfff);
-	map(0x0000, 0x017f).mirror(0x8000).ram();
+	map(0x0000, 0x007f).mirror(0x8000).m(m_riot1, FUNC(mos6532_device::ram_map));
+	map(0x0080, 0x00ff).mirror(0x8000).m(m_riot2, FUNC(mos6532_device::ram_map));
+	map(0x0100, 0x017f).mirror(0x8000).m(m_riot3, FUNC(mos6532_device::ram_map));
 	map(0x01cb, 0x01cb).lr8(NAME([] () { return 0xff; }));  // continual read
-	map(0x0200, 0x027f).mirror(0x8000).rw("riot1", FUNC(riot6532_device::read), FUNC(riot6532_device::write));
-	map(0x0280, 0x02ff).mirror(0x8000).rw("riot2", FUNC(riot6532_device::read), FUNC(riot6532_device::write));
-	map(0x0300, 0x037f).mirror(0x8000).rw("riot3", FUNC(riot6532_device::read), FUNC(riot6532_device::write));
+	map(0x0200, 0x021f).mirror(0x8060).m(m_riot1, FUNC(mos6532_device::io_map));
+	map(0x0280, 0x029f).mirror(0x8060).m(m_riot2, FUNC(mos6532_device::io_map));
+	map(0x0300, 0x031f).mirror(0x8060).m(m_riot3, FUNC(mos6532_device::io_map));
 	map(0x1000, 0x17ff).rom();
 	map(0x1800, 0x18ff).mirror(0x8000).ram().share("nvram"); // 5101L-1 256x4
 	map(0x2000, 0x2fff).rom();
@@ -163,11 +167,13 @@ void gts80b_state::gts80b_map(address_map &map)
 void gts80b_state::master_map(address_map &map)
 {
 	map(0x0000, 0x7fff).mirror(0x8000).rom();
-	map(0x0000, 0x017f).mirror(0x8000).ram();
+	map(0x0000, 0x007f).mirror(0x8000).m(m_riot1, FUNC(mos6532_device::ram_map));
+	map(0x0080, 0x00ff).mirror(0x8000).m(m_riot2, FUNC(mos6532_device::ram_map));
+	map(0x0100, 0x017f).mirror(0x8000).m(m_riot3, FUNC(mos6532_device::ram_map));
 	map(0x01cb, 0x01cb).lr8(NAME([] () { return 0xff; }));  // continual read
-	map(0x0200, 0x027f).mirror(0x8000).rw("riot1", FUNC(riot6532_device::read), FUNC(riot6532_device::write));
-	map(0x0280, 0x02ff).mirror(0x8000).rw("riot2", FUNC(riot6532_device::read), FUNC(riot6532_device::write));
-	map(0x0300, 0x037f).mirror(0x8000).rw("riot3", FUNC(riot6532_device::read), FUNC(riot6532_device::write));
+	map(0x0200, 0x021f).mirror(0x8060).m(m_riot1, FUNC(mos6532_device::io_map));
+	map(0x0280, 0x029f).mirror(0x8060).m(m_riot2, FUNC(mos6532_device::io_map));
+	map(0x0300, 0x031f).mirror(0x8060).m(m_riot3, FUNC(mos6532_device::io_map));
 	map(0x1800, 0x18ff).mirror(0x8000).ram().share("nvram"); // 5101L-1 256x4
 }
 
@@ -358,13 +364,13 @@ static INPUT_PORTS_START( gts80b )
 	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_UNUSED )
 
 	PORT_START("X8")
-	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_KEYPAD ) PORT_CODE(KEYCODE_0) PORT_NAME("Slam") PORT_CHANGED_MEMBER(DEVICE_SELF, gts80b_state, slam_w, 0)
+	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_KEYPAD ) PORT_CODE(KEYCODE_0) PORT_NAME("Slam") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(gts80b_state::slam_w), 0)
 INPUT_PORTS_END
 
 INPUT_CHANGED_MEMBER( gts80b_state::slam_w )
 {
-	u8 val = m_slam_low ? 0 : 0x80;
-	m_riot2->porta_in_set(newval ? val : val^0x80, 0x80);
+	u8 val = m_slam_low ? 0 : 1;
+	m_riot2->pa_bit_w<7>(newval ? val : val^1);
 }
 
 static const uint16_t patterns[] = {
@@ -612,21 +618,21 @@ void gts80b_state::p0(machine_config &config)
 	config.set_default_layout(layout_gts80b);
 
 	/* Devices */
-	RIOT6532(config, m_riot1, XTAL(3'579'545)/4);
-	m_riot1->in_pa_callback().set(FUNC(gts80b_state::port1a_r)); // sw_r
-	m_riot1->out_pb_callback().set(FUNC(gts80b_state::port1b_w)); // sw_w
-	m_riot1->irq_callback().set("irq", FUNC(input_merger_device::in_w<0>));
+	MOS6532(config, m_riot1, XTAL(3'579'545)/4);
+	m_riot1->pa_rd_callback().set(FUNC(gts80b_state::port1a_r)); // sw_r
+	m_riot1->pb_wr_callback().set(FUNC(gts80b_state::port1b_w)); // sw_w
+	m_riot1->irq_wr_callback().set("irq", FUNC(input_merger_device::in_w<0>));
 
-	RIOT6532(config, m_riot2, XTAL(3'579'545)/4);
-	m_riot2->in_pa_callback().set(FUNC(gts80b_state::port2a_r)); // pa7 - slam tilt
-	m_riot2->out_pa_callback().set(FUNC(gts80b_state::port2a_w)); // digit select
-	m_riot2->out_pb_callback().set(FUNC(gts80b_state::port2b_w)); // seg
-	m_riot2->irq_callback().set("irq", FUNC(input_merger_device::in_w<1>));
+	MOS6532(config, m_riot2, XTAL(3'579'545)/4);
+	m_riot2->pa_rd_callback().set(FUNC(gts80b_state::port2a_r)); // pa7 - slam tilt
+	m_riot2->pa_wr_callback().set(FUNC(gts80b_state::port2a_w)); // digit select
+	m_riot2->pb_wr_callback().set(FUNC(gts80b_state::port2b_w)); // seg
+	m_riot2->irq_wr_callback().set("irq", FUNC(input_merger_device::in_w<1>));
 
-	RIOT6532(config, m_riot3, XTAL(3'579'545)/4);
-	m_riot3->out_pa_callback().set(FUNC(gts80b_state::port3a_w)); // sol, snd
-	m_riot3->out_pb_callback().set(FUNC(gts80b_state::port3b_w)); // lamps
-	m_riot3->irq_callback().set("irq", FUNC(input_merger_device::in_w<2>));
+	MOS6532(config, m_riot3, XTAL(3'579'545)/4);
+	m_riot3->pa_wr_callback().set(FUNC(gts80b_state::port3a_w)); // sol, snd
+	m_riot3->pb_wr_callback().set(FUNC(gts80b_state::port3b_w)); // lamps
+	m_riot3->irq_wr_callback().set("irq", FUNC(input_merger_device::in_w<2>));
 
 	INPUT_MERGER_ANY_HIGH(config, "irq").output_handler().set_inputline("maincpu", m6502_device::IRQ_LINE);
 
@@ -638,31 +644,31 @@ void gts80b_state::p0(machine_config &config)
 void gts80b_state::p3(machine_config &config)
 {
 	p0(config);
-	GOTTLIEB_SOUND_PIN3(config, m_p3_sound, 0).add_route(ALL_OUTPUTS, "mono", 1.00);
+	GOTTLIEB_SOUND_PIN3(config, m_p3_sound).add_route(ALL_OUTPUTS, "mono", 1.00);
 }
 
 void gts80b_state::p4(machine_config &config)
 {
 	p0(config);
-	GOTTLIEB_SOUND_PIN4(config, m_p4_sound, 0).add_route(ALL_OUTPUTS, "mono", 1.00);
+	GOTTLIEB_SOUND_PIN4(config, m_p4_sound).add_route(ALL_OUTPUTS, "mono", 1.00);
 }
 
 void gts80b_state::p5(machine_config &config)
 {
 	p0(config);
-	GOTTLIEB_SOUND_PIN5(config, m_p5_sound, 0).add_route(ALL_OUTPUTS, "mono", 1.00);
+	GOTTLIEB_SOUND_PIN5(config, m_p5_sound).add_route(ALL_OUTPUTS, "mono", 1.00);
 }
 
 void gts80b_state::p6(machine_config &config)
 {
 	p0(config);
-	GOTTLIEB_SOUND_PIN6(config, m_p6_sound, 0).add_route(ALL_OUTPUTS, "mono", 1.00);
+	GOTTLIEB_SOUND_PIN6(config, m_p6_sound).add_route(ALL_OUTPUTS, "mono", 1.00);
 }
 
 void gts80b_state::r2(machine_config &config)
 {
 	p0(config);
-	GOTTLIEB_SOUND_REV2(config, m_r2_sound, 0).add_route(ALL_OUTPUTS, "mono", 1.00);
+	GOTTLIEB_SOUND_REV2(config, m_r2_sound).add_route(ALL_OUTPUTS, "mono", 1.00);
 }
 
 void gts80b_state::master(machine_config &config)
@@ -1000,6 +1006,24 @@ ROM_START(badgirls)
 	ROM_RELOAD(0x5000, 0x0800)
 	ROM_CONTINUE(0xd000, 0x0800)
 	ROM_LOAD("prom1.cpu", 0x2000, 0x2000, CRC(956aeae0) SHA1(24d9d514fc83aba1ab310bfe4ed80605df399417))
+	ROM_RELOAD(0x6000, 0x2000)
+	ROM_RELOAD(0xa000, 0x2000)
+	ROM_RELOAD(0xe000, 0x2000)
+
+	ROM_REGION(0x10000, "p5sound:audiocpu", ROMREGION_ERASEFF)
+	ROM_LOAD("drom1.snd", 0x8000, 0x8000, CRC(452dec20) SHA1(a9c41dfb2d83c5671ab96e946f13df774b567976))
+
+	ROM_REGION(0x10000, "p5sound:speechcpu", ROMREGION_ERASEFF)
+	ROM_LOAD("yrom1.snd", 0x8000, 0x8000, CRC(ab3b8e2d) SHA1(b57a0b804b42b923bb102d295e3b8a69b1033d27))
+ROM_END
+
+ROM_START(badgirlsa)
+	ROM_REGION(0x10000, "maincpu", ROMREGION_ERASEFF)
+	ROM_LOAD("prom2a.cpu", 0x1000, 0x0800, CRC(53e05ca7) SHA1(a45a37e180f10fcbc3fe89be28b3d5c7e56561c2))
+	ROM_CONTINUE(0x9000, 0x0800)
+	ROM_RELOAD(0x5000, 0x0800)
+	ROM_CONTINUE(0xd000, 0x0800)
+	ROM_LOAD("prom1a.cpu", 0x2000, 0x2000, CRC(07082568) SHA1(ea89dede1543fe34f8f0e95a33120a727c3ff274))
 	ROM_RELOAD(0x6000, 0x2000)
 	ROM_RELOAD(0xa000, 0x2000)
 	ROM_RELOAD(0xe000, 0x2000)
@@ -2192,74 +2216,75 @@ ROM_END
 } // Anonymous namespace
 
 
-GAME(1985, bountyh,   0,        p3, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Bounty Hunter",                             MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1985, bountyhg,  bountyh,  p3, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Bounty Hunter (German)",                    MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1985, triplay,   0,        p3, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Chicago Cubs' Triple Play",                 MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1985, triplaya,  triplay,  p3, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Chicago Cubs' Triple Play (alternate set)", MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1985, triplayg,  triplay,  p3, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Chicago Cubs' Triple Play (German)",        MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1985, rock,      0,        r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Rock",                                      MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1985, rockg,     rock,     r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Rock (German)",                             MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1985, tagteamp,  0,        p3, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Tag-Team Wrestling",                        MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1985, tagteampg, tagteamp, p3, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Tag-Team Wrestling (German)",               MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1985, tagteamp2, tagteamp, p3, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Tag-Team Wrestling (rev.2)",                MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1986, raven,     0,        r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Raven",                                     MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1986, ravena,    raven,    r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Raven (alternate set)",                     MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1986, raveng,    raven,    r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Raven (German)",                            MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1986, hlywoodh,  0,        r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Hollywood Heat",                            MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1986, hlywoodhf, hlywoodh, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Hollywood Heat (French)",                   MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1986, hlywoodhg, hlywoodh, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Hollywood Heat (German)",                   MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1986, rock_enc,  rock,     r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Rock Encore",                               MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1986, rock_encg, rock,     r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Rock Encore (German)",                      MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1986, genesisp,  0,        r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Genesis",                                   MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1986, genesispf, genesisp, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Genesis (French)",                          MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1986, genesispg, genesisp, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Genesis (German)",                          MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1987, amazonh2,  0,        r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Amazon Hunt II (French)",                   MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1987, sprbreak,  0,        r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Spring Break",                              MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1987, sprbreaka, sprbreak, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Spring Break (alternate set)",              MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1987, sprbreakf, sprbreak, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Spring Break (French)",                     MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1987, sprbreakg, sprbreak, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Spring Break (German)",                     MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1987, sprbreaks, sprbreak, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Spring Break (single ball game)",           MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1986, goldwing,  0,        r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Gold Wings",                                MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1986, goldwingf, goldwing, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Gold Wings (French)",                       MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1986, goldwingg, goldwing, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Gold Wings (German)",                       MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1987, mntecrlo,  0,        r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Monte Carlo (Pinball)",                     MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1987, mntecrloa, mntecrlo, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Monte Carlo (Pinball, alternate set)",      MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1987, mntecrlof, mntecrlo, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Monte Carlo (Pinball, French)",             MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1987, mntecrlog, mntecrlo, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Monte Carlo (Pinball, German)",             MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1987, mntecrlo2, mntecrlo, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Monte Carlo (Pinball, rev. 2)",             MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1987, arena,     0,        r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Arena",                                     MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1987, arenaa,    arena,    r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Arena (alternate set)",                     MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1987, arenaf,    arena,    r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Arena (French)",                            MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1987, arenag,    arena,    r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Arena (German)",                            MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1987, victoryp,  0,        p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Victory (Pinball)",                         MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1987, victorypf, victoryp, p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Victory (Pinball, French)",                 MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1987, victorypg, victoryp, p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Victory (Pinball, German)",                 MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1988, diamondp,  0,        p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Diamond Lady",                              MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1988, diamondpf, diamondp, p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Diamond Lady (French)",                     MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1988, diamondpg, diamondp, p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Diamond Lady (German)",                     MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1988, txsector,  0,        p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "TX-Sector",                                 MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1988, txsectorf, txsector, p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "TX-Sector (French)",                        MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1988, txsectorg, txsector, p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "TX-Sector (German)",                        MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1989, bighouse,  0,        p5, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Big House",                                 MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1989, bighousef, bighouse, p5, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Big House (French)",                        MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1989, bighouseg, bighouse, p5, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Big House (German)",                        MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1988, robowars,  0,        p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Robo-War",                                  MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1988, robowarsf, robowars, p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Robo-War (French)",                         MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1988, excalibr,  0,        p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Excalibur",                                 MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1988, excalibrf, excalibr, p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Excalibur (French)",                        MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1988, excalibrg, excalibr, p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Excalibur (German)",                        MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1988, badgirls,  0,        p5, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Bad Girls",                                 MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1988, badgirlsf, badgirls, p5, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Bad Girls (French)",                        MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1988, badgirlsg, badgirls, p5, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Bad Girls (German)",                        MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1989, hotshots,  0,        p5, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Hot Shots",                                 MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1989, hotshotsf, hotshots, p5, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Hot Shots (French)",                        MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1989, hotshotsg, hotshots, p5, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Hot Shots (German)",                        MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1989, bonebstr,  0,        p6, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Bone Busters Inc.",                         MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1989, bonebstrf, bonebstr, p6, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Bone Busters Inc. (French)",                MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1989, bonebstrg, bonebstr, p6, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Bone Busters Inc. (German)",                MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1989, nmoves,    0,        p5, gts80b, gts80b_state, init_s80c,  ROT0, "International Concepts", "Night Moves",                               MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1987, amazonh3,  0,        p4, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Amazon Hunt III (French)",                  MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1987, amazonh3a, amazonh3, p4, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Amazon Hunt III (rev. 1, French)",          MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(198?, s80btest,  0,        p0, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "System 80B Test",                           MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1988, mmmaster,  0,    master, gts80b, gts80b_state, empty_init, ROT0, "ManilaMatic",            "Master",                                    MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1988, topsound,  0,    master, gts80b, gts80b_state, empty_init, ROT0, "ManilaMatic",            "Top Sound (French)",                        MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
+GAME(1985, bountyh,   0,        p3, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Bounty Hunter",                             MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1985, bountyhg,  bountyh,  p3, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Bounty Hunter (German)",                    MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1985, triplay,   0,        p3, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Chicago Cubs' Triple Play",                 MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1985, triplaya,  triplay,  p3, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Chicago Cubs' Triple Play (alternate set)", MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1985, triplayg,  triplay,  p3, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Chicago Cubs' Triple Play (German)",        MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1985, rock,      0,        r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Rock",                                      MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1985, rockg,     rock,     r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Rock (German)",                             MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1985, tagteamp,  0,        p3, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Tag-Team Wrestling",                        MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1985, tagteampg, tagteamp, p3, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Tag-Team Wrestling (German)",               MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1985, tagteamp2, tagteamp, p3, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Tag-Team Wrestling (rev.2)",                MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1986, raven,     0,        r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Raven",                                     MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1986, ravena,    raven,    r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Raven (alternate set)",                     MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1986, raveng,    raven,    r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Raven (German)",                            MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1986, hlywoodh,  0,        r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Hollywood Heat",                            MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1986, hlywoodhf, hlywoodh, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Hollywood Heat (French)",                   MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1986, hlywoodhg, hlywoodh, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Hollywood Heat (German)",                   MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1986, rock_enc,  rock,     r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Rock Encore",                               MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1986, rock_encg, rock,     r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Rock Encore (German)",                      MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1986, genesisp,  0,        r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Genesis",                                   MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1986, genesispf, genesisp, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Genesis (French)",                          MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1986, genesispg, genesisp, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Genesis (German)",                          MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1987, amazonh2,  0,        r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Amazon Hunt II (French)",                   MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1987, sprbreak,  0,        r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Spring Break",                              MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1987, sprbreaka, sprbreak, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Spring Break (alternate set)",              MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1987, sprbreakf, sprbreak, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Spring Break (French)",                     MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1987, sprbreakg, sprbreak, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Spring Break (German)",                     MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1987, sprbreaks, sprbreak, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Spring Break (single ball game)",           MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1986, goldwing,  0,        r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Gold Wings",                                MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1986, goldwingf, goldwing, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Gold Wings (French)",                       MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1986, goldwingg, goldwing, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Gold Wings (German)",                       MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1987, mntecrlo,  0,        r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Monte Carlo (Pinball)",                     MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1987, mntecrloa, mntecrlo, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Monte Carlo (Pinball, alternate set)",      MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1987, mntecrlof, mntecrlo, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Monte Carlo (Pinball, French)",             MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1987, mntecrlog, mntecrlo, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Monte Carlo (Pinball, German)",             MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1987, mntecrlo2, mntecrlo, r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Monte Carlo (Pinball, rev. 2)",             MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1987, arena,     0,        r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Arena",                                     MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1987, arenaa,    arena,    r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Arena (alternate set)",                     MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1987, arenaf,    arena,    r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Arena (French)",                            MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1987, arenag,    arena,    r2, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Arena (German)",                            MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1987, victoryp,  0,        p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Victory (Pinball)",                         MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1987, victorypf, victoryp, p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Victory (Pinball, French)",                 MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1987, victorypg, victoryp, p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Victory (Pinball, German)",                 MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1988, diamondp,  0,        p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Diamond Lady",                              MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1988, diamondpf, diamondp, p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Diamond Lady (French)",                     MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1988, diamondpg, diamondp, p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Diamond Lady (German)",                     MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1988, txsector,  0,        p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "TX-Sector",                                 MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1988, txsectorf, txsector, p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "TX-Sector (French)",                        MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1988, txsectorg, txsector, p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "TX-Sector (German)",                        MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1989, bighouse,  0,        p5, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Big House",                                 MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1989, bighousef, bighouse, p5, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Big House (French)",                        MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1989, bighouseg, bighouse, p5, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Big House (German)",                        MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1988, robowars,  0,        p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Robo-War",                                  MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1988, robowarsf, robowars, p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Robo-War (French)",                         MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1988, excalibr,  0,        p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Excalibur (Gottlieb)",                      MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1988, excalibrf, excalibr, p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Excalibur (Gottlieb, French)",              MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1988, excalibrg, excalibr, p4, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "Excalibur (Gottlieb, German)",              MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1988, badgirls,  0,        p5, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Bad Girls",                                 MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1988, badgirlsa, badgirls, p5, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Bad Girls (alternate set)",                 MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1988, badgirlsf, badgirls, p5, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Bad Girls (French)",                        MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1988, badgirlsg, badgirls, p5, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Bad Girls (German)",                        MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1989, hotshots,  0,        p5, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Hot Shots",                                 MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1989, hotshotsf, hotshots, p5, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Hot Shots (French)",                        MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1989, hotshotsg, hotshots, p5, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Hot Shots (German)",                        MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1989, bonebstr,  0,        p6, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Bone Busters Inc.",                         MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1989, bonebstrf, bonebstr, p6, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Bone Busters Inc. (French)",                MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1989, bonebstrg, bonebstr, p6, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Bone Busters Inc. (German)",                MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1989, nmoves,    0,        p5, gts80b, gts80b_state, init_s80c,  ROT0, "International Concepts", "Night Moves",                               MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1987, amazonh3,  0,        p4, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Amazon Hunt III (French)",                  MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1987, amazonh3a, amazonh3, p4, gts80b, gts80b_state, init_s80c,  ROT0, "Gottlieb",               "Amazon Hunt III (rev. 1, French)",          MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(198?, s80btest,  0,        p0, gts80b, gts80b_state, empty_init, ROT0, "Gottlieb",               "System 80B Test",                           MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1988, mmmaster,  0,    master, gts80b, gts80b_state, empty_init, ROT0, "ManilaMatic",            "Master",                                    MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1988, topsound,  0,    master, gts80b, gts80b_state, empty_init, ROT0, "ManilaMatic",            "Top Sound (French)",                        MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )

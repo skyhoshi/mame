@@ -65,9 +65,9 @@ public:
 	void pc8801(machine_config &config);
 
 protected:
-	virtual void video_start() override;
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void video_start() override ATTR_COLD;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	uint8_t mem_r(offs_t offset);
 	void mem_w(offs_t offset, uint8_t data);
@@ -81,7 +81,7 @@ protected:
 
 	virtual uint8_t cdbios_rom_r(offs_t offset);
 	virtual bool cdbios_rom_enable();
-	virtual void main_io(address_map &map);
+	virtual void main_io(address_map &map) ATTR_COLD;
 
 //  required_device<cpu_device> m_maincpu;
 	required_device<screen_device> m_screen;
@@ -102,12 +102,12 @@ protected:
 	required_device<msx_general_purpose_port_device> m_mouse_port;
 	required_device<pc8801_exp_slot_device> m_exp;
 
-	DECLARE_WRITE_LINE_MEMBER(int4_irq_w);
+	void int4_irq_w(int state);
 
 	uint8_t m_gfx_ctrl = 0;
 
 private:
-	void main_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
 
 	std::unique_ptr<uint8_t[]> m_work_ram;
 	std::unique_ptr<uint8_t[]> m_hi_work_ram;
@@ -178,7 +178,7 @@ private:
 	template <unsigned kanji_level> void kanji_w(offs_t offset, uint8_t data);
 //  void rtc_w(uint8_t data);
 
-	DECLARE_WRITE_LINE_MEMBER(txdata_callback);
+	void txdata_callback(int state);
 
 	// video section
 	void draw_bitmap(bitmap_rgb32 &bitmap, const rectangle &cliprect, palette_device *palette, std::function<u8(u32 bitmap_offset, int y, int x, int xi)> dot_func);
@@ -188,11 +188,11 @@ private:
 	bitmap_rgb32 m_text_bitmap;
 
 	// irq section
-	DECLARE_WRITE_LINE_MEMBER(rxrdy_irq_w);
-	DECLARE_WRITE_LINE_MEMBER(vrtc_irq_w);
+	void rxrdy_irq_w(int state);
+	void vrtc_irq_w(int state);
 	TIMER_DEVICE_CALLBACK_MEMBER(clock_irq_w);
 	IRQ_CALLBACK_MEMBER(int_ack_cb);
-	DECLARE_WRITE_LINE_MEMBER(irq_w);
+	void irq_w(int state);
 
 	struct {
 		u8 enable = 0, pending = 0;
@@ -228,7 +228,7 @@ public:
 	void pc8801mk2mr(machine_config &config);
 
 protected:
-	virtual void main_io(address_map &map) override;
+	virtual void main_io(address_map &map) override ATTR_COLD;
 
 	uint8_t opn_porta_r();
 	uint8_t opn_portb_r();
@@ -250,13 +250,13 @@ public:
 	void pc8801fh(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void main_io(address_map &map) override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void main_io(address_map &map) override ATTR_COLD;
 
 private:
 	required_device<ym2608_device> m_opna;
-	void opna_map(address_map &map);
+	void opna_map(address_map &map) ATTR_COLD;
 
 	uint8_t cpuclock_r();
 	uint8_t baudrate_r();
@@ -277,10 +277,10 @@ public:
 	void pc8801ma(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
-	virtual void main_io(address_map &map) override;
+	virtual void main_io(address_map &map) override ATTR_COLD;
 
 	virtual uint8_t dictionary_rom_r(offs_t offset) override;
 	virtual bool dictionary_rom_enable() override;
@@ -306,10 +306,10 @@ public:
 	void pc8801mc(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
-	virtual void main_io(address_map &map) override;
+	virtual void main_io(address_map &map) override ATTR_COLD;
 
 private:
 	virtual uint8_t cdbios_rom_r(offs_t offset) override;

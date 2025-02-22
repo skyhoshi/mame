@@ -103,7 +103,7 @@ public:
 	void init_groundfx();
 
 protected:
-	virtual void video_start() override;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	required_shared_ptr<u32> m_ram;
@@ -135,17 +135,15 @@ private:
 	void rotate_control_w(offs_t offset, u16 data);
 	void motor_control_w(u32 data);
 	u32 irq_speedup_r();
-	DECLARE_READ_LINE_MEMBER(frame_counter_r);
+	int frame_counter_r();
 	void coin_word_w(u8 data);
 	u32 screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	INTERRUPT_GEN_MEMBER(interrupt);
 	void draw_sprites(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect, int do_hack, int x_offs, int y_offs);
 
-	void prg_map(address_map &map);
+	void prg_map(address_map &map) ATTR_COLD;
 };
 
-
-// video
 
 /******************************************************************/
 
@@ -408,13 +406,11 @@ u32 groundfx_state::screen_update(screen_device &screen, bitmap_ind16 &bitmap, c
 }
 
 
-// machine
-
 /**********************************************************
             GAME INPUTS
 **********************************************************/
 
-READ_LINE_MEMBER(groundfx_state::frame_counter_r)
+int groundfx_state::frame_counter_r()
 {
 	return m_frame_counter;
 }

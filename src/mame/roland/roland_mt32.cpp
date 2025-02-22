@@ -21,6 +21,10 @@
     with a MPU-401 frontend added to communicate with the synth.  All
     the roms are identical with the CM32L.
 
+    MT-100 is a desktop digital synthesizer which shares functionality
+    and main board with the MT-32, but extends it with a sequencer
+    and a Quick Disk drive.
+
     Some special tricks:
     - pressing 3+V (Part 3 + Volume) at boot time starts the test mode
 
@@ -200,8 +204,8 @@ public:
 	void mt32(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	required_device<i8x9x_device> cpu;
@@ -225,7 +229,7 @@ private:
 	TIMER_DEVICE_CALLBACK_MEMBER(midi_timer_cb);
 	TIMER_DEVICE_CALLBACK_MEMBER(samples_timer_cb);
 
-	void mt32_map(address_map &map);
+	void mt32_map(address_map &map) ATTR_COLD;
 
 	uint8_t lcd_data_buffer[256]{};
 	int lcd_data_buffer_pos = 0;
@@ -275,15 +279,21 @@ void mt32_state::machine_reset()
 
 void mt32_state::lcd_ctrl_w(uint8_t data)
 {
+	lcd->cs_w(0);
+	lcd->control_w(data >> 4);
 	lcd->control_w(data);
-	for(int i=0; i != lcd_data_buffer_pos; i++)
+	for(int i=0; i != lcd_data_buffer_pos; i++) {
+		lcd->data_w(lcd_data_buffer[i] >> 4);
 		lcd->data_w(lcd_data_buffer[i]);
+	}
+	lcd->cs_w(1);
 	lcd_data_buffer_pos = 0;
 }
 
 uint8_t mt32_state::lcd_ctrl_r()
 {
-	return lcd->control_r();
+	// Note that this does not read from the actual LCD unit (whose /RD line is pulled high)
+	return 0;
 }
 
 void mt32_state::lcd_data_w(uint8_t data)
@@ -412,6 +422,10 @@ ROM_START( mt32 )
 	ROMX_LOAD(       "mt32_2.0.4.ic28",              0,   0x10000, CRC(59a49d5c) SHA1(2c16432b6c73dd2a3947cba950a0f4c19d6180eb), ROM_BIOS(6) )
 	ROM_IGNORE(0x10000)  // banking needs to be implemented
 
+	ROM_SYSTEM_BIOS( 7, "207", "Firmware 2.0.7" )
+	ROMX_LOAD(       "mt32_2.0.7.ic28",              0,   0x10000, CRC(a016b607) SHA1(47b52adefedaec475c925e54340e37673c11707c), ROM_BIOS(7) )
+	ROM_IGNORE(0x10000)  // banking needs to be implemented
+
 // We need a bios-like selection for these too
 	ROM_REGION( 0x80000, "la32", 0 )
 	// separate PCM Mask ROMs from the MT-32 1.x older PCB
@@ -424,6 +438,23 @@ ROM_START( mt32 )
 
 	ROM_REGION( 0x8000, "boss", 0 )
 	ROM_LOAD(        "r15179857.ic13.bin",           0,   0x8000, CRC(cb219d85) SHA1(c2933cb7ad86e51904aa1c3bc12fa234e73a337f) )
+ROM_END
+
+ROM_START( mt100 )
+	ROM_REGION( 0x20000, "maincpu", 0 )
+	ROM_DEFAULT_BIOS( "203" )
+
+	ROM_SYSTEM_BIOS( 0, "203", "Firmware 2.0.3" )
+	ROMX_LOAD(       "mt32_2.0.3.ic28",              0,  0x20000, CRC(6af6b774) SHA1(5837064c9df4741a55f7c4d8787ac158dff2d3ce), ROM_BIOS(0) )
+
+	ROM_REGION( 0x80000, "la32", 0 )
+	ROM_LOAD(        "r15449121.ic37.bin",           0,  0x80000, CRC(573e31cc) SHA1(f6b1eebc4b2d200ec6d3d21d51325d5b48c60252) )  // Same as c32l
+
+	ROM_REGION( 0x8000, "boss", 0 )
+	ROM_LOAD(        "r15179917.ic13.bin",           0,   0x8000, CRC(236c87a6) SHA1(e1c03905c46e962d1deb15eeed92eb61b42bba4a) )  // Same as c32l
+
+	ROM_REGION( 0x10000, "prboard", 0 )
+	ROM_LOAD(        "mt100_4.0.0.bin",              0,  0x10000, CRC(0e3bffbb) SHA1(aeef44d56f0026243b4a6415ee5c60a8de9cea0f) )  // Roland MC-03 PR-100 Ver 4.00
 ROM_END
 
 ROM_START( cm32l )
@@ -453,4 +484,5 @@ ROM_END
 
 
 CONS( 1987, mt32,  0, 0, mt32, mt32, mt32_state, empty_init, "Roland", "MT-32",  MACHINE_NOT_WORKING | MACHINE_NO_SOUND )
+CONS( 1988, mt100, 0, 0, mt32, mt32, mt32_state, empty_init, "Roland", "MT-100", MACHINE_NOT_WORKING | MACHINE_NO_SOUND )
 CONS( 1989, cm32l, 0, 0, mt32, mt32, mt32_state, empty_init, "Roland", "CM-32L", MACHINE_NOT_WORKING | MACHINE_NO_SOUND )

@@ -75,7 +75,7 @@ public:
 	void wiping(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -94,9 +94,9 @@ private:
 	uint8_t m_sound_irq_mask = 0;
 
 	uint8_t ports_r(offs_t offset);
-	DECLARE_WRITE_LINE_MEMBER(main_irq_mask_w);
-	DECLARE_WRITE_LINE_MEMBER(sound_irq_mask_w);
-	DECLARE_WRITE_LINE_MEMBER(flipscreen_w);
+	void main_irq_mask_w(int state);
+	void sound_irq_mask_w(int state);
+	void flipscreen_w(int state);
 
 	void palette(palette_device &palette) const;
 
@@ -105,12 +105,10 @@ private:
 	INTERRUPT_GEN_MEMBER(vblank_irq);
 	INTERRUPT_GEN_MEMBER(sound_timer_irq);
 
-	void main_map(address_map &map);
-	void sound_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
 };
 
-
-// video
 
 /***************************************************************************
 
@@ -176,7 +174,7 @@ void wiping_state::palette(palette_device &palette) const
 
 
 
-WRITE_LINE_MEMBER(wiping_state::flipscreen_w)
+void wiping_state::flipscreen_w(int state)
 {
 	m_flipscreen = state;
 }
@@ -292,8 +290,6 @@ uint32_t wiping_state::screen_update(screen_device &screen, bitmap_ind16 &bitmap
 }
 
 
-// machine
-
 void wiping_state::machine_start()
 {
 	save_item(NAME(m_flipscreen));
@@ -314,12 +310,12 @@ uint8_t wiping_state::ports_r(offs_t offset)
 
 // irq / reset controls like in clshroad.cpp
 
-WRITE_LINE_MEMBER(wiping_state::main_irq_mask_w)
+void wiping_state::main_irq_mask_w(int state)
 {
 	m_main_irq_mask = state;
 }
 
-WRITE_LINE_MEMBER(wiping_state::sound_irq_mask_w)
+void wiping_state::sound_irq_mask_w(int state)
 {
 	m_sound_irq_mask = state;
 }

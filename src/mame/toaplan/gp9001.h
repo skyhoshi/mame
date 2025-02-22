@@ -15,6 +15,8 @@ class gp9001vdp_device : public device_t,
 							public device_memory_interface
 {
 public:
+	static constexpr unsigned VDP_PALETTE_LENGTH = 0x10000;
+
 	typedef device_delegate<void (u8 layer, u32 &code)> gp9001_cb_delegate;
 
 	gp9001vdp_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock);
@@ -32,12 +34,13 @@ public:
 
 	bitmap_ind8 *custom_priority_bitmap;
 
-	void map(address_map &map);
+	void map(address_map &map) ATTR_COLD;
 
 	// game-specific hack stuff
 	void disable_sprite_buffer() { m_sp.use_sprite_buffer = 0; }
 	void set_tm_extra_offsets(int layer, int xn, int yn, int xf, int yf) { m_tm[layer].set_extra_offsets(xn, yn, xf, yf); }
 	void set_sp_extra_offsets(int xn, int yn, int xf, int yf) { m_sp.set_extra_offsets(xn, yn, xf, yf); }
+	void set_bootleg_extra_offsets(int tm0x, int tm0y, int tm1x, int tm1y, int tm2x, int tm2y, int spx, int spy) { set_bootleg_offsets(tm0x, tm0y, tm1x, tm1y, tm2x, tm2y, spx, spy); }
 
 	// ROM banking control
 	void set_dirty() { m_gfxrom_bank_dirty = true; }
@@ -46,21 +49,22 @@ public:
 	u16 read(offs_t offset, u16 mem_mask = ~0);
 	void write(offs_t offset, u16 data, u16 mem_mask = ~0);
 
-	DECLARE_READ_LINE_MEMBER(hsync_r);
-	DECLARE_READ_LINE_MEMBER(vsync_r);
-	DECLARE_READ_LINE_MEMBER(fblank_r);
+	int hsync_r();
+	int vsync_r();
+	int fblank_r();
+	u16 vdpcount_r();
 
-	// this bootleg has strange access
-	u16 pipibibi_bootleg_videoram16_r(offs_t offset);
-	void pipibibi_bootleg_videoram16_w(offs_t offset, u16 data, u16 mem_mask = ~0);
-	u16 pipibibi_bootleg_spriteram16_r(offs_t offset);
-	void pipibibi_bootleg_spriteram16_w(offs_t offset, u16 data, u16 mem_mask = ~0);
-	void pipibibi_bootleg_scroll_w(offs_t offset, u16 data, u16 mem_mask = ~0);
+	// these bootlegs have strange access
+	u16 bootleg_videoram16_r(offs_t offset);
+	void bootleg_videoram16_w(offs_t offset, u16 data, u16 mem_mask = ~0);
+	u16 bootleg_spriteram16_r(offs_t offset);
+	void bootleg_spriteram16_w(offs_t offset, u16 data, u16 mem_mask = ~0);
+	void bootleg_scroll_w(offs_t offset, u16 data, u16 mem_mask = ~0);
 
 protected:
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 	virtual space_config_vector memory_space_config() const override;
 
@@ -121,12 +125,24 @@ private:
 		bool use_sprite_buffer;
 	};
 
+	void set_bootleg_offsets(int tm0x, int tm0y, int tm1x, int tm1y, int tm2x, int tm2y, int spx, int spy)
+	{
+		m_bootleg_tm0x_offs = tm0x;
+		m_bootleg_tm0y_offs = tm0y;
+		m_bootleg_tm1x_offs = tm1x;
+		m_bootleg_tm1y_offs = tm1y;
+		m_bootleg_tm2x_offs = tm2x;
+		m_bootleg_tm2y_offs = tm2y;
+		m_bootleg_spx_offs = spx;
+		m_bootleg_spy_offs = spy;
+	}
+
 	DECLARE_GFXDECODE_MEMBER(gfxinfo);
 
 	void voffs_w(u16 data, u16 mem_mask = ~0);
-	int videoram16_r(void);
+	int videoram16_r();
 	void videoram16_w(u16 data, u16 mem_mask = ~0);
-	u16 vdpstatus_r(void);
+	u16 vdpstatus_r();
 	void scroll_reg_select_w(u16 data, u16 mem_mask = ~0);
 	void scroll_reg_data_w(u16 data, u16 mem_mask = ~0);
 
@@ -140,6 +156,11 @@ private:
 	// in the chip implementation than externally for now (which would require dynamic decoding of the entire charsets every
 	// time the bank was changed)
 	bool m_gfxrom_bank_dirty;       /* dirty flag of object bank (for Batrider) */
+
+	int m_bootleg_tm0x_offs, m_bootleg_tm0y_offs;
+	int m_bootleg_tm1x_offs, m_bootleg_tm1y_offs;
+	int m_bootleg_tm2x_offs, m_bootleg_tm2y_offs;
+	int m_bootleg_spx_offs, m_bootleg_spy_offs;
 
 	required_shared_ptr_array<u16, 3> m_vram;
 	required_device<buffered_spriteram16_device> m_spriteram;

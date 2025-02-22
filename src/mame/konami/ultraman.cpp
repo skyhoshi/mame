@@ -33,7 +33,7 @@
 
 
 // configurable logging
-#define LOG_SHADOWS     (1U <<  1)
+#define LOG_SHADOWS     (1U << 1)
 
 #define VERBOSE (LOG_GENERAL | LOG_SHADOWS)
 
@@ -80,13 +80,11 @@ private:
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	template <uint8_t Which> K051316_CB_MEMBER(zoom_callback);
 	K051960_CB_MEMBER(sprite_callback);
-	void main_map(address_map &map);
-	void sound_io_map(address_map &map);
-	void sound_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void sound_io_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
 };
 
-
-// video
 
 /***************************************************************************
 
@@ -192,8 +190,6 @@ uint32_t ultraman_state::screen_update(screen_device &screen, bitmap_ind16 &bitm
 	return 0;
 }
 
-
-// machine
 
 void ultraman_state::sound_nmi_enable_w(uint8_t data)
 {

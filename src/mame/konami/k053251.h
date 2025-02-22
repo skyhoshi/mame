@@ -26,22 +26,18 @@ public:
 	void write(offs_t offset, u8 data);
 	int get_priority(int ci);
 	int get_palette_index(int ci);
-	int get_tmap_dirty(int tmap_num);
-	void set_tmap_dirty(int tmap_num, int data);
 
-	u8 read(offs_t offset);         // PCU1
+	u8 read(offs_t offset); // PCU1
 
 protected:
 	// device-level overrides
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 	virtual void device_post_load() override;
 
 private:
 	// internal state
-	int      m_dirty_tmap[5];
-
-	uint8_t    m_ram[16];
+	uint8_t  m_ram[16];
 	int      m_tilemaps_set;
 	int      m_palette_index[5];
 

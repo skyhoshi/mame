@@ -12,9 +12,7 @@
  ******************************************************************************/
 
 #include "emu.h"
-#include "cpu/z80/z80.h"
-#include "machine/z80daisy.h"
-#include "machine/z80daisy_generic.h"
+
 #include "bus/centronics/ctronics.h"
 #include "bus/einstein/pipe/pipe.h"
 #include "bus/einstein/userport/userport.h"
@@ -24,6 +22,7 @@
 #include "imagedev/cassette.h"
 #include "imagedev/floppy.h"
 #include "imagedev/snapquik.h"
+#include "cpu/z80/z80.h"
 #include "machine/adc0844.h"
 #include "machine/i8251.h"
 #include "machine/ram.h"
@@ -31,10 +30,12 @@
 #include "machine/timer.h"
 #include "machine/wd_fdc.h"
 #include "machine/z80ctc.h"
+#include "machine/z80daisy.h"
+#include "machine/z80daisy_generic.h"
 #include "machine/z80pio.h"
+#include "sound/ay8910.h"
 #include "video/tms9928a.h"
 #include "video/v9938.h"
-#include "sound/ay8910.h"
 
 #include "screen.h"
 #include "softlist_dev.h"
@@ -111,8 +112,8 @@ public:
 	DECLARE_QUICKLOAD_LOAD_MEMBER(quickload_cb);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	TIMER_DEVICE_CALLBACK_MEMBER(keyboard_timer_callback);
@@ -122,18 +123,18 @@ private:
 	void reset_w(uint8_t data);
 	uint8_t rom_r();
 	void rom_w(uint8_t data);
-	template <int src> DECLARE_WRITE_LINE_MEMBER(int_w);
+	template <int Src> void int_w(int state);
 	uint8_t kybint_msk_r();
 	void kybint_msk_w(uint8_t data);
 	void adcint_msk_w(uint8_t data);
 	void fireint_msk_w(uint8_t data);
 	void evdpint_msk_w(uint8_t data);
 	void drsel_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(write_centronics_ack);
-	DECLARE_WRITE_LINE_MEMBER(write_centronics_busy);
-	DECLARE_WRITE_LINE_MEMBER(write_centronics_perror);
-	DECLARE_WRITE_LINE_MEMBER(write_centronics_fault);
-	DECLARE_WRITE_LINE_MEMBER(ardy_w);
+	void write_centronics_ack(int state);
+	void write_centronics_busy(int state);
+	void write_centronics_perror(int state);
+	void write_centronics_fault(int state);
+	void ardy_w(int state);
 	TIMER_DEVICE_CALLBACK_MEMBER(strobe_callback);
 
 	uint8_t system_r();
@@ -147,9 +148,9 @@ private:
 	uint8_t alpha_lock_r();
 	void alpha_lock_w(uint8_t data);
 
-	void einstein_io(address_map &map);
-	void einstein_mem(address_map &map);
-	void einst256_io(address_map &map);
+	void einstein_io(address_map &map) ATTR_COLD;
+	void einstein_mem(address_map &map) ATTR_COLD;
+	void einst256_io(address_map &map) ATTR_COLD;
 
 	void einstein_scan_keyboard();
 
@@ -288,27 +289,27 @@ void einstein_state::drsel_w(uint8_t data)
     CENTRONICS
 ***************************************************************************/
 
-WRITE_LINE_MEMBER(einstein_state::write_centronics_ack)
+void einstein_state::write_centronics_ack(int state)
 {
 	m_centronics_ack = state;
 }
 
-WRITE_LINE_MEMBER( einstein_state::write_centronics_busy )
+void einstein_state::write_centronics_busy(int state)
 {
 	m_centronics_busy = state;
 }
 
-WRITE_LINE_MEMBER( einstein_state::write_centronics_perror )
+void einstein_state::write_centronics_perror(int state)
 {
 	m_centronics_perror = state;
 }
 
-WRITE_LINE_MEMBER( einstein_state::write_centronics_fault )
+void einstein_state::write_centronics_fault(int state)
 {
 	m_centronics_fault = state;
 }
 
-WRITE_LINE_MEMBER( einstein_state::ardy_w )
+void einstein_state::ardy_w(int state)
 {
 	if (m_strobe == 0 && state == 1)
 	{
@@ -349,13 +350,14 @@ static const z80_daisy_config einst256_daisy_chain[] =
 	{ nullptr }
 };
 
-template <int src> WRITE_LINE_MEMBER( einstein_state::int_w )
+template <int Src>
+void einstein_state::int_w(int state)
 {
 	int old = m_int;
 
 	if (state)
 	{
-		m_int |= (1 << src);
+		m_int |= (1 << Src);
 		if (!old)
 		{
 			m_maincpu->set_input_line(INPUT_LINE_IRQ0, ASSERT_LINE);
@@ -364,7 +366,7 @@ template <int src> WRITE_LINE_MEMBER( einstein_state::int_w )
 	}
 	else
 	{
-		m_int &= ~(1 << src);
+		m_int &= ~(1 << Src);
 		if (old && !m_int)
 		{
 			m_maincpu->set_input_line(INPUT_LINE_IRQ0, CLEAR_LINE);
@@ -774,8 +776,8 @@ static INPUT_PORTS_START( einstein )
 
 	// fire buttons for analogue joysticks
 	PORT_START("BUTTONS")
-	PORT_BIT(0x01, IP_ACTIVE_LOW, IPT_BUTTON1) PORT_NAME("Joystick 1 Button 1") PORT_PLAYER(1) PORT_CHANGED_MEMBER(DEVICE_SELF, einstein_state, joystick_button, 0)
-	PORT_BIT(0x02, IP_ACTIVE_LOW, IPT_BUTTON1) PORT_NAME("Joystick 2 Button 1") PORT_PLAYER(2) PORT_CHANGED_MEMBER(DEVICE_SELF, einstein_state, joystick_button, 0)
+	PORT_BIT(0x01, IP_ACTIVE_LOW, IPT_BUTTON1) PORT_NAME("Joystick 1 Button 1") PORT_PLAYER(1) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(einstein_state::joystick_button), 0)
+	PORT_BIT(0x02, IP_ACTIVE_LOW, IPT_BUTTON1) PORT_NAME("Joystick 2 Button 1") PORT_PLAYER(2) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(einstein_state::joystick_button), 0)
 	PORT_BIT(0xfc, IP_ACTIVE_HIGH, IPT_UNUSED)
 
 	PORT_START("analogue_1_x")
@@ -810,14 +812,14 @@ static INPUT_PORTS_START( einst256 )
 	PORT_BIT(0x02, IP_ACTIVE_LOW, IPT_JOYSTICK_DOWN)  PORT_PLAYER(1)
 	PORT_BIT(0x04, IP_ACTIVE_LOW, IPT_JOYSTICK_LEFT)  PORT_PLAYER(1)
 	PORT_BIT(0x08, IP_ACTIVE_LOW, IPT_JOYSTICK_RIGHT) PORT_PLAYER(1)
-	PORT_BIT(0x10, IP_ACTIVE_LOW, IPT_BUTTON1)        PORT_PLAYER(1) PORT_CHANGED_MEMBER(DEVICE_SELF, einstein_state, joystick_button, 0)
+	PORT_BIT(0x10, IP_ACTIVE_LOW, IPT_BUTTON1)        PORT_PLAYER(1) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(einstein_state::joystick_button), 0)
 
 	PORT_START("PORTB_JOY")
 	PORT_BIT(0x01, IP_ACTIVE_LOW, IPT_JOYSTICK_UP)    PORT_PLAYER(2)
 	PORT_BIT(0x02, IP_ACTIVE_LOW, IPT_JOYSTICK_DOWN)  PORT_PLAYER(2)
 	PORT_BIT(0x04, IP_ACTIVE_LOW, IPT_JOYSTICK_LEFT)  PORT_PLAYER(2)
 	PORT_BIT(0x08, IP_ACTIVE_LOW, IPT_JOYSTICK_RIGHT) PORT_PLAYER(2)
-	PORT_BIT(0x10, IP_ACTIVE_LOW, IPT_BUTTON1)        PORT_PLAYER(2) PORT_CHANGED_MEMBER(DEVICE_SELF, einstein_state, joystick_button, 0)
+	PORT_BIT(0x10, IP_ACTIVE_LOW, IPT_BUTTON1)        PORT_PLAYER(2) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(einstein_state::joystick_button), 0)
 
 	PORT_START("DIPS")
 	PORT_DIPNAME(0x01, 0x00, "Line Standard") PORT_DIPLOCATION("S:1")

@@ -1359,20 +1359,20 @@ void spacegun_state::spacegun_eeprom_w(u8 data)
                        GAME INPUTS
 **********************************************************/
 
-CUSTOM_INPUT_MEMBER(taitoz_state::gas_pedal_r)
+ioport_value taitoz_state::gas_pedal_r()
 {
 	static const u8 retval[8] = { 0,1,3,2,6,7,5,4 };
 	return retval[m_gas.read_safe(0) & 7];
 }
 
-CUSTOM_INPUT_MEMBER(taitoz_state::brake_pedal_r)
+ioport_value taitoz_state::brake_pedal_r()
 {
 	static const u8 retval[8] = { 0,1,3,2,6,7,5,4 };
 	return retval[m_brake.read_safe(0) & 7];
 }
 
 // enforceja only, 3 bits applied on both pots
-template <int axis> CUSTOM_INPUT_MEMBER(taitoz_state::adstick_r)
+template <int axis> ioport_value taitoz_state::adstick_r()
 {
 	static const u8 retval[8] = { 0,1,3,2,6,7,5,4 };
 	u8 raw_value = ((axis == 0 ? m_stickx : m_sticky).read_safe(0) >> 5) & 7;
@@ -1585,7 +1585,7 @@ void taitoz_z80_sound_state::sound_bankswitch_w(u8 data)
 /**** sound pan control ****/
 void taitoz_state::pancontrol_w(offs_t offset, u8 data)
 {
-	m_filter[offset & 3]->flt_volume_set_volume(data / 255.0f);
+	m_filter[offset & 3]->set_gain(data / 255.0f);
 }
 
 
@@ -2195,7 +2195,7 @@ static INPUT_PORTS_START( contcirc )
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_COIN2 )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_COIN1 )
 	PORT_BIT( 0x10, IP_ACTIVE_LOW,  IPT_SERVICE1 )
-	PORT_BIT( 0xe0, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(taitoz_state, gas_pedal_r) PORT_CONDITION("DSWA", 0x01, EQUALS, 0x01)
+	PORT_BIT( 0xe0, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(taitoz_state::gas_pedal_r)) PORT_CONDITION("DSWA", 0x01, EQUALS, 0x01)
 	PORT_BIT( 0xe0, IP_ACTIVE_LOW,  IPT_BUTTON1 ) PORT_NAME("Gas Switch") PORT_CONDITION("DSWA", 0x01, EQUALS, 0x00)
 
 	PORT_START("IN1")
@@ -2204,7 +2204,7 @@ static INPUT_PORTS_START( contcirc )
 	PORT_BIT( 0x04, IP_ACTIVE_LOW,  IPT_TILT )
 	PORT_BIT( 0x08, IP_ACTIVE_LOW,  IPT_START1 )
 	PORT_BIT( 0x10, IP_ACTIVE_LOW,  IPT_BUTTON3 ) PORT_NAME("Shifter") PORT_TOGGLE
-	PORT_BIT( 0xe0, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(taitoz_state, brake_pedal_r) PORT_CONDITION("DSWA", 0x01, EQUALS, 0x01)
+	PORT_BIT( 0xe0, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(taitoz_state::brake_pedal_r)) PORT_CONDITION("DSWA", 0x01, EQUALS, 0x01)
 	PORT_BIT( 0xe0, IP_ACTIVE_LOW,  IPT_BUTTON2 ) PORT_NAME("Brake Switch") PORT_CONDITION("DSWA", 0x01, EQUALS, 0x00) // no function?
 
 	PORT_START("IN2")   /* unused */
@@ -2277,7 +2277,7 @@ static INPUT_PORTS_START( chasehq ) // IN3-6 perhaps used with cockpit setup? //
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_COIN1 )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_COIN2 )
 	PORT_BIT( 0x10, IP_ACTIVE_LOW,  IPT_SERVICE1 )
-	PORT_BIT( 0xe0, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(taitoz_state, brake_pedal_r) PORT_CONDITION("DSWA", 0x02, EQUALS, 0x00)
+	PORT_BIT( 0xe0, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(taitoz_state::brake_pedal_r)) PORT_CONDITION("DSWA", 0x02, EQUALS, 0x00)
 	PORT_BIT( 0x20, IP_ACTIVE_LOW,  IPT_BUTTON2 ) PORT_NAME("Brake Switch") PORT_CONDITION("DSWA", 0x02, EQUALS, 0x02)
 
 	PORT_START("IN1")
@@ -2286,7 +2286,7 @@ static INPUT_PORTS_START( chasehq ) // IN3-6 perhaps used with cockpit setup? //
 	PORT_BIT( 0x04, IP_ACTIVE_LOW,  IPT_SERVICE2 ) PORT_NAME("Calibrate") // ?
 	PORT_BIT( 0x08, IP_ACTIVE_LOW,  IPT_START1 )
 	PORT_BIT( 0x10, IP_ACTIVE_LOW,  IPT_BUTTON4 ) PORT_NAME("Shifter") PORT_TOGGLE
-	PORT_BIT( 0xe0, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(taitoz_state, gas_pedal_r) PORT_CONDITION("DSWA", 0x02, EQUALS, 0x00)
+	PORT_BIT( 0xe0, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(taitoz_state::gas_pedal_r)) PORT_CONDITION("DSWA", 0x02, EQUALS, 0x00)
 	PORT_BIT( 0x20, IP_ACTIVE_LOW,  IPT_BUTTON1 ) PORT_NAME("Gas Switch") PORT_CONDITION("DSWA", 0x02, EQUALS, 0x02)
 
 	PORT_START("IN2")   /* unused */
@@ -2409,10 +2409,10 @@ static INPUT_PORTS_START( enforceja )
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_COIN2 )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_COIN1 )
 	PORT_BIT( 0x10, IP_ACTIVE_LOW,  IPT_SERVICE1 )
-	PORT_BIT( 0xe0, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(taitoz_state, adstick_r<0>);
+	PORT_BIT( 0xe0, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(taitoz_state::adstick_r<0>));
 
 	PORT_MODIFY("IN1")
-	PORT_BIT( 0xe0, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(taitoz_state, adstick_r<1>);
+	PORT_BIT( 0xe0, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(taitoz_state::adstick_r<1>));
 
 	PORT_MODIFY("IN2")
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_BUTTON3 ) PORT_NAME("P1 Shifter") PORT_TOGGLE PORT_PLAYER(1)
@@ -2551,8 +2551,8 @@ static INPUT_PORTS_START( bsharkjjs )
 	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_START2 )
 	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_JOYSTICK_UP ) PORT_8WAY PORT_PLAYER(1)
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_JOYSTICK_DOWN ) PORT_8WAY PORT_PLAYER(1)
-	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_JOYSTICK_LEFT ) PORT_8WAY PORT_PLAYER(1)
-	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_JOYSTICK_RIGHT ) PORT_8WAY PORT_PLAYER(1)
+	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_JOYSTICK_RIGHT ) PORT_8WAY PORT_PLAYER(1)
+	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_JOYSTICK_LEFT ) PORT_8WAY PORT_PLAYER(1)
 	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_BUTTON1 ) PORT_NAME("Fire") PORT_PLAYER(1)   /* "Fire" */
 	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_BUTTON2 ) PORT_NAME("Warp") PORT_PLAYER(1)   /* Same as Fire, but called "Warp" in Service Mode */
 INPUT_PORTS_END
@@ -2711,6 +2711,10 @@ static INPUT_PORTS_START( nghtstru )
 	TAITO_COINAGE_US_LOC(SW A)
 INPUT_PORTS_END
 
+// default all off but Cabinet: Upright according to Jp manual.
+// jp manual also shows a Yoke-like analog test mode, and demo sounds with reversed meaning,
+// (off position -> with sounds), undumped revision?
+// NOTE: setting to Cockpit dip doesn't seem to do anything compared to Upright.
 static INPUT_PORTS_START( aquajack )
 	PORT_START("DSWA")
 	PORT_DIPNAME( 0x80, 0x00, DEF_STR( Cabinet ) ) PORT_DIPLOCATION("SW A:1")
@@ -2778,8 +2782,8 @@ static INPUT_PORTS_START( aquajack )
 	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_BUTTON1 ) PORT_PLAYER(1)
 	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_UNKNOWN )
 
-	PORT_START("IN2")   /* what is it ??? */
-	PORT_BIT( 0xff, 0x00, IPT_DIAL ) PORT_SENSITIVITY(50) PORT_KEYDELTA(10) PORT_PLAYER(1)
+	PORT_START("IN2")
+	PORT_BIT( 0xff, IP_ACTIVE_LOW, IPT_UNKNOWN )
 INPUT_PORTS_END
 
 static INPUT_PORTS_START( aquajckj )
@@ -2847,9 +2851,9 @@ static INPUT_PORTS_START( spacegun )
 	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_UNKNOWN )
 
 	PORT_START( "EEPROMOUT" )
-	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_OUTPUT ) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_93cxx_device, cs_write)
-	PORT_BIT( 0x20, IP_ACTIVE_HIGH, IPT_OUTPUT ) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_93cxx_device, clk_write)
-	PORT_BIT( 0x40, IP_ACTIVE_HIGH, IPT_OUTPUT ) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_93cxx_device, di_write)
+	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_OUTPUT ) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", FUNC(eeprom_serial_93cxx_device::cs_write))
+	PORT_BIT( 0x20, IP_ACTIVE_HIGH, IPT_OUTPUT ) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", FUNC(eeprom_serial_93cxx_device::clk_write))
+	PORT_BIT( 0x40, IP_ACTIVE_HIGH, IPT_OUTPUT ) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", FUNC(eeprom_serial_93cxx_device::di_write))
 
 	PORT_START("STICKX1")
 	PORT_BIT( 0xff, 0x80, IPT_AD_STICK_X ) PORT_CROSSHAIR(X, 1.0, 0.0, 0) PORT_SENSITIVITY(25) PORT_KEYDELTA(13) PORT_CENTERDELTA(0) PORT_REVERSE PORT_PLAYER(1)
@@ -3234,8 +3238,8 @@ void contcirc_state::contcirc(machine_config &config) //OSC: 26.686, 24.000, 16.
 	FILTER_VOLUME(config, "2610.2.l").add_route(ALL_OUTPUTS, "front", 1.0);
 
 	TC0140SYT(config, m_tc0140syt, 0);
-	m_tc0140syt->set_master_tag(m_subcpu);
-	m_tc0140syt->set_slave_tag(m_audiocpu);
+	m_tc0140syt->nmi_callback().set_inputline(m_audiocpu, INPUT_LINE_NMI);
+	m_tc0140syt->reset_callback().set_inputline(m_audiocpu, INPUT_LINE_RESET);
 }
 
 void chasehq_state::chasehq(machine_config &config) //OSC: 26.686, 24.000, 16.000
@@ -3293,8 +3297,8 @@ void chasehq_state::chasehq(machine_config &config) //OSC: 26.686, 24.000, 16.00
 	FILTER_VOLUME(config, "2610.2.l").add_route(ALL_OUTPUTS, "front", 1.0);
 
 	TC0140SYT(config, m_tc0140syt, 0);
-	m_tc0140syt->set_master_tag(m_subcpu);
-	m_tc0140syt->set_slave_tag(m_audiocpu);
+	m_tc0140syt->nmi_callback().set_inputline(m_audiocpu, INPUT_LINE_NMI);
+	m_tc0140syt->reset_callback().set_inputline(m_audiocpu, INPUT_LINE_RESET);
 }
 
 void contcirc_state::enforce(machine_config &config)
@@ -3355,8 +3359,8 @@ void contcirc_state::enforce(machine_config &config)
 	FILTER_VOLUME(config, "2610.2.l").add_route(ALL_OUTPUTS, "lspeaker", 1.0);
 
 	TC0140SYT(config, m_tc0140syt, 0);
-	m_tc0140syt->set_master_tag(m_subcpu);
-	m_tc0140syt->set_slave_tag(m_audiocpu);
+	m_tc0140syt->nmi_callback().set_inputline(m_audiocpu, INPUT_LINE_NMI);
+	m_tc0140syt->reset_callback().set_inputline(m_audiocpu, INPUT_LINE_RESET);
 }
 
 void taitoz_state::bshark_base(machine_config &config)
@@ -3486,8 +3490,8 @@ void sci_state::sci(machine_config &config)
 	FILTER_VOLUME(config, "2610.2.l").add_route(ALL_OUTPUTS, "lspeaker", 1.0);
 
 	TC0140SYT(config, m_tc0140syt, 0);
-	m_tc0140syt->set_master_tag(m_subcpu);
-	m_tc0140syt->set_slave_tag(m_audiocpu);
+	m_tc0140syt->nmi_callback().set_inputline(m_audiocpu, INPUT_LINE_NMI);
+	m_tc0140syt->reset_callback().set_inputline(m_audiocpu, INPUT_LINE_RESET);
 }
 
 void nightstr_state::nightstr(machine_config &config) //OSC: 26.686, 24.000, 16.000
@@ -3555,8 +3559,8 @@ void nightstr_state::nightstr(machine_config &config) //OSC: 26.686, 24.000, 16.
 	FILTER_VOLUME(config, "2610.2.l").add_route(ALL_OUTPUTS, "front", 1.0);
 
 	TC0140SYT(config, m_tc0140syt, 0);
-	m_tc0140syt->set_master_tag(m_subcpu);
-	m_tc0140syt->set_slave_tag(m_audiocpu);
+	m_tc0140syt->nmi_callback().set_inputline(m_audiocpu, INPUT_LINE_NMI);
+	m_tc0140syt->reset_callback().set_inputline(m_audiocpu, INPUT_LINE_RESET);
 }
 
 void taitoz_z80_sound_state::aquajack(machine_config &config) //OSC: 26.686, 24.000, 16.000
@@ -3616,8 +3620,8 @@ void taitoz_z80_sound_state::aquajack(machine_config &config) //OSC: 26.686, 24.
 	FILTER_VOLUME(config, "2610.2.l").add_route(ALL_OUTPUTS, "lspeaker", 1.0);
 
 	TC0140SYT(config, m_tc0140syt, 0);
-	m_tc0140syt->set_master_tag(m_subcpu);
-	m_tc0140syt->set_slave_tag(m_audiocpu);
+	m_tc0140syt->nmi_callback().set_inputline(m_audiocpu, INPUT_LINE_NMI);
+	m_tc0140syt->reset_callback().set_inputline(m_audiocpu, INPUT_LINE_RESET);
 }
 
 void spacegun_state::spacegun(machine_config &config) //OSC: 26.686, 24.000, 16.000
@@ -3741,8 +3745,8 @@ void taitoz_z80_sound_state::dblaxle(machine_config &config)
 	FILTER_VOLUME(config, "2610.2.l").add_route(ALL_OUTPUTS, "lspeaker", 1.0);
 
 	TC0140SYT(config, m_tc0140syt, 0);
-	m_tc0140syt->set_master_tag(m_subcpu);
-	m_tc0140syt->set_slave_tag(m_audiocpu);
+	m_tc0140syt->nmi_callback().set_inputline(m_audiocpu, INPUT_LINE_NMI);
+	m_tc0140syt->reset_callback().set_inputline(m_audiocpu, INPUT_LINE_RESET);
 }
 
 void sci_state::racingb(machine_config &config)
@@ -3802,8 +3806,8 @@ void sci_state::racingb(machine_config &config)
 	FILTER_VOLUME(config, "2610.2.l").add_route(ALL_OUTPUTS, "lspeaker", 1.0);
 
 	TC0140SYT(config, m_tc0140syt, 0);
-	m_tc0140syt->set_master_tag(m_subcpu);
-	m_tc0140syt->set_slave_tag(m_audiocpu);
+	m_tc0140syt->nmi_callback().set_inputline(m_audiocpu, INPUT_LINE_NMI);
+	m_tc0140syt->reset_callback().set_inputline(m_audiocpu, INPUT_LINE_RESET);
 }
 
 
@@ -4618,8 +4622,8 @@ ROM_START( sci )
 
 	ROM_REGION( 0x200000, "sprites", 0 )
 	ROM_LOAD64_WORD_SWAP( "c09-04.52", 0x000000, 0x080000, CRC(2cbb3c9b) SHA1(9e3d95f76f5f5d385b6a9516af781aefef1eb0ca) )    /* OBJ 16x8 */
-	ROM_LOAD64_WORD_SWAP( "c09-02.53", 0x000002, 0x080000, CRC(a83a0389) SHA1(932788b5b5f01326d0fbb2b9fdb94a8c7c004db3) )
-	ROM_LOAD64_WORD_SWAP( "c09-03.54", 0x000004, 0x080000, CRC(a31d0e80) SHA1(dfeff1b89dd7b3f19b26e77f2d66f6448cb00553) )
+	ROM_LOAD64_WORD_SWAP( "c09-02.54", 0x000002, 0x080000, CRC(a83a0389) SHA1(932788b5b5f01326d0fbb2b9fdb94a8c7c004db3) )
+	ROM_LOAD64_WORD_SWAP( "c09-03.53", 0x000004, 0x080000, CRC(a31d0e80) SHA1(dfeff1b89dd7b3f19b26e77f2d66f6448cb00553) )
 	ROM_LOAD64_WORD_SWAP( "c09-01.55", 0x000006, 0x080000, CRC(64bfea10) SHA1(15ea43092027b1717d0f24fbe6ac2cdf11a7ddc6) )
 
 	ROM_REGION16_LE( 0x80000, "tc0150rod", 0 )
@@ -4669,8 +4673,8 @@ ROM_START( scia )
 
 	ROM_REGION( 0x200000, "sprites", 0 )
 	ROM_LOAD64_WORD_SWAP( "c09-04.52", 0x000000, 0x080000, CRC(2cbb3c9b) SHA1(9e3d95f76f5f5d385b6a9516af781aefef1eb0ca) )    /* OBJ 16x8 */
-	ROM_LOAD64_WORD_SWAP( "c09-02.53", 0x000002, 0x080000, CRC(a83a0389) SHA1(932788b5b5f01326d0fbb2b9fdb94a8c7c004db3) )
-	ROM_LOAD64_WORD_SWAP( "c09-03.54", 0x000004, 0x080000, CRC(a31d0e80) SHA1(dfeff1b89dd7b3f19b26e77f2d66f6448cb00553) )
+	ROM_LOAD64_WORD_SWAP( "c09-02.54", 0x000002, 0x080000, CRC(a83a0389) SHA1(932788b5b5f01326d0fbb2b9fdb94a8c7c004db3) )
+	ROM_LOAD64_WORD_SWAP( "c09-03.53", 0x000004, 0x080000, CRC(a31d0e80) SHA1(dfeff1b89dd7b3f19b26e77f2d66f6448cb00553) )
 	ROM_LOAD64_WORD_SWAP( "c09-01.55", 0x000006, 0x080000, CRC(64bfea10) SHA1(15ea43092027b1717d0f24fbe6ac2cdf11a7ddc6) )
 
 	ROM_REGION16_LE( 0x80000, "tc0150rod", 0 )
@@ -4720,8 +4724,8 @@ ROM_START( scij )
 
 	ROM_REGION( 0x200000, "sprites", 0 )
 	ROM_LOAD64_WORD_SWAP( "c09-04.52", 0x000000, 0x080000, CRC(2cbb3c9b) SHA1(9e3d95f76f5f5d385b6a9516af781aefef1eb0ca) )    /* OBJ 16x8 */
-	ROM_LOAD64_WORD_SWAP( "c09-02.53", 0x000002, 0x080000, CRC(a83a0389) SHA1(932788b5b5f01326d0fbb2b9fdb94a8c7c004db3) )
-	ROM_LOAD64_WORD_SWAP( "c09-03.54", 0x000004, 0x080000, CRC(a31d0e80) SHA1(dfeff1b89dd7b3f19b26e77f2d66f6448cb00553) )
+	ROM_LOAD64_WORD_SWAP( "c09-02.54", 0x000002, 0x080000, CRC(a83a0389) SHA1(932788b5b5f01326d0fbb2b9fdb94a8c7c004db3) )
+	ROM_LOAD64_WORD_SWAP( "c09-03.53", 0x000004, 0x080000, CRC(a31d0e80) SHA1(dfeff1b89dd7b3f19b26e77f2d66f6448cb00553) )
 	ROM_LOAD64_WORD_SWAP( "c09-01.55", 0x000006, 0x080000, CRC(64bfea10) SHA1(15ea43092027b1717d0f24fbe6ac2cdf11a7ddc6) )
 
 	ROM_REGION16_LE( 0x80000, "tc0150rod", 0 )
@@ -4771,8 +4775,8 @@ ROM_START( sciu )
 
 	ROM_REGION( 0x200000, "sprites", 0 )
 	ROM_LOAD64_WORD_SWAP( "c09-04.52", 0x000000, 0x080000, CRC(2cbb3c9b) SHA1(9e3d95f76f5f5d385b6a9516af781aefef1eb0ca) )    /* OBJ 16x8 */
-	ROM_LOAD64_WORD_SWAP( "c09-02.53", 0x000002, 0x080000, CRC(a83a0389) SHA1(932788b5b5f01326d0fbb2b9fdb94a8c7c004db3) )
-	ROM_LOAD64_WORD_SWAP( "c09-03.54", 0x000004, 0x080000, CRC(a31d0e80) SHA1(dfeff1b89dd7b3f19b26e77f2d66f6448cb00553) )
+	ROM_LOAD64_WORD_SWAP( "c09-02.54", 0x000002, 0x080000, CRC(a83a0389) SHA1(932788b5b5f01326d0fbb2b9fdb94a8c7c004db3) )
+	ROM_LOAD64_WORD_SWAP( "c09-03.53", 0x000004, 0x080000, CRC(a31d0e80) SHA1(dfeff1b89dd7b3f19b26e77f2d66f6448cb00553) )
 	ROM_LOAD64_WORD_SWAP( "c09-01.55", 0x000006, 0x080000, CRC(64bfea10) SHA1(15ea43092027b1717d0f24fbe6ac2cdf11a7ddc6) )
 
 	ROM_REGION16_LE( 0x80000, "tc0150rod", 0 )
@@ -4822,8 +4826,8 @@ ROM_START( scin )
 
 	ROM_REGION( 0x200000, "sprites", 0 )
 	ROM_LOAD64_WORD_SWAP( "c09-04.52", 0x000000, 0x080000, CRC(2cbb3c9b) SHA1(9e3d95f76f5f5d385b6a9516af781aefef1eb0ca) )    /* OBJ 16x8 */
-	ROM_LOAD64_WORD_SWAP( "c09-02.53", 0x000002, 0x080000, CRC(a83a0389) SHA1(932788b5b5f01326d0fbb2b9fdb94a8c7c004db3) )
-	ROM_LOAD64_WORD_SWAP( "c09-03.54", 0x000004, 0x080000, CRC(a31d0e80) SHA1(dfeff1b89dd7b3f19b26e77f2d66f6448cb00553) )
+	ROM_LOAD64_WORD_SWAP( "c09-02.54", 0x000002, 0x080000, CRC(a83a0389) SHA1(932788b5b5f01326d0fbb2b9fdb94a8c7c004db3) )
+	ROM_LOAD64_WORD_SWAP( "c09-03.53", 0x000004, 0x080000, CRC(a31d0e80) SHA1(dfeff1b89dd7b3f19b26e77f2d66f6448cb00553) )
 	ROM_LOAD64_WORD_SWAP( "c09-01.55", 0x000006, 0x080000, CRC(64bfea10) SHA1(15ea43092027b1717d0f24fbe6ac2cdf11a7ddc6) )
 
 	ROM_REGION16_LE( 0x80000, "tc0150rod", 0 )

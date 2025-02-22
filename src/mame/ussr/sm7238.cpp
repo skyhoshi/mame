@@ -75,8 +75,8 @@ public:
 	void sm7238(machine_config &config);
 
 private:
-	DECLARE_WRITE_LINE_MEMBER(write_keyboard_clock);
-	DECLARE_WRITE_LINE_MEMBER(write_printer_clock);
+	void write_keyboard_clock(int state);
+	void write_printer_clock(int state);
 
 	void control_w(uint8_t data);
 	void text_control_w(uint8_t data);
@@ -84,9 +84,9 @@ private:
 
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	void sm7238_io(address_map &map);
-	void sm7238_mem(address_map &map);
-	void videobank_map(address_map &map);
+	void sm7238_io(address_map &map) ATTR_COLD;
+	void sm7238_mem(address_map &map) ATTR_COLD;
+	void videobank_map(address_map &map) ATTR_COLD;
 
 	void recompute_parameters();
 
@@ -98,7 +98,7 @@ private:
 		bool reverse = false;
 	} m_video;
 
-	virtual void machine_reset() override;
+	virtual void machine_reset() override ATTR_COLD;
 
 	required_device<i8080_cpu_device> m_maincpu;
 	required_device<nvram_device> m_nvram;
@@ -154,7 +154,7 @@ void sm7238_state::sm7238_io(address_map &map)
 
 void sm7238_state::machine_reset()
 {
-	memset(&m_video, 0, sizeof(m_video));
+	m_video = decltype(m_video)();
 	m_videobank->set_bank(0);
 }
 
@@ -193,13 +193,13 @@ void sm7238_state::vmem_w(offs_t offset, uint8_t data)
 	m_p_videoram[offset + 0x1000] = data;
 }
 
-WRITE_LINE_MEMBER(sm7238_state::write_keyboard_clock)
+void sm7238_state::write_keyboard_clock(int state)
 {
 	m_i8251kbd->write_txc(state);
 	m_i8251kbd->write_rxc(state);
 }
 
-WRITE_LINE_MEMBER(sm7238_state::write_printer_clock)
+void sm7238_state::write_printer_clock(int state)
 {
 	m_i8251prn->write_txc(state);
 	m_i8251prn->write_rxc(state);

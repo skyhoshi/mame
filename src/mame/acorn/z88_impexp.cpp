@@ -82,7 +82,7 @@ TIMER_CALLBACK_MEMBER(z88_impexp_device::poll_queue)
 	queue();
 }
 
-WRITE_LINE_MEMBER( z88_impexp_device::input_rts )
+void z88_impexp_device::input_rts(int state)
 {
 	if (!state && m_rts)
 	{
@@ -176,11 +176,15 @@ std::pair<std::error_condition, std::string> z88_impexp_device::call_load()
 	// file data
 	m_queue.push(0x1b);
 	m_queue.push('F');
-	while (!image_feof())
+
+	util::core_file &file = image_core_file();
+	std::error_condition err;
+	while (true)
 	{
 		uint8_t b;
-		if (fread(&b, 1) != 1)
-			return std::make_pair(image_error::UNSPECIFIED, std::string());
+		auto const [err, actual] = read(file, &b, 1);
+		if (err || actual != 1)
+			break;
 
 		// Escape non printable characters
 		if ((b < 0x20 || b >= 0x7f) && b != 0x0a && b != 0x0d && b != 0x09)
@@ -205,7 +209,7 @@ std::pair<std::error_condition, std::string> z88_impexp_device::call_load()
 	m_queue.push('E');
 	queue();
 
-	return std::make_pair(std::error_condition(), std::string());
+	return std::make_pair(err, std::string());
 }
 
 

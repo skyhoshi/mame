@@ -70,25 +70,25 @@ private:
 	required_device<scn2661c_device> m_epci;
 	required_device<input_merger_device> m_epci_irq;
 	required_device<rs232_port_device> m_rs232;
-	void dtc03_io(address_map &map);
-	void dtc03_mem(address_map &map);
-	void dsp_io(address_map &map);
-	void dsp_mem(address_map &map);
+	void dtc03_io(address_map &map) ATTR_COLD;
+	void dtc03_mem(address_map &map) ATTR_COLD;
+	void dsp_io(address_map &map) ATTR_COLD;
+	void dsp_mem(address_map &map) ATTR_COLD;
 
 	u16 m_dsp_dma;
 	u8 m_bio;
 	u16 m_ctl;
 	attotime m_dbgclk;
 
-	virtual void machine_reset() override;
-	virtual void machine_start() override;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void machine_start() override ATTR_COLD;
 
 	void dac_w(uint16_t data);
 	uint16_t dsp_dma_r();
 	void dsp_dma_w(uint16_t data);
-	DECLARE_READ_LINE_MEMBER(bio_line_r);
-	DECLARE_WRITE_LINE_MEMBER(dsp_clock_w);
-	DECLARE_WRITE_LINE_MEMBER(epci_txrx_clock_w);
+	int bio_line_r();
+	void dsp_clock_w(int state);
+	void epci_txrx_clock_w(int state);
 	void ctl_w(uint16_t data);
 };
 
@@ -125,7 +125,7 @@ void dtc03_state::dsp_dma_w(uint16_t data)
 	//m_dsp_dma = data;
 }
 
-READ_LINE_MEMBER(dtc03_state::bio_line_r)
+int dtc03_state::bio_line_r()
 {
 	// TODO: reading the bio line doesn't cause any direct external effects so this is wrong
 	//if(m_bio == ASSERT_LINE)
@@ -162,7 +162,7 @@ void dtc03_state::ctl_w(u16 data)
  \---------------- DM button
 */
 
-WRITE_LINE_MEMBER(dtc03_state::dsp_clock_w)
+void dtc03_state::dsp_clock_w(int state)
 {
 #if 0
 	if (((m_ctl&0x2000) && state))
@@ -181,7 +181,7 @@ WRITE_LINE_MEMBER(dtc03_state::dsp_clock_w)
 	//m_dsp->set_input_line(0, ((m_ctl&0x2000) && state) ? ASSERT_LINE : CLEAR_LINE)); // TMS32010 INT
 }
 
-WRITE_LINE_MEMBER(dtc03_state::epci_txrx_clock_w)
+void dtc03_state::epci_txrx_clock_w(int state)
 {
 	m_epci->txc_w(state);
 	m_epci->rxc_w(state);

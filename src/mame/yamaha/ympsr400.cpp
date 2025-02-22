@@ -7,7 +7,7 @@
 *******************************************************************************/
 
 #include "emu.h"
-#include "cpu/m6805/m6805.h"
+#include "cpu/m6805/hd6305.h"
 #include "cpu/mn1880/mn1880.h"
 #include "sound/multipcm.h"
 #include "speaker.h"
@@ -28,13 +28,13 @@ public:
 
 protected:
 	virtual void driver_start() override;
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	TIMER_CALLBACK_MEMBER(interrupt_hack);
 
-	void program_map(address_map &map);
-	void data_map(address_map &map);
+	void program_map(address_map &map) ATTR_COLD;
+	void data_map(address_map &map) ATTR_COLD;
 
 	required_device<cpu_device> m_maincpu;
 	required_device<cpu_device> m_mpscpu;
@@ -95,7 +95,7 @@ void psr400_state::psr500(machine_config &config)
 	m_maincpu->set_addrmap(AS_PROGRAM, &psr400_state::program_map);
 	m_maincpu->set_addrmap(AS_DATA, &psr400_state::data_map);
 
-	HD63705(config, m_mpscpu, 8_MHz_XTAL).set_disable(); // HD63B05V0D73P (mislabeled HD63B50 on schematic)
+	HD6305V0(config, m_mpscpu, 8_MHz_XTAL).set_disable(); // HD63B05V0D73P (mislabeled HD63B50 on schematic)
 
 	SPEAKER(config, "lspeaker").front_left();
 	SPEAKER(config, "rspeaker").front_right();

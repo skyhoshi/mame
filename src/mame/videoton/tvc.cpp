@@ -63,8 +63,8 @@ public:
 	void tvc(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	required_device<cpu_device> m_maincpu;
 	required_device<address_map_bank_device> m_bank1;
@@ -99,8 +99,8 @@ protected:
 	void sound_w(offs_t offset, uint8_t data);
 	void cassette_w(uint8_t data);
 	uint8_t _5b_r();
-	DECLARE_WRITE_LINE_MEMBER(int_ff_set);
-	DECLARE_WRITE_LINE_MEMBER(centronics_ack);
+	void int_ff_set(int state);
+	void centronics_ack(int state);
 
 	// expansions
 	void expansion_w(offs_t offset, uint8_t data);
@@ -114,11 +114,11 @@ protected:
 
 	void tvc_palette(palette_device &palette) const;
 
-	void tvc_mem(address_map &map);
-	void tvc_bank1(address_map &map);
-	void tvc_bank3(address_map &map);
-	void tvc_bank4(address_map &map);
-	void tvc_io(address_map &map);
+	void tvc_mem(address_map &map) ATTR_COLD;
+	void tvc_bank1(address_map &map) ATTR_COLD;
+	void tvc_bank3(address_map &map) ATTR_COLD;
+	void tvc_bank4(address_map &map) ATTR_COLD;
+	void tvc_io(address_map &map) ATTR_COLD;
 };
 
 class tvc64p_state : public tvc_state
@@ -133,15 +133,15 @@ public:
 	void tvc64p(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	void vram_bank_w(uint8_t data);
 
-	void bank1_64p(address_map &map);
-	void bank3_64p(address_map &map);
-	void io_64p(address_map &map);
+	void bank1_64p(address_map &map) ATTR_COLD;
+	void bank3_64p(address_map &map) ATTR_COLD;
+	void io_64p(address_map &map) ATTR_COLD;
 
 	required_memory_bank m_vram_bank1;
 	required_memory_bank m_vram_bank3;
@@ -363,7 +363,7 @@ static INPUT_PORTS_START( tvc )
 	PORT_BIT(0x04, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("2") PORT_CODE(KEYCODE_2)         PORT_CHAR('2')  PORT_CHAR('\"')
 	PORT_BIT(0x08, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("0") PORT_CODE(KEYCODE_0)         PORT_CHAR('0')  PORT_CHAR('&')
 	PORT_BIT(0x10, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("6") PORT_CODE(KEYCODE_6)         PORT_CHAR('6')  PORT_CHAR('/')
-	PORT_BIT(0x20, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("\xc3\x8d") PORT_CODE(KEYCODE_1_PAD)  PORT_CHAR(0x00cd)
+	PORT_BIT(0x20, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME(u8"Í") PORT_CODE(KEYCODE_1_PAD)   PORT_CHAR(U'Í',U'í')
 	PORT_BIT(0x40, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("1") PORT_CODE(KEYCODE_1)         PORT_CHAR('1')  PORT_CHAR('\'')
 	PORT_BIT(0x80, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("4") PORT_CODE(KEYCODE_4)         PORT_CHAR('4')  PORT_CHAR('!')
 
@@ -371,10 +371,10 @@ static INPUT_PORTS_START( tvc )
 	PORT_BIT(0x01, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("^") PORT_CODE(KEYCODE_MINUS_PAD) PORT_CHAR('^')
 	PORT_BIT(0x02, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("8") PORT_CODE(KEYCODE_8)         PORT_CHAR('8')  PORT_CHAR('(')
 	PORT_BIT(0x04, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("9") PORT_CODE(KEYCODE_9)         PORT_CHAR('9')  PORT_CHAR(')')
-	PORT_BIT(0x08, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("\xc3\xbc") PORT_CODE(KEYCODE_2_PAD)  PORT_CHAR(0x00fc)
-	PORT_BIT(0x10, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("*") PORT_CODE(KEYCODE_ASTERISK)      PORT_CHAR('*')
-	PORT_BIT(0x20, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("\xc3\xb3") PORT_CODE(KEYCODE_3_PAD)  PORT_CHAR(0x00f3)
-	PORT_BIT(0x40, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("\xc3\xb6") PORT_CODE(KEYCODE_4_PAD)  PORT_CHAR(0x00f6)
+	PORT_BIT(0x08, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME(u8"ü") PORT_CODE(KEYCODE_2_PAD)   PORT_CHAR(U'ü')
+	PORT_BIT(0x10, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("*") PORT_CODE(KEYCODE_ASTERISK)  PORT_CHAR('*')
+	PORT_BIT(0x20, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME(u8"ó") PORT_CODE(KEYCODE_3_PAD)   PORT_CHAR(U'ó')
+	PORT_BIT(0x40, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME(u8"ö") PORT_CODE(KEYCODE_4_PAD)   PORT_CHAR(U'ö')
 	PORT_BIT(0x80, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("7") PORT_CODE(KEYCODE_7)         PORT_CHAR('7')  PORT_CHAR('=')
 
 	PORT_START("LINE.2")
@@ -391,9 +391,9 @@ static INPUT_PORTS_START( tvc )
 	PORT_BIT(0x01, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("]") PORT_CODE(KEYCODE_CLOSEBRACE) PORT_CHAR(']') PORT_CHAR('}')
 	PORT_BIT(0x02, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("I") PORT_CODE(KEYCODE_I)         PORT_CHAR('i')  PORT_CHAR('I')
 	PORT_BIT(0x04, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("O") PORT_CODE(KEYCODE_O)         PORT_CHAR('o')  PORT_CHAR('O')
-	PORT_BIT(0x08, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("\xc5\x91") PORT_CODE(KEYCODE_5_PAD)  PORT_CHAR(0x0151)
+	PORT_BIT(0x08, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME(u8"ő") PORT_CODE(KEYCODE_5_PAD)   PORT_CHAR(U'ő')
 	PORT_BIT(0x10, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("[") PORT_CODE(KEYCODE_OPENBRACE) PORT_CHAR('[')  PORT_CHAR('{')
-	PORT_BIT(0x20, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("\xc3\xba") PORT_CODE(KEYCODE_6_PAD)  PORT_CHAR(0x00fa)
+	PORT_BIT(0x20, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME(u8"ú") PORT_CODE(KEYCODE_6_PAD)   PORT_CHAR(U'ú')
 	PORT_BIT(0x40, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("P") PORT_CODE(KEYCODE_P)         PORT_CHAR('p')  PORT_CHAR('P')
 	PORT_BIT(0x80, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("U") PORT_CODE(KEYCODE_U)         PORT_CHAR('u')  PORT_CHAR('U')
 
@@ -411,10 +411,10 @@ static INPUT_PORTS_START( tvc )
 	PORT_BIT(0x01, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("Backspace") PORT_CODE(KEYCODE_BACKSPACE) PORT_CHAR(UCHAR_MAMEKEY(BACKSPACE))
 	PORT_BIT(0x02, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("K") PORT_CODE(KEYCODE_K)         PORT_CHAR('k')  PORT_CHAR('K')
 	PORT_BIT(0x04, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("L") PORT_CODE(KEYCODE_L)         PORT_CHAR('l')  PORT_CHAR('L')
-	PORT_BIT(0x08, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("\xc3\xa1") PORT_CODE(KEYCODE_7_PAD)  PORT_CHAR(0x00e1)
+	PORT_BIT(0x08, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME(u8"á") PORT_CODE(KEYCODE_7_PAD)   PORT_CHAR(U'á')
 	PORT_BIT(0x10, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("Enter") PORT_CODE(KEYCODE_ENTER) PORT_CHAR(13)
-	PORT_BIT(0x20, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("\xc5\xb1") PORT_CODE(KEYCODE_8_PAD)      PORT_CHAR(0x0171)
-	PORT_BIT(0x40, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("\xc3\xa9") PORT_CODE(KEYCODE_9_PAD)  PORT_CHAR(0x00e9)
+	PORT_BIT(0x20, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME(u8"ű") PORT_CODE(KEYCODE_8_PAD)   PORT_CHAR(U'ű')
+	PORT_BIT(0x40, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME(u8"é") PORT_CODE(KEYCODE_9_PAD)   PORT_CHAR(U'é')
 	PORT_BIT(0x80, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("J") PORT_CODE(KEYCODE_J)         PORT_CHAR('j')  PORT_CHAR('J')
 
 	PORT_START("LINE.6")
@@ -465,7 +465,7 @@ INPUT_PORTS_END
 
 static INPUT_PORTS_START( tvc64pru )
 	PORT_START("LINE.0")
-	PORT_BIT(0x01, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("4") PORT_CODE(KEYCODE_4)         PORT_CHAR('4')  PORT_CHAR(0x0436)
+	PORT_BIT(0x01, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("4") PORT_CODE(KEYCODE_4)         PORT_CHAR('4')  PORT_CHAR(U'ж')
 	PORT_BIT(0x02, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("2") PORT_CODE(KEYCODE_2)         PORT_CHAR('2')  PORT_CHAR('"')
 	PORT_BIT(0x04, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("1") PORT_CODE(KEYCODE_1)         PORT_CHAR('1')  PORT_CHAR('!')
 	PORT_BIT(0x08, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("DL") PORT_CODE(KEYCODE_HOME)     // delete line
@@ -722,7 +722,7 @@ void tvc_state::tvc_palette(palette_device &palette) const
 	palette.set_pen_colors(0, tvc_pens);
 }
 
-WRITE_LINE_MEMBER(tvc_state::int_ff_set)
+void tvc_state::int_ff_set(int state)
 {
 	if (state)
 	{
@@ -731,7 +731,7 @@ WRITE_LINE_MEMBER(tvc_state::int_ff_set)
 	}
 }
 
-WRITE_LINE_MEMBER(tvc_state::centronics_ack)
+void tvc_state::centronics_ack(int state)
 {
 	if (state)
 		m_centronics_ff = 1;

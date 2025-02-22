@@ -22,6 +22,7 @@
 #include "unicode.h"
 
 #include <cctype>
+#include <sstream>
 #include <type_traits>
 #include <typeinfo>
 
@@ -2204,6 +2205,8 @@ void validity_checker::validate_roms(device_t &root)
 				current_length = ROMREGION_GETLENGTH(romp);
 				if (!m_region_map.emplace(fulltag, current_length).second)
 					osd_printf_error("Multiple ROM_REGIONs with the same tag '%s' defined\n", fulltag);
+				if (current_length == 0)
+					osd_printf_error("ROM region '%s' has zero length\n", fulltag);
 			}
 			else if (ROMENTRY_ISSYSTEM_BIOS(romp)) // If this is a system bios, make sure it is using the next available bios number
 			{
@@ -2493,12 +2496,13 @@ void validity_checker::validate_inputs(device_t &root)
 
 		// allocate the input ports
 		ioport_list portlist;
-		std::string errorbuf;
-		portlist.append(device, errorbuf);
-
-		// report any errors during construction
-		if (!errorbuf.empty())
-			osd_printf_error("I/O port error during construction:\n%s\n", errorbuf);
+		{
+			// report any errors during construction
+			std::ostringstream errorbuf;
+			portlist.append(device, errorbuf);
+			if (errorbuf.tellp())
+				osd_printf_error("I/O port error during construction:\n%s\n", std::move(errorbuf).str());
+		}
 
 		// do a first pass over ports to add their names and find duplicates
 		for (auto &port : portlist)

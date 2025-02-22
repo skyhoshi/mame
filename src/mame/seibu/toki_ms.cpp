@@ -308,8 +308,8 @@ private:
 	required_device<msm5205_device> m_msm;
 	required_device<generic_latch_8_device> m_soundlatch;
 
-	virtual void machine_start() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 	TILE_GET_INFO_MEMBER(get_bk1_info);
 	TILE_GET_INFO_MEMBER(get_bk2_info);
@@ -328,13 +328,13 @@ private:
 
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	void tokims_map(address_map &map);
-	void audio_map(address_map &map);
+	void tokims_map(address_map &map) ATTR_COLD;
+	void audio_map(address_map &map) ATTR_COLD;
 
 	u8 sound_status_r();
 	void sound_command_w(u8 data);
 	void adpcm_w(u8 data);
-	DECLARE_WRITE_LINE_MEMBER(adpcm_int);
+	void adpcm_int(int state);
 	u8 m_adpcm_data = 0;
 
 	void descramble_16x16tiles(uint8_t* src, int len);
@@ -680,7 +680,7 @@ void toki_ms_state::machine_start()
 	membank("sound_bank")->configure_entries(0, 2, memregion("audiocpu")->base() + 0x8000, 0x4000);
 }
 
-WRITE_LINE_MEMBER(toki_ms_state::adpcm_int)
+void toki_ms_state::adpcm_int(int state)
 {
 	m_msm->data_w(m_adpcm_data);
 	m_audiocpu->set_input_line(0, HOLD_LINE);

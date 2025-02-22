@@ -25,8 +25,8 @@ public:
 	void tiamc1(machine_config &config);
 
 protected:
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	std::unique_ptr<uint8_t[]> m_videoram;
@@ -57,7 +57,7 @@ private:
 	void tiamc1_palette_w(offs_t offset, uint8_t data);
 	void kot_bankswitch_w(uint8_t data);
 	void kot_videoram_w(offs_t offset, uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(pit8253_2_w);
+	void pit8253_2_w(int state);
 
 	TILE_GET_INFO_MEMBER(get_bg1_tile_info);
 	TILE_GET_INFO_MEMBER(get_bg2_tile_info);
@@ -70,10 +70,10 @@ private:
 	required_device<gfxdecode_device> m_gfxdecode;
 	required_device<palette_device> m_palette;
 
-	void kotrybolov_io_map(address_map &map);
-	void kotrybolov_map(address_map &map);
-	void tiamc1_io_map(address_map &map);
-	void tiamc1_map(address_map &map);
+	void kotrybolov_io_map(address_map &map) ATTR_COLD;
+	void kotrybolov_map(address_map &map) ATTR_COLD;
+	void tiamc1_io_map(address_map &map) ATTR_COLD;
+	void tiamc1_map(address_map &map) ATTR_COLD;
 
 	optional_device<speaker_sound_device> m_speaker;
 	void update_bg_palette();

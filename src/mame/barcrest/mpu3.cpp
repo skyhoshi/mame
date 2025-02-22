@@ -4,8 +4,7 @@
 /* Notes 17/07/11 DH
  added most other MPU3 sets
 
- most fail to boot, giving the CPU a 'WAIT' instruction then sitting there
- some complain about Characterizer (protection) and then do the same
+ some complain about Characterizer (protection)
  a few boot to show light displays with no LED text
  some display misaligned LED text
  many run VERY slowly, even when the CPU is inactive (inefficient MAME timer system overhead?)
@@ -161,14 +160,13 @@ TODO: - Distinguish door switches using manual
 #include "m3winstr.lh"
 #include "m3xchngg.lh"
 
-
 #ifdef MAME_DEBUG
-#define MPU3VERBOSE 1
+#define VERBOSE (LOG_GENERAL)
 #else
-#define MPU3VERBOSE 0
+#define VERBOSE (0)
 #endif
 
-#define LOG(x)  do { if (MPU3VERBOSE) logerror x; } while (0)
+#include "logmacro.h"
 
 
 namespace {
@@ -198,45 +196,45 @@ public:
 	void init_mpu3();
 
 protected:
-	void mpu3_basemap(address_map &map);
+	void mpu3_basemap(address_map &map) ATTR_COLD;
 
 	required_device<cpu_device> m_maincpu;
 
 private:
-	template <unsigned N> DECLARE_WRITE_LINE_MEMBER(reel_optic_cb) { if (state) m_optic_pattern |= (1 << N); else m_optic_pattern &= ~(1 << N); }
+	template <unsigned N> void reel_optic_cb(int state) { if (state) m_optic_pattern |= (1 << N); else m_optic_pattern &= ~(1 << N); }
 
 	void mpu3ptm_w(offs_t offset, uint8_t data);
 	uint8_t mpu3ptm_r(offs_t offset);
-	DECLARE_WRITE_LINE_MEMBER(ic2_o1_callback);
-	DECLARE_WRITE_LINE_MEMBER(ic2_o2_callback);
-	DECLARE_WRITE_LINE_MEMBER(ic2_o3_callback);
+	void ic2_o1_callback(int state);
+	void ic2_o2_callback(int state);
+	void ic2_o3_callback(int state);
 	uint8_t pia_ic3_porta_r();
 	void pia_ic3_portb_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(pia_ic3_ca2_w);
+	void pia_ic3_ca2_w(int state);
 	uint8_t pia_ic4_porta_r();
 	void pia_ic4_porta_w(uint8_t data);
 	void pia_ic4_portb_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(pia_ic4_ca2_w);
-	DECLARE_WRITE_LINE_MEMBER(pia_ic4_cb2_w);
+	void pia_ic4_ca2_w(int state);
+	void pia_ic4_cb2_w(int state);
 	void pia_ic5_porta_w(uint8_t data);
 	uint8_t pia_ic5_portb_r();
 	void pia_ic5_portb_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(pia_ic5_ca2_w);
-	DECLARE_WRITE_LINE_MEMBER(pia_ic5_cb2_w);
+	void pia_ic5_ca2_w(int state);
+	void pia_ic5_cb2_w(int state);
 	uint8_t pia_ic6_porta_r();
 	uint8_t pia_ic6_portb_r();
 	void pia_ic6_porta_w(uint8_t data);
 	void pia_ic6_portb_w(uint8_t data);
 	TIMER_CALLBACK_MEMBER(ic21_timeout);
-	TIMER_DEVICE_CALLBACK_MEMBER(gen_50hz);
+	TIMER_DEVICE_CALLBACK_MEMBER(gen_100hz);
 	TIMER_DEVICE_CALLBACK_MEMBER(ic10_callback);
 	void update_triacs();
 	void ic11_update();
 	void ic21_output(int data);
 	void ic21_setup();
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	int m_triac_ic3 = 0;
 	int m_triac_ic4 = 0;
@@ -259,7 +257,7 @@ private:
 	int m_input_strobe = 0;   /* IC11 74LS138 A = CA2 IC3, B = CA2 IC4, C = CA2 IC5 */
 	uint8_t m_lamp_strobe = 0;
 	uint8_t m_led_strobe = 0;
-	int m_signal_50hz = 0;
+	int m_signal_100hz = 0;
 
 	int m_optic_pattern = 0;
 
@@ -296,8 +294,8 @@ public:
 	void mpu3_chr_c000(machine_config &config);
 
 private:
-	void mpu3_map_chr_3000(address_map &map);
-	void mpu3_map_chr_c000(address_map &map);
+	void mpu3_map_chr_3000(address_map &map) ATTR_COLD;
+	void mpu3_map_chr_c000(address_map &map) ATTR_COLD;
 
 	required_device<mpu4_characteriser_pal> m_characteriser;
 };
@@ -330,17 +328,17 @@ void mpu3_state::machine_reset()
 
 
 /* IC2 6840 PTM handler probably clocked from elsewhere*/
-WRITE_LINE_MEMBER(mpu3_state::ic2_o1_callback)
+void mpu3_state::ic2_o1_callback(int state)
 {
 }
 
 //FIXME FROM HERE
-WRITE_LINE_MEMBER(mpu3_state::ic2_o2_callback)
+void mpu3_state::ic2_o2_callback(int state)
 {
 }
 
 
-WRITE_LINE_MEMBER(mpu3_state::ic2_o3_callback)
+void mpu3_state::ic2_o3_callback(int state)
 {
 }
 
@@ -424,7 +422,7 @@ uint8_t mpu3_state::pia_ic3_porta_r()
 {
 	static const char *const portnames[] = { "ORANGE1", "ORANGE2", "BLACK1", "BLACK2", "DIL1", "DIL1", "DIL2", "DIL2" };
 	int data=0,swizzle;
-	LOG(("%s: IC3 PIA Read of Port A (MUX input data)\n", machine().describe_context()));
+	LOG("%s: IC3 PIA Read of Port A (MUX input data)\n", machine().describe_context());
 	//popmessage("%x",m_input_strobe);
 	switch (m_input_strobe)
 	{
@@ -452,7 +450,7 @@ uint8_t mpu3_state::pia_ic3_porta_r()
 			break;
 		}
 	}
-	if (m_signal_50hz)
+	if (m_signal_100hz)
 	{
 		data |= 0x02;
 	}
@@ -465,14 +463,14 @@ uint8_t mpu3_state::pia_ic3_porta_r()
 
 void mpu3_state::pia_ic3_portb_w(uint8_t data)
 {
-	LOG(("%s: IC3 PIA Port B Set to %2x (Triac)\n", machine().describe_context(),data));
+	LOG("%s: IC3 PIA Port B Set to %2x (Triac)\n", machine().describe_context(),data);
 	m_triac_ic3 =data;
 }
 
 
-WRITE_LINE_MEMBER(mpu3_state::pia_ic3_ca2_w)
+void mpu3_state::pia_ic3_ca2_w(int state)
 {
-	LOG(("%s: IC3 PIA Port CA2 Set to %2x (input A)\n", machine().describe_context(),state));
+	LOG("%s: IC3 PIA Port CA2 Set to %2x (input A)\n", machine().describe_context(),state);
 	m_IC11GA = state;
 	ic21_setup();
 	ic11_update();
@@ -494,7 +492,7 @@ uint8_t mpu3_state::pia_ic4_porta_r()
 /*  IC4, 7 seg leds */
 void mpu3_state::pia_ic4_porta_w(uint8_t data)
 {
-	LOG(("%s: IC4 PIA Port A Set to %2x (DISPLAY PORT)\n", machine().describe_context(),data));
+	LOG("%s: IC4 PIA Port A Set to %2x (DISPLAY PORT)\n", machine().describe_context(),data);
 	m_ic4_input_a=data;
 	switch (m_disp_func)
 	{
@@ -527,7 +525,7 @@ void mpu3_state::pia_ic4_porta_w(uint8_t data)
 
 void mpu3_state::pia_ic4_portb_w(uint8_t data)
 {
-	LOG(("%s: IC4 PIA Port B Set to %2x (Lamp)\n", machine().describe_context(),data));
+	LOG("%s: IC4 PIA Port B Set to %2x (Lamp)\n", machine().describe_context(),data);
 	if (m_ic11_active)
 	{
 		if (m_lamp_strobe != m_input_strobe)
@@ -544,23 +542,23 @@ void mpu3_state::pia_ic4_portb_w(uint8_t data)
 	}
 }
 
-WRITE_LINE_MEMBER(mpu3_state::pia_ic4_ca2_w)
+void mpu3_state::pia_ic4_ca2_w(int state)
 {
-	LOG(("%s: IC4 PIA Port CA2 Set to %2x (Input B)\n", machine().describe_context(),state));
+	LOG("%s: IC4 PIA Port CA2 Set to %2x (Input B)\n", machine().describe_context(),state);
 	m_IC11GB = state;
 	ic11_update();
 }
 
-WRITE_LINE_MEMBER(mpu3_state::pia_ic4_cb2_w)
+void mpu3_state::pia_ic4_cb2_w(int state)
 {
-	LOG(("%s: IC4 PIA Port CA2 Set to %2x (Triac)\n", machine().describe_context(),state));
+	LOG("%s: IC4 PIA Port CA2 Set to %2x (Triac)\n", machine().describe_context(),state);
 	m_triac_ic4=state;
 }
 
 /* IC5, AUX ports, coin lockouts and AY sound chip select (MODs below 4 only) */
 void mpu3_state::pia_ic5_porta_w(uint8_t data)
 {
-	LOG(("%s: IC5 PIA Port A Set to %2x (Reel)\n", machine().describe_context(),data));
+	LOG("%s: IC5 PIA Port A Set to %2x (Reel)\n", machine().describe_context(),data);
 	m_reels[0]->update( data     & 0x03);
 	m_reels[1]->update((data>>2) & 0x03);
 	m_reels[2]->update((data>>4) & 0x03);
@@ -590,16 +588,16 @@ void mpu3_state::pia_ic5_portb_w(uint8_t data)
 	m_ic3_data = data;
 }
 
-WRITE_LINE_MEMBER(mpu3_state::pia_ic5_ca2_w)
+void mpu3_state::pia_ic5_ca2_w(int state)
 {
-	LOG(("%s: IC5 PIA Port CA2 Set to %2x (C)\n", machine().describe_context(),state));
+	LOG("%s: IC5 PIA Port CA2 Set to %2x (C)\n", machine().describe_context(),state);
 	m_IC11GC = state;
 	ic11_update();
 }
 
-WRITE_LINE_MEMBER(mpu3_state::pia_ic5_cb2_w)
+void mpu3_state::pia_ic5_cb2_w(int state)
 {
-	LOG(("%s: IC5 PIA Port CB2 Set to %2x (Triac)\n", machine().describe_context(),state));
+	LOG("%s: IC5 PIA Port CB2 Set to %2x (Triac)\n", machine().describe_context(),state);
 	m_triac_ic5 = state;
 }
 
@@ -618,7 +616,7 @@ uint8_t mpu3_state::pia_ic6_portb_r()
 
 void mpu3_state::pia_ic6_porta_w(uint8_t data)
 {
-	LOG(("%s: IC6 PIA Port A Set to %2x (Alpha)\n", machine().describe_context(),data));
+	LOG("%s: IC6 PIA Port A Set to %2x (Alpha)\n", machine().describe_context(),data);
 	m_vfd->por((data & 0x08));
 	m_vfd->data((data & 0x20) >> 5);
 	m_vfd->sclk((data & 0x10) >>4);
@@ -626,7 +624,7 @@ void mpu3_state::pia_ic6_porta_w(uint8_t data)
 
 void mpu3_state::pia_ic6_portb_w(uint8_t data)
 {
-	LOG(("%s: IC6 PIA Port B Set to %2x (AUX2)\n", machine().describe_context(),data));
+	LOG("%s: IC6 PIA Port B Set to %2x (AUX2)\n", machine().describe_context(),data);
 	m_aux2_input = data;
 }
 
@@ -747,15 +745,15 @@ void mpu3_state::machine_start()
 	m_lamp.resolve();
 }
 
-/* generate a 50 Hz signal (some components rely on this for external sync) */
-TIMER_DEVICE_CALLBACK_MEMBER(mpu3_state::gen_50hz)
+/* generate a 100 Hz signal (some components rely on this for external sync) */
+TIMER_DEVICE_CALLBACK_MEMBER(mpu3_state::gen_100hz)
 {
 	/* Although reported as a '50Hz' signal, the fact that both rising and
 	falling edges of the pulse are used means the timer actually gives a 100Hz
 	oscillating signal.*/
-	m_signal_50hz = m_signal_50hz?0:1;
-	m_ptm2->set_c1(m_signal_50hz);
-	m_pia3->cb1_w(~m_signal_50hz);
+	m_signal_100hz ^= 1;
+	m_ptm2->set_c1(m_signal_100hz);
+	m_pia3->cb1_w(m_signal_100hz);
 	update_triacs();
 }
 
@@ -811,7 +809,7 @@ void mpu3_state::mpu3base(machine_config &config)
 
 	MSC1937(config, m_vfd);
 
-	TIMER(config, "50hz").configure_periodic(FUNC(mpu3_state::gen_50hz), attotime::from_hz(100));
+	TIMER(config, "100hz").configure_periodic(FUNC(mpu3_state::gen_100hz), attotime::from_hz(200));
 	TIMER(config, "555_ic10").configure_periodic(FUNC(mpu3_state::ic10_callback), PERIOD_OF_555_ASTABLE(10000,1000,0.0000001));
 
 	/* 6840 PTM */
@@ -822,13 +820,13 @@ void mpu3_state::mpu3base(machine_config &config)
 	m_ptm2->o3_callback().set(FUNC(mpu3_state::ic2_o3_callback));
 	m_ptm2->irq_callback().set("mainirq", FUNC(input_merger_device::in_w<0>));
 
-	PIA6821(config, m_pia3, 0);
+	PIA6821(config, m_pia3);
 	m_pia3->readpa_handler().set(FUNC(mpu3_state::pia_ic3_porta_r));
 	m_pia3->writepb_handler().set(FUNC(mpu3_state::pia_ic3_portb_w));
 	m_pia3->ca2_handler().set(FUNC(mpu3_state::pia_ic3_ca2_w));
 	m_pia3->irqb_handler().set("mainirq", FUNC(input_merger_device::in_w<1>));
 
-	PIA6821(config, m_pia4, 0);
+	PIA6821(config, m_pia4);
 	m_pia4->readpa_handler().set(FUNC(mpu3_state::pia_ic4_porta_r));
 	m_pia4->writepa_handler().set(FUNC(mpu3_state::pia_ic4_porta_w));
 	m_pia4->writepb_handler().set(FUNC(mpu3_state::pia_ic4_portb_w));
@@ -836,14 +834,14 @@ void mpu3_state::mpu3base(machine_config &config)
 	m_pia4->cb2_handler().set(FUNC(mpu3_state::pia_ic4_cb2_w));
 	m_pia4->irqa_handler().set("mainirq", FUNC(input_merger_device::in_w<2>));
 
-	PIA6821(config, m_pia5, 0);
+	PIA6821(config, m_pia5);
 	m_pia5->readpb_handler().set(FUNC(mpu3_state::pia_ic5_portb_r));
 	m_pia5->writepa_handler().set(FUNC(mpu3_state::pia_ic5_porta_w));
 	m_pia5->writepb_handler().set(FUNC(mpu3_state::pia_ic5_portb_w));
 	m_pia5->ca2_handler().set(FUNC(mpu3_state::pia_ic5_ca2_w));
 	m_pia5->cb2_handler().set(FUNC(mpu3_state::pia_ic5_cb2_w));
 
-	PIA6821(config, m_pia6, 0);
+	PIA6821(config, m_pia6);
 	m_pia6->readpa_handler().set(FUNC(mpu3_state::pia_ic6_porta_r));
 	m_pia6->readpb_handler().set(FUNC(mpu3_state::pia_ic6_portb_r));
 	m_pia6->writepa_handler().set(FUNC(mpu3_state::pia_ic6_porta_w));
@@ -1572,7 +1570,7 @@ ROM_END
 
 // search for cmpa (x+$01) in trace logs to find protection accesses
 
-#define GAME_FLAGS MACHINE_NOT_WORKING|MACHINE_NO_SOUND|MACHINE_REQUIRES_ARTWORK|MACHINE_MECHANICAL|MACHINE_CLICKABLE_ARTWORK
+#define GAME_FLAGS MACHINE_NOT_WORKING|MACHINE_NO_SOUND|MACHINE_REQUIRES_ARTWORK|MACHINE_MECHANICAL
 
 
 
@@ -1690,10 +1688,9 @@ GAME(  198?, m3topsht,   0,          mpu3_chr_c000, mpu3, mpu3_chr_state, init_m
 // doesn't boot, does nothing?
 GAMEL( 198?, m3supnud,   0,          mpu3base, mpu3, mpu3_state, init_mpu3, ROT0, "Barcrest","Super Nudges Unlimited (Barcrest) (MPU3)", GAME_FLAGS, layout_m3supnud )
 
-// doesn't boot, does nothing?
 GAME(  198?, m3supser,   0,          mpu3base, mpu3, mpu3_state, init_mpu3, ROT0, "Barcrest","Super Series (Barcrest) (MPU3)",GAME_FLAGS )
 
-// doesn't boot, does nothing?
+// boots without initialising reels
 GAMEL( 198?, m3circle,   0,          mpu3base, mpu3, mpu3_state, init_mpu3, ROT0, "Barcrest","Special Circle Club (Barcrest) (MPU3, set 1)", GAME_FLAGS, layout_m3circle )
 GAMEL( 198?, m3circlea,  m3circle,   mpu3base, mpu3, mpu3_state, init_mpu3, ROT0, "Barcrest","Special Circle Club (Barcrest) (MPU3, set 2, bad)", GAME_FLAGS, layout_m3circle )
 GAMEL( 198?, m3circleb,  m3circle,   mpu3base, mpu3, mpu3_state, init_mpu3, ROT0, "Barcrest","Special Circle Club (Barcrest) (MPU3, set 3)", GAME_FLAGS, layout_m3circle )
@@ -1713,6 +1710,7 @@ GAMEL( 198?, m3ratrce,   0,          mpu3base, mpu3, mpu3_state, init_mpu3, ROT0
 
 GAME(  198?, m3supasw,   0,          mpu3base, mpu3, mpu3_state, init_mpu3, ROT0, "BWB","Supaswop (BWB) (MPU3)",GAME_FLAGS )
 
+// boots and then errors with REEL 'A' FAILURE
 GAMEL( 198?, m3supwin,   0,          mpu3base, mpu3, mpu3_state, init_mpu3, ROT0, "BWB","Super Win (BWB) (MPU3, set 1) (W.AG2) ", GAME_FLAGS, layout_m3supwin ) // offset VFD
 GAMEL( 198?, m3supwina,  m3supwin,   mpu3base, mpu3, mpu3_state, init_mpu3, ROT0, "BWB","Super Win (BWB) (MPU3, set 2) (S.W.2 1.0)", GAME_FLAGS, layout_m3supwin )
 
@@ -1732,14 +1730,13 @@ GAMEL( 198?, m3spoofa,   m3spoof,    mpu3base, mpu3, mpu3_state, init_mpu3, ROT0
 GAMEL( 198?, m3supspo,   0,          mpu3base, mpu3, mpu3_state, init_mpu3, ROT0, "Pcp","Super Spoof (Pcp) (MPU3, set 1)", GAME_FLAGS, layout_m3supspo )
 GAMEL( 198?, m3supspoa,  m3supspo,   mpu3base, mpu3, mpu3_state, init_mpu3, ROT0, "Pcp","Super Spoof (Pcp) (MPU3, set 2)", GAME_FLAGS, layout_m3supspo )
 
-// boots, reel error a
 GAMEL( 198?, m3loony,    0,          mpu3base, mpu3, mpu3_state, init_mpu3, ROT0, "Pcp","Loonybin (Pcp) (MPU3)", GAME_FLAGS, layout_m3loony )
 
-// does nothing
+// boots, no vfd, then locks
 GAMEL( 198?, m3online,   0,          mpu3base, mpu3, mpu3_state, init_mpu3, ROT0, "Pcp","On Line (Pcp) (MPU3)", GAME_FLAGS, layout_m3online )
 GAMEL( 198?, m3toplin,   0,          mpu3base, mpu3, mpu3_state, init_mpu3, ROT0, "Pcp","Top Line (Pcp) (MPU3)", GAME_FLAGS, layout_m3toplin )
 
-// offset VFD, don't boot (act like m3supwin above)
+// REEL 'A' FAILURE
 GAMEL( 198?, m3rockpl,   0,          mpu3base, mpu3, mpu3_state, init_mpu3, ROT0, "Pcp","Rock Pile (Pcp) (MPU3)", GAME_FLAGS, layout_m3rockpl )
 GAMEL( 198?, m3rollem,   0,          mpu3base, mpu3, mpu3_state, init_mpu3, ROT0, "Pcp","Roll 'Em (Pcp) (MPU3)", GAME_FLAGS, layout_m3rollem )
 GAME(  198?, m3wigwam,   0,          mpu3base, mpu3, mpu3_state, init_mpu3, ROT0, "Pcp","Wig Wam (Pcp) (MPU3)",GAME_FLAGS )
@@ -1750,7 +1747,7 @@ GAME(  198?, m3wigwam,   0,          mpu3base, mpu3, mpu3_state, init_mpu3, ROT0
 // no protection, boots without testing reels?
 GAMEL( 198?, m3gcrown,   0,          mpu3base, mpu3, mpu3_state, init_mpu3, ROT0, "Mdm","Golden Crowns (Mdm) (MPU3)", GAME_FLAGS, layout_m3gcrown )
 
-// reel A alarm
+// no VFD
 GAMEL( 198?, m3tfair,    0,          mpu3base, mpu3, mpu3_state, init_mpu3, ROT0, "Mdm","Tuppenny Fair (Mdm) (MPU3)", GAME_FLAGS, layout_m3tfair )
 GAME(  198?, m3wacky,    0,          mpu3base, mpu3, mpu3_state, init_mpu3, ROT0, "Mdm","Wacky Racer (Mdm) (MPU3)",GAME_FLAGS )
 

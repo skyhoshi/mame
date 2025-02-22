@@ -312,7 +312,7 @@ static INPUT_PORTS_START( swtpc09 )
 	// keep up with higher rate operation. The MPU09 did have the option of
 	// 1MHz or 2MHz operation.
 	PORT_START("MAINCPU_CLOCK")
-	PORT_CONFNAME(0xffffff, 2000000, "CPU clock") PORT_CHANGED_MEMBER(DEVICE_SELF, swtpc09_state, maincpu_clock_change, 0)
+	PORT_CONFNAME(0xffffff, 2000000, "CPU clock") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(swtpc09_state::maincpu_clock_change), 0)
 	PORT_CONFSETTING(1000000, "1.0 MHz")
 	PORT_CONFSETTING(2000000, "2.0 MHz")
 	PORT_CONFSETTING(4000000, "4.0 MHz")
@@ -325,7 +325,7 @@ static INPUT_PORTS_START( swtpc09 )
 	// 3.5" hd  -  2.0MHz
 	// 8" 360rpm  -  2.4MHz
 	PORT_START("FDC_CLOCK")
-	PORT_CONFNAME(0xffffff, 2000000, "DMAF2/3 FDC clock") PORT_CHANGED_MEMBER(DEVICE_SELF, swtpc09_state, fdc_clock_change, 0)
+	PORT_CONFNAME(0xffffff, 2000000, "DMAF2/3 FDC clock") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(swtpc09_state::fdc_clock_change), 0)
 	PORT_CONFSETTING(1000000, "1.0 MHz")
 	PORT_CONFSETTING(1200000, "1.2 MHz")
 	PORT_CONFSETTING(2000000, "2.0 MHz")
@@ -335,7 +335,7 @@ static INPUT_PORTS_START( swtpc09 )
 	// most useful is the Low/High rate jumper that provide a four times
 	// rate increase.
 	PORT_START("BAUD_RATE_HIGH")
-	PORT_CONFNAME(0x1, 0, "High baud rate") PORT_CHANGED_MEMBER(DEVICE_SELF, swtpc09_state, baud_rate_high_change, 0)
+	PORT_CONFNAME(0x1, 0, "High baud rate") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(swtpc09_state::baud_rate_high_change), 0)
 	PORT_CONFSETTING(0, "Low (x1)")
 	PORT_CONFSETTING(1, "High (x4)")
 
@@ -497,7 +497,7 @@ void swtpc09_state::swtpc09_base(machine_config &config)
 	io7.firq_cb().set("mainfirq", FUNC(input_merger_device::in_w<7>));
 
 	// IO8 at 0xe080 is used internally by the MPID board PIA.
-	PIA6821(config, m_pia, 0);
+	PIA6821(config, m_pia);
 	m_pia->readpa_handler().set(FUNC(swtpc09_state::pia0_a_r));
 	m_pia->ca1_w(0);
 	m_pia->irqa_handler().set(FUNC(swtpc09_state::pia0_irq_a));

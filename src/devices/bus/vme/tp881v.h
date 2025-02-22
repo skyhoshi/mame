@@ -19,23 +19,23 @@
 #include "bus/vme/vme.h"
 #include "bus/rs232/rs232.h"
 
-class tp881v_device
+class vme_tp881v_card_device
 	: public device_t
 	, public device_vme_card_interface
 {
 public:
-	tp881v_device(machine_config const &mconfig, char const *tag, device_t *owner, u32 clock);
+	vme_tp881v_card_device(machine_config const &mconfig, char const *tag, device_t *owner, u32 clock);
 
 protected:
-	virtual const tiny_rom_entry *device_rom_region() const override;
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual ioport_constructor device_input_ports() const override;
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual const tiny_rom_entry *device_rom_region() const override ATTR_COLD;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual ioport_constructor device_input_ports() const override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 private:
-	void cpu_mem(address_map &map);
-	void net_mem(address_map &map);
+	void cpu_mem(address_map &map) ATTR_COLD;
+	void net_mem(address_map &map) ATTR_COLD;
 
 	required_device<mc88100_device> m_cpu;
 	required_device_array<mc88200_device, 2> m_mmu;
@@ -54,6 +54,6 @@ private:
 	required_device_array<rs232_port_device, 4> m_serial;
 };
 
-DECLARE_DEVICE_TYPE(TP881V, tp881v_device)
+DECLARE_DEVICE_TYPE(VME_TP881V, vme_tp881v_card_device)
 
 #endif // MAME_BUS_VME_TP881V_H

@@ -42,8 +42,8 @@ public:
 
 	a2eauxslot_slot_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock = 0);
 
-	// device-level overrides
-	virtual void device_resolve_objects() override;
+	// device_t implementation
+	virtual void device_resolve_objects() override ATTR_COLD;
 	virtual void device_start() override { }
 
 protected:
@@ -75,15 +75,14 @@ public:
 	void set_irq_line(int state);
 	void set_nmi_line(int state);
 
-	DECLARE_WRITE_LINE_MEMBER( irq_w );
-	DECLARE_WRITE_LINE_MEMBER( nmi_w );
+	void irq_w(int state);
+	void nmi_w(int state);
 
 protected:
 	a2eauxslot_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock);
 
-	// device-level overrides
-	virtual void device_resolve_objects() override;
-	virtual void device_start() override;
+	// device_t implementation
+	virtual void device_start() override ATTR_COLD;
 
 	// internal state
 	required_address_space m_space;

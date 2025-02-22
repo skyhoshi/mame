@@ -158,7 +158,7 @@ INTERRUPT_GEN_MEMBER(polyplay_state::nmi_handler)
 }
 
 /* I/O Port handling */
-WRITE_LINE_MEMBER(polyplay_state::ctc_zc2_w)
+void polyplay_state::ctc_zc2_w(int state)
 {
 	//osd_printf_verbose("ctc_z2_w: %02x\n", state);
 }
@@ -236,14 +236,14 @@ void polyplay_state::polyplay_io_zrepp(address_map &map)
 
 static INPUT_PORTS_START( polyplay )
 	PORT_START("IN0")
-	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_BUTTON1 ) PORT_CHANGED_MEMBER(DEVICE_SELF, polyplay_state, input_changed, 0)
-	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_JOYSTICK_RIGHT ) PORT_CHANGED_MEMBER(DEVICE_SELF, polyplay_state, input_changed, 0) PORT_8WAY
-	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_JOYSTICK_LEFT ) PORT_CHANGED_MEMBER(DEVICE_SELF, polyplay_state, input_changed, 0) PORT_8WAY
-	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_JOYSTICK_UP ) PORT_CHANGED_MEMBER(DEVICE_SELF, polyplay_state, input_changed, 0) PORT_8WAY
-	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_JOYSTICK_DOWN ) PORT_CHANGED_MEMBER(DEVICE_SELF, polyplay_state, input_changed, 0) PORT_8WAY
-	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_UNUSED ) PORT_CHANGED_MEMBER(DEVICE_SELF, polyplay_state, input_changed, 0)
-	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_SERVICE ) PORT_CHANGED_MEMBER(DEVICE_SELF, polyplay_state, input_changed, 0) PORT_NAME("Bookkeeping Info") PORT_CODE(KEYCODE_F2)
-	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_COIN1 ) PORT_CHANGED_MEMBER(DEVICE_SELF, polyplay_state, input_changed, 0)
+	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_BUTTON1 ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(polyplay_state::input_changed), 0)
+	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_JOYSTICK_RIGHT ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(polyplay_state::input_changed), 0) PORT_8WAY
+	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_JOYSTICK_LEFT ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(polyplay_state::input_changed), 0) PORT_8WAY
+	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_JOYSTICK_UP ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(polyplay_state::input_changed), 0) PORT_8WAY
+	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_JOYSTICK_DOWN ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(polyplay_state::input_changed), 0) PORT_8WAY
+	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_UNUSED ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(polyplay_state::input_changed), 0)
+	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_SERVICE ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(polyplay_state::input_changed), 0) PORT_NAME("Bookkeeping Info") PORT_CODE(KEYCODE_F2)
+	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_COIN1 ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(polyplay_state::input_changed), 0)
 INPUT_PORTS_END
 
 /* graphic structures */
@@ -271,7 +271,7 @@ static const gfx_layout charlayout_3_bit =
 
 static GFXDECODE_START( gfx_polyplay )
 	GFXDECODE_ENTRY( "gfx1",  0x0000, charlayout_1_bit, 0, 1 )
-	GFXDECODE_ENTRY( nullptr, 0xec00, charlayout_3_bit, 2, 1 )
+	GFXDECODE_RAM(   nullptr, 0xec00, charlayout_3_bit, 2, 1 )
 GFXDECODE_END
 
 

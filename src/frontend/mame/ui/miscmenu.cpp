@@ -200,19 +200,21 @@ bool menu_network_devices::handle(event const *ev)
 	}
 	else if (ev->iptkey == IPT_UI_LEFT || ev->iptkey == IPT_UI_RIGHT)
 	{
+		// FIXME: this conflates presumably arbitrary interface ID numbers with 0-based indices
 		device_network_interface *const network = (device_network_interface *)ev->itemref;
+		auto const &interfaces = get_netdev_list();
 		int curr = network->get_interface();
 		if (ev->iptkey == IPT_UI_LEFT)
 			curr--;
 		else
 			curr++;
 		if (curr == -2)
-			curr = netdev_count() - 1;
+			curr = interfaces.size() - 1;
 		network->set_interface(curr);
 
 		curr = network->get_interface();
 		const char *title = nullptr;
-		for (auto &entry : get_netdev_list())
+		for (auto &entry : interfaces)
 		{
 			if (entry->id == curr)
 			{
@@ -309,7 +311,7 @@ bool menu_bookkeeping::handle(event const *ev)
 	}
 	else
 	{
-		return ev && handle_key(ev->iptkey);
+		return menu_textbox::handle(ev);
 	}
 }
 
@@ -970,16 +972,16 @@ bool menu_plugins_configure::handle(event const *ev)
 
 void menu_plugins_configure::populate()
 {
-	plugin_options const &plugins = mame_machine_manager::instance()->plugins();
+	plugin_options const &plugin_opts = mame_machine_manager::instance()->plugins();
 
 	bool first(true);
-	for (auto const &curentry : plugins.plugins())
+	for (const plugin_options::plugin &p : plugin_opts.plugins())
 	{
-		if ("library" != curentry.m_type)
+		if (p.m_type != "library")
 		{
 			first = false;
-			bool const enabled = curentry.m_start;
-			item_append_on_off(curentry.m_description, enabled, 0, (void *)(uintptr_t)curentry.m_name.c_str());
+			bool const enabled = p.m_start;
+			item_append_on_off(p.m_description, enabled, 0, (void *)(uintptr_t)p.m_name.c_str());
 		}
 	}
 	if (first)

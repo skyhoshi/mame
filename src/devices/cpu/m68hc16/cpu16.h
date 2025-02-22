@@ -29,8 +29,8 @@ protected:
 	cpu16_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, u32 clock, address_map_constructor map);
 
 	// device-level overrides
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 	// device_execute_interface overrides
 	virtual u32 execute_min_cycles() const noexcept override { return 2; }
@@ -59,6 +59,7 @@ private:
 	void set_k(u16 value) noexcept;
 	u16 get_ix(int which) const noexcept;
 	void set_ix(int which, u16 value) noexcept;
+	u32 add_ix_masked(int which, int offset) const noexcept;
 	u8 get_xk(int which) const noexcept;
 	void set_xk(int which, u8 value) noexcept;
 	void set_a(u8 value) noexcept;
@@ -82,6 +83,10 @@ private:
 	void mulu16() noexcept;
 	void muls16(bool frac) noexcept;
 	void divu16(bool frac) noexcept;
+	u64 accumulate32(u32 data, bool v) noexcept;
+	void aslm() noexcept;
+	void asrm() noexcept;
+	u16 saturation_value(u64 sum) const noexcept;
 
 	// misc. execution helpers
 	void advance() noexcept;

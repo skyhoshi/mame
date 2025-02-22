@@ -126,11 +126,34 @@ public:
 	void cc40p(machine_config &config);
 
 protected:
-	virtual void machine_reset() override;
-	virtual void machine_start() override;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void machine_start() override ATTR_COLD;
 	virtual void device_post_load() override;
 
 private:
+	required_device<tms7000_device> m_maincpu;
+	required_device_array<nvram_device, 2> m_nvram;
+	required_memory_bank m_sysbank;
+	required_memory_bank m_cartbank;
+	required_device<generic_slot_device> m_cart;
+	optional_device<cassette_image_device> m_cass;
+	required_ioport_array<8> m_key_matrix;
+	output_finder<80> m_segs;
+
+	memory_region *m_cart_rom;
+
+	u8 m_bus_control = 0;
+	u8 m_power = 0;
+	u8 m_banks = 0;
+	u8 m_clock_control = 0;
+	u8 m_clock_divider = 0;
+	u8 m_key_select = 0;
+
+	std::unique_ptr<u8[]> m_sysram[2];
+	u16 m_sysram_size[2];
+	u16 m_sysram_end[2];
+	u16 m_sysram_mask[2];
+
 	void init_sysram(int chip, u16 size);
 	void update_lcd_indicator(u8 y, u8 x, int state);
 	void update_clock_divider();
@@ -154,31 +177,8 @@ private:
 	DECLARE_DEVICE_IMAGE_LOAD_MEMBER(cart_load);
 	HD44780_PIXEL_UPDATE(cc40_pixel_update);
 
-	void cc40_map(address_map &map);
-	void cc40p_map(address_map &map);
-
-	required_device<tms7000_device> m_maincpu;
-	required_device_array<nvram_device, 2> m_nvram;
-	required_memory_bank m_sysbank;
-	required_memory_bank m_cartbank;
-	required_device<generic_slot_device> m_cart;
-	optional_device<cassette_image_device> m_cass;
-	required_ioport_array<8> m_key_matrix;
-	output_finder<80> m_segs;
-
-	memory_region *m_cart_rom;
-
-	u8 m_bus_control = 0;
-	u8 m_power = 0;
-	u8 m_banks = 0;
-	u8 m_clock_control = 0;
-	u8 m_clock_divider = 0;
-	u8 m_key_select = 0;
-
-	std::unique_ptr<u8[]> m_sysram[2];
-	u16 m_sysram_size[2];
-	u16 m_sysram_end[2];
-	u16 m_sysram_mask[2];
+	void cc40_map(address_map &map) ATTR_COLD;
+	void cc40p_map(address_map &map) ATTR_COLD;
 };
 
 
@@ -511,11 +511,11 @@ INPUT_CHANGED_MEMBER(cc40_state::sysram_size_changed)
 
 static INPUT_PORTS_START( cc40 )
 	PORT_START("RAMSIZE")
-	PORT_CONFNAME( 0x07, 0x01, "RAM Chip 1") PORT_CHANGED_MEMBER(DEVICE_SELF, cc40_state, sysram_size_changed, 0)
+	PORT_CONFNAME( 0x07, 0x01, "RAM Chip 1") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(cc40_state::sysram_size_changed), 0)
 	PORT_CONFSETTING(    0x00, "None" )
 	PORT_CONFSETTING(    0x01, "2KB" )
 	PORT_CONFSETTING(    0x04, "8KB" )
-	PORT_CONFNAME( 0x70, 0x10, "RAM Chip 2") PORT_CHANGED_MEMBER(DEVICE_SELF, cc40_state, sysram_size_changed, 1)
+	PORT_CONFNAME( 0x70, 0x10, "RAM Chip 2") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(cc40_state::sysram_size_changed), 1)
 	PORT_CONFSETTING(    0x00, "None" ) // note: invalid configuration, unless Chip 1 is also 0x00
 	PORT_CONFSETTING(    0x10, "2KB" )
 	PORT_CONFSETTING(    0x40, "8KB" )
@@ -639,7 +639,7 @@ void cc40_state::cc40(machine_config &config)
 
 	PALETTE(config, "palette", FUNC(cc40_state::cc40_palette), 3);
 
-	hd44780_device &hd44780(HD44780(config, "hd44780", 0));
+	hd44780_device &hd44780(HD44780(config, "hd44780", 270'000)); // OSC = 91K resistor
 	hd44780.set_lcd_size(2, 16); // 2*16 internal
 	hd44780.set_pixel_update_cb(FUNC(cc40_state::cc40_pixel_update));
 

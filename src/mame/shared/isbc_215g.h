@@ -5,9 +5,10 @@
 
 #pragma once
 
-#include "cpu/i8089/i8089.h"
 #include "bus/isbx/isbx.h"
+#include "cpu/i8089/i8089.h"
 #include "imagedev/harddriv.h"
+
 
 class isbc_215g_device : public device_t
 {
@@ -31,13 +32,13 @@ public:
 	void mem_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 
 protected:
-	virtual void device_start() override;
-	virtual void device_reset() override;
-	virtual void device_add_mconfig(machine_config &config) override;
-	const tiny_rom_entry *device_rom_region() const override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	const tiny_rom_entry *device_rom_region() const override ATTR_COLD;
 
-	void isbc_215g_io(address_map &map);
-	void isbc_215g_mem(address_map &map);
+	void isbc_215g_io(address_map &map) ATTR_COLD;
+	void isbc_215g_mem(address_map &map) ATTR_COLD;
 
 private:
 	void find_sector();
@@ -78,10 +79,10 @@ private:
 
 	const struct hard_disk_file::info* m_geom[2];
 
-	DECLARE_WRITE_LINE_MEMBER(isbx_irq_00_w);
-	DECLARE_WRITE_LINE_MEMBER(isbx_irq_01_w);
-	DECLARE_WRITE_LINE_MEMBER(isbx_irq_10_w);
-	DECLARE_WRITE_LINE_MEMBER(isbx_irq_11_w);
+	void isbx_irq_00_w(int state);
+	void isbx_irq_01_w(int state);
+	void isbx_irq_10_w(int state);
+	void isbx_irq_11_w(int state);
 };
 
 DECLARE_DEVICE_TYPE(ISBC_215G, isbc_215g_device)

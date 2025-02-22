@@ -8,7 +8,7 @@ DEFINE_DEVICE_TYPE(SPG_RENDERER, spg_renderer_device, "spg_renderer", "SunPlus /
 
 spg_renderer_device::spg_renderer_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock) :
 	device_t(mconfig, type, tag, owner, clock),
-	m_space_read_cb(*this)
+	m_space_read_cb(*this, 0)
 {
 }
 
@@ -19,8 +19,6 @@ spg_renderer_device::spg_renderer_device(const machine_config &mconfig, const ch
 
 void spg_renderer_device::device_start()
 {
-	m_space_read_cb.resolve_safe(0);
-
 	for (uint8_t i = 0; i < 32; i++)
 	{
 		m_rgb5_to_rgb8[i] = (i << 3) | (i >> 2);
@@ -257,7 +255,8 @@ void spg_renderer_device::draw_linemap(bool has_extended_tilemaps, const rectang
 		uint32_t tilemap = tilemapregs[2];
 		uint32_t palette_map = tilemapregs[3];
 
-		//popmessage("draw draw_linemap bases %04x %04x\n", tilemap, palette_map);
+		//if (scanline == 128)
+		//  popmessage("draw draw_linemap reg0 %04x reg1 %04x bases %04x %04x\n", tilemapregs[0], tilemapregs[1], tilemap, palette_map);
 
 		//uint32_t xscroll = scrollregs[0];
 		uint32_t yscroll = scrollregs[1];
@@ -296,26 +295,36 @@ void spg_renderer_device::draw_linemap(bool has_extended_tilemaps, const rectang
 		}
 		else
 		{
-			for (int i = 0; i < 320 / 2; i++)
+			const uint32_t attr = tilemapregs[0];
+			const uint8_t bpp = attr & 0x0003;
+			const uint32_t nc_bpp = ((bpp)+1) << 1;
+			uint32_t palette_offset = (attr & 0x0f00) >> 4;
+			palette_offset >>= nc_bpp;
+			palette_offset <<= nc_bpp;
+
+			uint32_t bits = 0;
+			uint32_t nbits = 0;
+
+			for (int i = 0; i < 320; i++)
 			{
-				uint8_t palette_entry;
-				uint16_t color;
-				const uint16_t data = spc.read_word(sourcebase + i);
-
-				palette_entry = (data & 0x00ff);
-				color = paletteram[palette_entry];
-
-				if (!(color & 0x8000))
+				bits <<= nc_bpp;
+				if (nbits < nc_bpp)
 				{
-					m_linebuf[(i * 2) + 0] = color & 0x7fff;
+					uint16_t b = spc.read_word(sourcebase++ & 0x3fffff);
+					b = (b << 8) | (b >> 8);
+					bits |= b << (nc_bpp - nbits);
+					nbits += 16;
 				}
+				nbits -= nc_bpp;
 
-				palette_entry = (data & 0xff00) >> 8;
-				color = paletteram[palette_entry];
+				uint32_t pal = palette_offset + (bits >> 16);
+				bits &= 0xffff;
 
-				if (!(color & 0x8000))
+				uint16_t rgb = paletteram[pal];
+
+				if (!(rgb & 0x8000))
 				{
-					m_linebuf[(i * 2) + 1] = color & 0x7fff;
+					m_linebuf[i] = rgb;
 				}
 			}
 		}

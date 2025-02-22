@@ -180,11 +180,11 @@ public:
 	virtual char const *image_brief_type_name()         const noexcept override { return "prom"; }
 
 protected:
-	virtual ioport_constructor device_input_ports() const override;
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual ioport_constructor device_input_ports() const override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
-	virtual DECLARE_WRITE_LINE_MEMBER(reset_4002_in) override;
+	virtual void reset_4002_in(int state) override;
 
 private:
 	void ram_out(offs_t offset, u8 data);
@@ -271,7 +271,7 @@ void imm4_22_device::device_reset()
 }
 
 
-WRITE_LINE_MEMBER(imm4_22_device::reset_4002_in)
+void imm4_22_device::reset_4002_in(int state)
 {
 	// FIXME: this takes several cycles to actually erase everything, and prevents writes while asserted
 	if (!state)

@@ -43,7 +43,7 @@
 
 
 // configurable logging
-#define LOG_PORT34     (1U <<  1)
+#define LOG_PORT34     (1U << 1)
 
 //#define VERBOSE (LOG_GENERAL | LOG_PORT34)
 
@@ -73,8 +73,8 @@ public:
 	DECLARE_INPUT_CHANGED_MEMBER(right_coin_inserted);
 
 protected:
-	virtual void machine_start() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	uint8_t sensors1_r();
@@ -92,8 +92,8 @@ private:
 	void palette(palette_device &palette) const;
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	void io_map(address_map &map);
-	void prg_map(address_map &map);
+	void io_map(address_map &map) ATTR_COLD;
+	void prg_map(address_map &map) ATTR_COLD;
 
 	// devices
 	required_device<cpu_device> m_maincpu;
@@ -113,8 +113,6 @@ private:
 	uint8_t m_scrollx = 0U;
 };
 
-
-// video
 
 void kopunch_state::palette(palette_device &palette) const
 {
@@ -220,8 +218,6 @@ uint32_t kopunch_state::screen_update(screen_device &screen, bitmap_ind16 &bitma
 	return 0;
 }
 
-
-// machine
 
 /********************************************************
 
@@ -329,11 +325,11 @@ static INPUT_PORTS_START( kopunch )
 
 	PORT_START("SYSTEM")
 	PORT_BIT( 0x07, IP_ACTIVE_HIGH, IPT_CUSTOM ) // punch strength (high 3 bits)
-	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_COIN2 ) PORT_CHANGED_MEMBER(DEVICE_SELF, kopunch_state, right_coin_inserted, 0)
+	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_COIN2 ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(kopunch_state::right_coin_inserted), 0)
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_CUSTOM ) // sensor
 	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_CUSTOM ) // sensor
 	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_CUSTOM ) // sensor
-	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_COIN1 ) PORT_CHANGED_MEMBER(DEVICE_SELF, kopunch_state, left_coin_inserted, 0)
+	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_COIN1 ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(kopunch_state::left_coin_inserted), 0)
 
 	PORT_START("DSW")
 	PORT_DIPNAME( 0x01, 0x01, DEF_STR( Unknown ) )
@@ -430,13 +426,13 @@ void kopunch_state::kopunch(machine_config &config)
 	i8255_device &ppi1(I8255A(config, "ppi8255_1"));
 	// $34 - always $80 (PPI mode 0, ports A & B & C as output)
 	ppi1.out_pa_callback().set(FUNC(kopunch_state::coin_w));
-	ppi1.out_pb_callback().set_log("PPI8255 - unmapped write port B");
-	ppi1.out_pc_callback().set_log("PPI8255 - unmapped write port C");
+	ppi1.out_pb_callback().set([this](uint8_t data) { logerror("%s ppi1 write port B: %02X\n", machine().describe_context(), data); });
+	ppi1.out_pc_callback().set([this](uint8_t data) { logerror("%s ppi1 write port C: %02X\n", machine().describe_context(), data); });
 
 	i8255_device &ppi2(I8255A(config, "ppi8255_2"));
 	// $38 - always $89 (PPI mode 0, ports A & B as output, port C as input)
 	ppi2.out_pa_callback().set(FUNC(kopunch_state::lamp_w));
-	ppi2.out_pb_callback().set_log("PPI8255 - unmapped write port B");
+	ppi2.out_pb_callback().set([this](uint8_t data) { logerror("%s ppi2 write port B: %02X\n", machine().describe_context(), data); });
 	ppi2.in_pc_callback().set_ioport("DSW");
 
 	i8255_device &ppi3(I8255A(config, "ppi8255_3"));

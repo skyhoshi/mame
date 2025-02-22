@@ -43,7 +43,7 @@ public:
 	void amu880(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 	virtual void machine_reset() override { m_maincpu->set_pc(0xf000); }
 
 private:
@@ -72,11 +72,11 @@ private:
 
 	// video state
 	TIMER_DEVICE_CALLBACK_MEMBER(keyboard_tick);
-	DECLARE_WRITE_LINE_MEMBER(ctc_z0_w);
-	DECLARE_WRITE_LINE_MEMBER(ctc_z2_w);
-	DECLARE_WRITE_LINE_MEMBER(cassette_w);
-	void amu880_io(address_map &map);
-	void amu880_mem(address_map &map);
+	void ctc_z0_w(int state);
+	void ctc_z2_w(int state);
+	void cassette_w(int state);
+	void amu880_io(address_map &map) ATTR_COLD;
+	void amu880_mem(address_map &map) ATTR_COLD;
 
 	// cassette variables
 	u8 m_cnt = 0;

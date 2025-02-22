@@ -32,15 +32,15 @@ public:
 	void write(offs_t offset, uint16_t data);
 
 	// control lines
-	DECLARE_WRITE_LINE_MEMBER(lock1_w);
-	DECLARE_WRITE_LINE_MEMBER(unlock2_w);
-	DECLARE_WRITE_LINE_MEMBER(regsel_w);
+	void lock1_w(int state);
+	void unlock2_w(int state);
+	void regsel_w(int state);
 
 	bool present() { return is_loaded(); }
 
 protected:
 	// device_t implementation
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 private:
 	uint8_t m_memcard_data[0x800];

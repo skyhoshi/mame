@@ -14,18 +14,18 @@ public:
 
 	static constexpr feature_type unemulated_features() { return feature::COMMS; }
 
-	virtual void rom_map(address_map &map) override;
-	virtual void io_map(address_map &map) override;
+	virtual void rom_map(address_map &map) override ATTR_COLD;
+	virtual void io_map(address_map &map) override ATTR_COLD;
 
 protected:
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 private:
-	DECLARE_WRITE_LINE_MEMBER( modem_cb );
-	DECLARE_WRITE_LINE_MEMBER( modem_tx_w);
-	DECLARE_WRITE_LINE_MEMBER( write_acia_clock );
+	void modem_cb(int state);
+	void modem_tx_w(int state);
+	void write_acia_clock(int state);
 
 	required_device<acia6850_device> m_acia;
 

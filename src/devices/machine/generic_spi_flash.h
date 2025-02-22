@@ -24,7 +24,7 @@ public:
 		m_spi_state = READY_FOR_COMMAND;
 	}
 
-	DECLARE_WRITE_LINE_MEMBER(dir_w)
+	void dir_w(int state)
 	{
 		m_spidir = state;
 	}
@@ -33,8 +33,8 @@ public:
 
 protected:
 	// device-level overrides
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 	// device_nvram_interface overrides
 	virtual void nvram_default() override;

@@ -34,8 +34,8 @@ public:
 	void pocketc_base(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	TIMER_CALLBACK_MEMBER(power_up_done);
 
@@ -44,7 +44,7 @@ protected:
 	void pocketc_draw_special(bitmap_ind16 &bitmap,int x, int y, const char* const *fig, int color);
 
 	void out_a_w(uint8_t data);
-	DECLARE_READ_LINE_MEMBER(brk_r);
+	int brk_r();
 
 	required_device<sc61860_device> m_maincpu;
 	required_device<gfxdecode_device> m_gfxdecode;

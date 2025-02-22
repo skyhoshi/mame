@@ -84,8 +84,8 @@ public:
 	void timeplt(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 	required_device<cpu_device> m_maincpu;
 	required_device<ls259_device> m_mainlatch;
@@ -103,15 +103,15 @@ protected:
 	// video-related
 	tilemap_t *m_bg_tilemap = nullptr;
 
-	void main_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
 
 private:
 	// misc
 	uint8_t m_nmi_enable = 0;
 
-	DECLARE_WRITE_LINE_MEMBER(nmi_enable_w);
-	DECLARE_WRITE_LINE_MEMBER(video_enable_w);
-	template <uint8_t Which> DECLARE_WRITE_LINE_MEMBER(coin_counter_w);
+	void nmi_enable_w(int state);
+	void video_enable_w(int state);
+	template <uint8_t Which> void coin_counter_w(int state);
 	void videoram_w(offs_t offset, uint8_t data);
 	void colorram_w(offs_t offset, uint8_t data);
 	uint8_t scanline_r();
@@ -119,7 +119,7 @@ private:
 	void palette(palette_device &palette) const;
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	void draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect);
-	DECLARE_WRITE_LINE_MEMBER(vblank_irq);
+	void vblank_irq(int state);
 };
 
 class psurge_state : public timeplt_state
@@ -130,12 +130,12 @@ public:
 	void psurge(machine_config &config);
 
 protected:
-	virtual void video_start() override;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	uint8_t protection_r();
 
-	void main_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
 };
 
 class bikkuric_state : public timeplt_state
@@ -145,15 +145,15 @@ public:
 
 	void bikkuric(machine_config &config);
 
-	DECLARE_READ_LINE_MEMBER(hopper_status_r);
+	int hopper_status_r();
 
 protected:
-	virtual void video_start() override;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	TILE_GET_INFO_MEMBER(get_tile_info);
 
-	void main_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
 };
 
 class chkun_state : public bikkuric_state
@@ -172,8 +172,6 @@ private:
 	void sound_w(uint8_t data);
 };
 
-
-// video
 
 /***************************************************************************
 
@@ -330,7 +328,7 @@ void timeplt_state::colorram_w(offs_t offset, uint8_t data)
 }
 
 
-WRITE_LINE_MEMBER(timeplt_state::video_enable_w)
+void timeplt_state::video_enable_w(int state)
 {
 	m_video_enable = state;
 }
@@ -388,22 +386,20 @@ uint32_t timeplt_state::screen_update(screen_device &screen, bitmap_ind16 &bitma
 }
 
 
-// machine
-
 /*************************************
  *
  *  Interrupts
  *
  *************************************/
 
-WRITE_LINE_MEMBER(timeplt_state::vblank_irq)
+void timeplt_state::vblank_irq(int state)
 {
 	if (state && m_nmi_enable)
 		m_maincpu->set_input_line(INPUT_LINE_NMI, ASSERT_LINE);
 }
 
 
-WRITE_LINE_MEMBER(timeplt_state::nmi_enable_w)
+void timeplt_state::nmi_enable_w(int state)
 {
 	m_nmi_enable = state;
 	if (!m_nmi_enable)
@@ -419,7 +415,7 @@ WRITE_LINE_MEMBER(timeplt_state::nmi_enable_w)
  *************************************/
 
 template <uint8_t Which>
-WRITE_LINE_MEMBER(timeplt_state::coin_counter_w)
+void timeplt_state::coin_counter_w(int state)
 {
 	machine().bookkeeping().coin_counter_w(Which, state);
 }
@@ -443,7 +439,7 @@ void chkun_state::sound_w(uint8_t data)
 		m_tc8830f->reset();
 }
 
-READ_LINE_MEMBER(bikkuric_state::hopper_status_r)
+int bikkuric_state::hopper_status_r()
 {
 	// temp workaround, needs hopper
 	return machine().rand();
@@ -600,7 +596,7 @@ static INPUT_PORTS_START( chkun )
 
 	PORT_START("IN1")
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_BUTTON4 ) PORT_NAME("Bet 3B")
-	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(bikkuric_state, hopper_status_r)
+	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(FUNC(bikkuric_state::hopper_status_r))
 	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_BUTTON2 ) PORT_NAME("Bet 1B")
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_BUTTON3 ) PORT_NAME("Bet 2B")
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_BUTTON1 )
@@ -649,7 +645,7 @@ static INPUT_PORTS_START( bikkuric )
 
 	PORT_START("IN1")
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_JOYSTICK_LEFT )
-	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(bikkuric_state, hopper_status_r)
+	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(FUNC(bikkuric_state::hopper_status_r))
 	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_JOYSTICK_UP )
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_JOYSTICK_DOWN )
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_BUTTON1 )

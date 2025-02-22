@@ -23,8 +23,6 @@
 #include "video/poly.h"
 #include "screen.h"
 
-#define SOUND_CHANNELS  4
-
 
 class gaelco3d_state : public driver_device
 {
@@ -57,13 +55,16 @@ public:
 	void gaelco3d2(machine_config &config);
 	void gaelco3d(machine_config &config);
 
-	template <int N> DECLARE_READ_LINE_MEMBER(analog_bit_r);
-	template <int N> DECLARE_READ_LINE_MEMBER(fp_analog_bit_r);
+	template <int N> int analog_bit_r();
+	template <int N> int fp_analog_bit_r();
+
+protected:
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	static constexpr unsigned SOUND_CHANNELS = 4;
 
 	struct gaelco3d_object_data
 	{
@@ -127,10 +128,9 @@ private:
 	uint8_t m_sound_status = 0;
 	uint8_t m_analog_ports[4]{};
 	uint32_t m_fp_analog_ports[2]{};
-	uint32_t m_fp_lenght[2]{};
+	uint32_t m_fp_length[2]{};
 	uint8_t m_fp_clock = 0;
 	uint8_t m_fp_state = 0;
-	uint8_t m_framenum = 0;
 	uint8_t m_adsp_ireg = 0;
 	offs_t m_adsp_ireg_base = 0;
 	offs_t m_adsp_incs = 0;
@@ -138,30 +138,29 @@ private:
 	std::unique_ptr<rgb_t[]> m_palette;
 	std::unique_ptr<uint32_t[]> m_polydata_buffer;
 	uint32_t m_polydata_count = 0;
-	int m_lastscan = 0;
-	int m_video_changed = 0;
+	int32_t m_lastscan = 0;
+	bool m_video_changed = false;
 	std::unique_ptr<gaelco3d_renderer> m_poly;
 
 	void irq_ack_w(uint16_t data);
 	uint16_t sound_status_r(offs_t offset, uint16_t mem_mask = ~0);
 	void sound_status_w(uint16_t data);
-	DECLARE_WRITE_LINE_MEMBER(analog_port_clock_w);
-	DECLARE_WRITE_LINE_MEMBER(analog_port_latch_w);
+	void analog_port_clock_w(int state);
+	void analog_port_latch_w(int state);
 	uint32_t tms_m68k_ram_r(offs_t offset);
 	void tms_m68k_ram_w(offs_t offset, uint32_t data);
 	void tms_iack_w(offs_t offset, uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(tms_reset_w);
-	DECLARE_WRITE_LINE_MEMBER(tms_irq_w);
-	DECLARE_WRITE_LINE_MEMBER(tms_control3_w);
+	void tms_reset_w(int state);
+	void tms_irq_w(int state);
+	void tms_control3_w(int state);
 	void adsp_control_w(offs_t offset, uint16_t data);
 	void adsp_rombank_w(offs_t offset, uint16_t data);
-	DECLARE_WRITE_LINE_MEMBER(radikalb_lamp_w);
-	DECLARE_WRITE_LINE_MEMBER(unknown_137_w);
-	DECLARE_WRITE_LINE_MEMBER(unknown_13a_w);
-	void gaelco3d_render_w(uint32_t data);
-	void gaelco3d_paletteram_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
-	void gaelco3d_paletteram_020_w(offs_t offset, uint32_t data, uint32_t mem_mask = ~0);
-	DECLARE_WRITE_LINE_MEMBER(ser_irq);
+	void unknown_137_w(int state);
+	void unknown_13a_w(int state);
+	void render_w(uint32_t data);
+	void paletteram_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
+	void paletteram_020_w(offs_t offset, uint32_t data, uint32_t mem_mask = ~0);
+	void ser_irq(int state);
 	uint16_t eeprom_data_r(offs_t offset, uint16_t mem_mask = ~0);
 
 	DECLARE_MACHINE_RESET(gaelco3d2);
@@ -171,13 +170,13 @@ private:
 	TIMER_DEVICE_CALLBACK_MEMBER(adsp_autobuffer_irq);
 	void gaelco3d_render(screen_device &screen);
 	void adsp_tx_callback(offs_t offset, uint32_t data);
-	DECLARE_WRITE_LINE_MEMBER(fp_analog_clock_w);
+	void fp_analog_clock_w(int state);
 
-	void adsp_data_map(address_map &map);
-	void adsp_program_map(address_map &map);
-	void main020_map(address_map &map);
-	void main_map(address_map &map);
-	void tms_map(address_map &map);
+	void adsp_data_map(address_map &map) ATTR_COLD;
+	void adsp_program_map(address_map &map) ATTR_COLD;
+	void main020_map(address_map &map) ATTR_COLD;
+	void main_map(address_map &map) ATTR_COLD;
+	void tms_map(address_map &map) ATTR_COLD;
 };
 
 #endif // MAME_GAELCO_GAELCO3D_H

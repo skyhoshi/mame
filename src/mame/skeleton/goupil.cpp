@@ -76,7 +76,7 @@ public:
 
 	void base(machine_config &config);
 protected:
-	virtual void machine_reset() override;
+	virtual void machine_reset() override ATTR_COLD;
 
 	required_device<m6808_cpu_device> m_maincpu;
 	required_device<acia6850_device> m_acia;
@@ -110,17 +110,17 @@ public:
 
 	void via_video_pba_w(uint8_t data);
 	void via_video_pbb_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(via_video_ca2_w);
+	void via_video_ca2_w(int state);
 
 	void goupil_g1(machine_config &config);
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	TIMER_CALLBACK_MEMBER(scanline_tick);
 
 private:
-	void mem(address_map &map);
+	void mem(address_map &map) ATTR_COLD;
 
 	required_device<ef9364_device> m_ef9364;
 
@@ -148,7 +148,7 @@ public:
 	void goupil_g2(machine_config &config);
 
 private:
-	void mem(address_map &map);
+	void mem(address_map &map) ATTR_COLD;
 
 	required_device<ram_device>     m_visu24x80_ram;
 	required_region_ptr<uint8_t>    m_visu24x80_rom;
@@ -467,7 +467,7 @@ void goupil_g1_state::via_video_pbb_w(uint8_t data)
 	m_via_video_pbb_data = data;
 }
 
-WRITE_LINE_MEMBER( goupil_g1_state::via_video_ca2_w )
+void goupil_g1_state::via_video_ca2_w(int state)
 {
 	if (!m_old_state_ca2 && state)
 	{

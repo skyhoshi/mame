@@ -19,7 +19,7 @@
 #include "bus/rs232/rs232.h"
 #include "machine/6522via.h"
 #include "machine/6821pia.h"
-#include "machine/mos6530n.h"
+#include "machine/mos6530.h"
 #include "machine/ram.h"
 #include "video/dl1416.h"
 #include "emupal.h"
@@ -68,7 +68,7 @@ public:
 	DECLARE_INPUT_CHANGED_MEMBER(reset_button);
 
 private:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 	void aim65_palette(palette_device &palette) const;
 	void u1_pa_w(u8 data);
@@ -94,7 +94,7 @@ private:
 
 	std::pair<std::error_condition, std::string> load_cart(device_image_interface &image, generic_slot_device *slot, const char *slot_tag);
 
-	void mem_map(address_map &map);
+	void mem_map(address_map &map) ATTR_COLD;
 
 	optional_device<palette_device> m_palette;
 	uint8_t m_riot_port_a = 0U;
@@ -125,7 +125,7 @@ private:
 	required_device<via6522_device> m_via0;
 	required_device<via6522_device> m_via1;
 	required_device<pia6821_device> m_pia;
-	required_device<mos6532_new_device> m_riot;
+	required_device<mos6532_device> m_riot;
 	required_ioport_array<8> m_io_keyboard;
 };
 

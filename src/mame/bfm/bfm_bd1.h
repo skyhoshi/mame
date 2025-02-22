@@ -27,20 +27,20 @@ public:
 	void shift_clock(int state);
 	void setdata(int segdata, int data);
 	uint16_t set_display(uint16_t segin);
-	DECLARE_WRITE_LINE_MEMBER( sclk );
-	DECLARE_WRITE_LINE_MEMBER( data );
-	DECLARE_WRITE_LINE_MEMBER( por );
+	void sclk(int state);
+	void data(int state);
+	void por(int state);
 
 protected:
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 	virtual void device_post_load() override;
 
 private:
-	static const uint8_t AT_NORMAL  = 0x00;
-	static const uint8_t AT_FLASH   = 0x01;
-	static const uint8_t AT_BLANK   = 0x02;
-	static const uint8_t AT_FLASHED = 0x80;   // set when character should be blinked off
+	static constexpr uint8_t AT_NORMAL  = 0x00;
+	static constexpr uint8_t AT_FLASH   = 0x01;
+	static constexpr uint8_t AT_BLANK   = 0x02;
+	static constexpr uint8_t AT_FLASHED = 0x80;   // set when character should be blinked off
 
 	std::unique_ptr<output_finder<16> > m_outputs;
 	uint8_t m_port_val;

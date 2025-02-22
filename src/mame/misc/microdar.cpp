@@ -67,9 +67,12 @@ ________________________________________________________________________________
 |  YES  | Far West            | Compumatic        | Standard Microdar SPD with Philips REF34VA                          | Electromechanical shooting |
 |  YES  | Minidart            | Compumatic        | Compumatic Microdard-V6 PCB. Atmel AT89S51 instead of the REF34 MCU | Darts                      |
 |  NO   | Party Darts         | Compumatic        | More info: http://www.recreativas.org/party-darts-4906-compumatic   | Darts                      |
+|  NO   | Compudar            | Compumatic        | Standard Microdar with Philips REF34VA                              | Darts                      |
 |  YES  | Diana Bifuca        | Compumatic/Bifuca | Standard Microdar SPD with Philips REF34VA. "Bifuca" string on ROM  | Darts                      |
 |  YES  | Diana Olakoa        | Compumatic/Olaoka | Compumatic Microdard-V5 PCB (REF0034 + REF0032 + REF0096)           | Darts                      |
 |  YES  | Covidarts           | Covielsa          | Not from Compumatic, but similar hardware. 80C31 (ROMless MCU)      | Darts                      |
+|  NO   | Top Darts           | unknown           | Large PCB that combines a Microdar PCB with the LED control PCB     | Darts                      |
+|  NO   | Western Darts       | unknown           | Standard Microdar with Philips REF34VA                              | Darts                      |
 |  NO   | Diamant             | unknown           | Newer PCB with Philips REF34VA and additional Compumatic custom ICs | Darts                      |
 |  NO   | Tiger Dart          | unknown           | Standard Microdar SPD with Philips REF34VA                          | Darts                      |
 |  NO   | Champion            | unknown           | ProSPDP PCB. https://www.recreativas.org/champion-6137-compumatic   | Darts                      |
@@ -102,8 +105,8 @@ public:
 	void covidarts(machine_config &config);
 
 private:
-	void prog_map(address_map &map);
-	void ext_map(address_map &map);
+	void prog_map(address_map &map) ATTR_COLD;
+	void ext_map(address_map &map) ATTR_COLD;
 
 	required_device<mcs51_cpu_device> m_maincpu;
 	required_device<i2cmem_device> m_eeprom;
@@ -498,12 +501,12 @@ ROM_END
 } // anonymous namespace
 
 
-GAME(199?, dibifuca,   0,        microdar,  microdar, microdar_state, empty_init, ROT0, "Compumatic / Bifuca", "Diana Bifuca (v9.25)",                          MACHINE_IS_SKELETON_MECHANICAL)
-GAME(199?, dibif743,   dibifuca, microdar,  microdar, microdar_state, empty_init, ROT0, "Compumatic / Bifuca", "Diana Bifuca (v7.43)",                          MACHINE_IS_SKELETON_MECHANICAL)
-GAME(199?, dibif727,   dibifuca, microdar,  microdar, microdar_state, empty_init, ROT0, "Compumatic / Bifuca", "Diana Bifuca (v7.27)",                          MACHINE_IS_SKELETON_MECHANICAL)
-GAME(1997, dibifpspdp, dibifuca, prospdp,   microdar, microdar_state, empty_init, ROT0, "Compumatic / Bifuca", "Diana Bifuca (unknown version, ProSPDP based)", MACHINE_IS_SKELETON_MECHANICAL)
-GAME(1997, cfarwest,   0,        microdar,  microdar, microdar_state, empty_init, ROT0, "Compumatic",          "Far West (Compumatic)",                         MACHINE_IS_SKELETON_MECHANICAL)
-GAME(1997, diolakoa,   0,        microdv5,  microdar, microdar_state, empty_init, ROT0, "Compumatic / Olakoa", "Diana Olakoa (v8.38)",                          MACHINE_IS_SKELETON_MECHANICAL)
-GAME(1997, diola827,   diolakoa, microdv5,  microdar, microdar_state, empty_init, ROT0, "Compumatic / Olakoa", "Diana Olakoa (v8.27)",                          MACHINE_IS_SKELETON_MECHANICAL)
-GAME(1997, covidarts,  0,        covidarts, microdar, microdar_state, empty_init, ROT0, "Covielsa",            "Covidarts",                                     MACHINE_IS_SKELETON_MECHANICAL)
-GAME(2009, minidart,   0,        prospdp,   microdar, microdar_state, empty_init, ROT0, "Compumatic",          "Minidart",                                      MACHINE_IS_SKELETON_MECHANICAL)
+GAME(199?, dibifuca,   0,        microdar,  microdar, microdar_state, empty_init, ROT0, "Compumatic / Bifuca", "Diana Bifuca (v9.25)",                          MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK)
+GAME(199?, dibif743,   dibifuca, microdar,  microdar, microdar_state, empty_init, ROT0, "Compumatic / Bifuca", "Diana Bifuca (v7.43)",                          MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK)
+GAME(199?, dibif727,   dibifuca, microdar,  microdar, microdar_state, empty_init, ROT0, "Compumatic / Bifuca", "Diana Bifuca (v7.27)",                          MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK)
+GAME(1997, dibifpspdp, dibifuca, prospdp,   microdar, microdar_state, empty_init, ROT0, "Compumatic / Bifuca", "Diana Bifuca (unknown version, ProSPDP based)", MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK)
+GAME(1997, cfarwest,   0,        microdar,  microdar, microdar_state, empty_init, ROT0, "Compumatic",          "Far West (Compumatic)",                         MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK)
+GAME(1997, diolakoa,   0,        microdv5,  microdar, microdar_state, empty_init, ROT0, "Compumatic / Olakoa", "Diana Olakoa (v8.38)",                          MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK)
+GAME(1997, diola827,   diolakoa, microdv5,  microdar, microdar_state, empty_init, ROT0, "Compumatic / Olakoa", "Diana Olakoa (v8.27)",                          MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK)
+GAME(1997, covidarts,  0,        covidarts, microdar, microdar_state, empty_init, ROT0, "Covielsa",            "Covidarts",                                     MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK)
+GAME(2009, minidart,   0,        prospdp,   microdar, microdar_state, empty_init, ROT0, "Compumatic",          "Minidart",                                      MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK)

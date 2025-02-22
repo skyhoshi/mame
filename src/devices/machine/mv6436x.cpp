@@ -11,7 +11,6 @@
 #include "emu.h"
 #include "mv6436x.h"
 
-//#define LOG_GENERAL    (1U << 0)
 #define LOG_PCI_CONFIG (1U << 1)
 #define LOG_PCI_MEM    (1U << 2)
 #define LOG_PCI_IO     (1U << 3)
@@ -1138,8 +1137,7 @@ void mv64361_pci_host_device::device_start()
 {
 	pci_host_device::device_start();
 
-	memory_space = &space(AS_PCI_MEM);
-	io_space = &space(AS_PCI_IO);
+	set_spaces(&space(AS_PCI_MEM), &space(AS_PCI_IO));
 
 	memory_window_start = 0;
 	memory_window_end = 0xffffffff;

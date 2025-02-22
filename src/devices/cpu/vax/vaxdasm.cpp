@@ -23,36 +23,10 @@ u32 vax_disassembler::opcode_alignment() const
 	return 1;
 }
 
-enum class vax_disassembler::mode : u8
-{
-	none,
-	rb, srb, urb, cntb, rw, srw, urw, mskw, rl, srl, url, posl, prl, rq, srq, urq, ro, uro,
-	mb, mw, ml, mq, mo,
-	wb, ww, wl, wq, wo,
-	ab, aw, al, aq, ao,
-	bb, bw,
-	vb
-};
-
 namespace {
 
 using namespace std::literals;
 using mode = vax_disassembler::mode;
-
-static constexpr bool is_read_mode(mode m)
-{
-	switch (m)
-	{
-	case mode::rb: case mode::srb: case mode::urb: case mode::cntb:
-	case mode::rw: case mode::srw: case mode::urw: case mode::mskw:
-	case mode::rl: case mode::srl: case mode::url: case mode::posl: case mode::prl:
-	case mode::rq: case mode::urq:
-	case mode::ro: case mode::uro:
-		return true;
-	default:
-		return false;
-	}
-}
 
 static constexpr bool is_address_mode(mode m)
 {
@@ -380,12 +354,12 @@ static const vax_disassembler::opdef s_nonprefix_ops[0x100 - 3] =
 	{ "DIVP"sv,   { mode::rw,   mode::ab,   mode::rw,   mode::ab,   mode::rw,   mode::ab   }, 0 },
 	{ "MOVC3"sv,  { mode::rw,   mode::ab,   mode::ab,   mode::none, mode::none, mode::none }, 0 },
 	{ "CMPC3"sv,  { mode::rw,   mode::ab,   mode::ab,   mode::none, mode::none, mode::none }, 0 },
-	{ "SCANC"sv,  { mode::rw,   mode::ab,   mode::ab,   mode::rb,   mode::none, mode::none }, 0 },
-	{ "SPANC"sv,  { mode::rw,   mode::ab,   mode::ab,   mode::rb,   mode::none, mode::none }, 0 },
-	{ "MOVC5"sv,  { mode::rw,   mode::ab,   mode::rb,   mode::rw,   mode::ab,   mode::none }, 0 },
-	{ "CMPC5"sv,  { mode::rw,   mode::ab,   mode::rb,   mode::rw,   mode::ab,   mode::none }, 0 },
-	{ "MOVTC"sv,  { mode::rw,   mode::ab,   mode::rb,   mode::ab,   mode::rw,   mode::ab   }, 0 },
-	{ "MOVTUC"sv, { mode::rw,   mode::ab,   mode::rb,   mode::ab,   mode::rw,   mode::ab   }, 0 },
+	{ "SCANC"sv,  { mode::rw,   mode::ab,   mode::ab,   mode::urb,  mode::none, mode::none }, 0 },
+	{ "SPANC"sv,  { mode::rw,   mode::ab,   mode::ab,   mode::urb,  mode::none, mode::none }, 0 },
+	{ "MOVC5"sv,  { mode::rw,   mode::ab,   mode::urb,  mode::rw,   mode::ab,   mode::none }, 0 },
+	{ "CMPC5"sv,  { mode::rw,   mode::ab,   mode::urb,  mode::rw,   mode::ab,   mode::none }, 0 },
+	{ "MOVTC"sv,  { mode::rw,   mode::ab,   mode::urb,  mode::ab,   mode::rw,   mode::ab   }, 0 },
+	{ "MOVTUC"sv, { mode::rw,   mode::ab,   mode::urb,  mode::ab,   mode::rw,   mode::ab   }, 0 },
 
 	{ "BSBW"sv,   { mode::bw,   mode::none, mode::none, mode::none, mode::none, mode::none }, vax_disassembler::STEP_OVER },
 	{ "BRW"sv,    { mode::bw,   mode::none, mode::none, mode::none, mode::none, mode::none }, 0 },
@@ -397,8 +371,8 @@ static const vax_disassembler::opdef s_nonprefix_ops[0x100 - 3] =
 	{ "CMPP4"sv,  { mode::rw,   mode::ab,   mode::rw,   mode::ab,   mode::none, mode::none }, 0 },
 	{ "EDITPC"sv, { mode::rw,   mode::ab,   mode::ab,   mode::ab,   mode::none, mode::none }, 0 },
 	{ "MATCHC"sv, { mode::rw,   mode::ab,   mode::rw,   mode::ab,   mode::none, mode::none }, 0 },
-	{ "LOCC"sv,   { mode::rb,   mode::rw,   mode::ab,   mode::none, mode::none, mode::none }, 0 },
-	{ "SKPC"sv,   { mode::rb,   mode::rw,   mode::ab,   mode::none, mode::none, mode::none }, 0 },
+	{ "LOCC"sv,   { mode::urb,  mode::rw,   mode::ab,   mode::none, mode::none, mode::none }, 0 },
+	{ "SKPC"sv,   { mode::urb,  mode::rw,   mode::ab,   mode::none, mode::none, mode::none }, 0 },
 	{ "MOVZWL"sv, { mode::rw,   mode::wl,   mode::none, mode::none, mode::none, mode::none }, 0 },
 	{ "ACBW"sv,   { mode::srw,  mode::srw,  mode::mw,   mode::bw,   mode::none, mode::none }, vax_disassembler::STEP_COND },
 	{ "MOVAW"sv,  { mode::aw,   mode::wl,   mode::none, mode::none, mode::none, mode::none }, 0 },
@@ -954,6 +928,7 @@ offs_t vax_disassembler::disassemble_inst(std::ostream &stream, const vax_disass
 					else switch (inst.operand[n])
 					{
 					case mode::rb:
+					case mode::ab: // Immediate bytes may be used as MOVCn sources, at least with a length of 0
 						format_immediate(stream, opcodes.r8(pc++));
 						break;
 
@@ -1117,4 +1092,24 @@ offs_t vax_disassembler::disassemble(std::ostream &stream, offs_t pc, const vax_
 	}
 	else
 		return disassemble_inst(stream, s_nonprefix_ops[op], pc, ppc, opcodes);
+}
+
+bool vax_disassembler::is_read_mode(vax_disassembler::mode m)
+{
+	switch (m)
+	{
+	case mode::rb: case mode::srb: case mode::urb: case mode::cntb:
+	case mode::rw: case mode::srw: case mode::urw: case mode::mskw:
+	case mode::rl: case mode::srl: case mode::url: case mode::posl: case mode::prl:
+	case mode::rq: case mode::urq:
+	case mode::ro: case mode::uro:
+		return true;
+	default:
+		return false;
+	}
+}
+
+const vax_disassembler::mode *vax_disassembler::get_operands(u8 op)
+{
+	return s_nonprefix_ops[op].operand;
 }

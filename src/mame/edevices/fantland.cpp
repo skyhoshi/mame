@@ -334,7 +334,7 @@ void borntofi_state::msm5205_w(offs_t offset, uint8_t data)
 }
 
 template<int Voice>
-WRITE_LINE_MEMBER(borntofi_state::adpcm_int)
+void borntofi_state::adpcm_int(int state)
 {
 	if (!m_adpcm_playing[Voice])
 		return;
@@ -686,7 +686,7 @@ INPUT_PORTS_END
 ***************************************************************************/
 
 template <int Player>
-CUSTOM_INPUT_MEMBER(fantland_state::wheelrun_wheel_r)
+ioport_value fantland_state::wheelrun_wheel_r()
 {
 	int delta = m_wheel[Player]->read();
 	delta = (delta & 0x7f) - (delta & 0x80) + 4;
@@ -704,7 +704,7 @@ static INPUT_PORTS_START( wheelrun )
 	PORT_BIT( 0x02, IP_ACTIVE_LOW,  IPT_BUTTON1 ) PORT_PLAYER(1)
 	PORT_BIT( 0x04, IP_ACTIVE_LOW,  IPT_UNKNOWN )
 	PORT_BIT( 0x08, IP_ACTIVE_LOW,  IPT_UNKNOWN )
-	PORT_BIT( 0x70, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(fantland_state, wheelrun_wheel_r<0>)
+	PORT_BIT( 0x70, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(fantland_state::wheelrun_wheel_r<0>))
 	PORT_BIT( 0x80, IP_ACTIVE_LOW,  IPT_UNKNOWN )
 
 	PORT_START("53001")     // 53001
@@ -712,7 +712,7 @@ static INPUT_PORTS_START( wheelrun )
 	PORT_BIT( 0x02, IP_ACTIVE_LOW,  IPT_BUTTON1 ) PORT_PLAYER(2)
 	PORT_BIT( 0x04, IP_ACTIVE_LOW,  IPT_UNKNOWN )
 	PORT_BIT( 0x08, IP_ACTIVE_LOW,  IPT_UNKNOWN )
-	PORT_BIT( 0x70, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(fantland_state, wheelrun_wheel_r<1>)
+	PORT_BIT( 0x70, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(fantland_state::wheelrun_wheel_r<1>))
 	PORT_BIT( 0x80, IP_ACTIVE_LOW,  IPT_UNKNOWN )
 
 	PORT_START("53002")     // 53002
@@ -793,7 +793,7 @@ void fantland_state::machine_reset()
 	m_nmi_enable = 0;
 }
 
-WRITE_LINE_MEMBER(fantland_state::vblank_irq)
+void fantland_state::vblank_irq(int state)
 {
 	if (state && BIT(m_nmi_enable, 3))
 		m_maincpu->pulse_input_line(INPUT_LINE_NMI, attotime::zero);
@@ -842,7 +842,7 @@ void fantland_state::fantland(machine_config &config)
 }
 
 
-WRITE_LINE_MEMBER(fantland_state::galaxygn_sound_irq)
+void fantland_state::galaxygn_sound_irq(int state)
 {
 	m_audiocpu->set_input_line_and_vector(0, state ? ASSERT_LINE : CLEAR_LINE, 0x80/4); // I8088
 }

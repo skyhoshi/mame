@@ -43,8 +43,13 @@ Todo:
 #include "softlist_dev.h"
 #include "speaker.h"
 
-#include "formats/imageutl.h"
 #include "formats/vt_cas.h"
+#include "multibyte.h"
+
+#define LOG_VTECH1_LATCH (1U << 1)
+
+#define VERBOSE (0)
+#include "logmacro.h"
 
 
 namespace {
@@ -52,8 +57,6 @@ namespace {
 /***************************************************************************
     CONSTANTS & MACROS
 ***************************************************************************/
-
-#define LOG_VTECH1_LATCH 0
 
 #define VTECH1_CLK        3579500
 #define VZ300_XTAL1_CLK   XTAL(17'734'470)
@@ -81,10 +84,10 @@ public:
 
 	void vtech1(machine_config &config);
 
-	void laser110_mem(address_map &map);
-	void laser210_mem(address_map &map);
-	void laser310_mem(address_map &map);
-	void vtech1_io(address_map &map);
+	void laser110_mem(address_map &map) ATTR_COLD;
+	void laser210_mem(address_map &map) ATTR_COLD;
+	void laser310_mem(address_map &map) ATTR_COLD;
+	void vtech1_io(address_map &map) ATTR_COLD;
 
 protected:
 	required_device<cpu_device> m_maincpu;
@@ -120,7 +123,7 @@ public:
 	void laser210(machine_config &config);
 
 protected:
-	void machine_start() override;
+	void machine_start() override ATTR_COLD;
 
 private:
 	memory_share_creator<uint8_t> m_vram;
@@ -139,7 +142,7 @@ public:
 	void laser310h(machine_config &config);
 
 protected:
-	void machine_start() override;
+	void machine_start() override ATTR_COLD;
 
 private:
 	memory_share_creator<uint8_t> m_vram;
@@ -148,8 +151,8 @@ private:
 	void video_bank_w(uint8_t data);
 	uint8_t mc6847_videoram_r(offs_t offset);
 
-	void vtech1_shrg_mem(address_map &map);
-	void vtech1_shrg_io(address_map &map);
+	void vtech1_shrg_mem(address_map &map) ATTR_COLD;
+	void vtech1_shrg_io(address_map &map) ATTR_COLD;
 };
 
 
@@ -173,7 +176,7 @@ SNAPSHOT_LOAD_MEMBER(vtech1_base_state::snapshot_cb)
 	pgmname[16] = '\0';
 
 	// get start and end addresses
-	uint16_t const start = pick_integer_le(header, 22, 2);
+	uint16_t const start = get_u16le(&header[22]);
 	uint16_t const end = start + image.length() - sizeof(header);
 	uint16_t const size = end - start;
 
@@ -266,8 +269,7 @@ uint8_t vtech1_base_state::keyboard_r(offs_t offset)
 
 void vtech1_base_state::latch_w(uint8_t data)
 {
-	if (LOG_VTECH1_LATCH)
-		logerror("vtech1_latch_w $%02X\n", data);
+	LOGMASKED(LOG_VTECH1_LATCH, "vtech1_latch_w $%02X\n", data);
 
 	// bit 2, cassette out (actually bits 1 and 2 perform this function, so either can be used)
 	m_cassette->output( BIT(data, 2) ? 1.0 : -1.0);

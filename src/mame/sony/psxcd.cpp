@@ -4,10 +4,10 @@
 #include "psxcd.h"
 #include "debugger.h"
 
-#define LOG_CMD  (1 << 1)
-#define LOG_MISC (1 << 2)
+#define LOG_CMD  (1U << 1)
+#define LOG_MISC (1U << 2)
 
-#define VERBOSE ( 0 )
+#define VERBOSE (0)
 #include "logmacro.h"
 
 enum cdrom_events
@@ -85,14 +85,13 @@ psxcd_device::psxcd_device(const machine_config &mconfig, const char *tag, devic
 	m_maincpu(*this, finder_base::DUMMY_TAG),
 	m_spu(*this, finder_base::DUMMY_TAG)
 {
-	set_interface("psx_cdrom");
+	set_interface("cdrom");
 }
 
 
 void psxcd_device::device_start()
 {
 	cdrom_image_device::device_start();
-	m_irq_handler.resolve_safe();
 
 	uint32_t sysclk = m_maincpu->clock() / 2;
 	start_read_delay = (sysclk / 60);

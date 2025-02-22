@@ -349,12 +349,12 @@ void nb1413m3_device::inputportsel_w(uint8_t data)
 	m_inputport = data;
 }
 
-READ_LINE_MEMBER( nb1413m3_device::busyflag_r )
+int nb1413m3_device::busyflag_r()
 {
 	return m_busyflag & 0x01;
 }
 
-WRITE_LINE_MEMBER( nb1413m3_device::busyflag_w )
+void nb1413m3_device::busyflag_w(int state)
 {
 	m_busyflag = state;
 }
@@ -635,7 +635,8 @@ void nb1413m3_device::vcrctrl_w(uint8_t data)
 	}
 }
 
-/* Nichibutsu Mahjong games share a common control panel */
+// Nichibutsu Mahjong games share a common control panel
+// The bit order is the opposite of Dynax/IGS
 INPUT_PORTS_START( nbmjcontrols )
 	PORT_START("KEY0")
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_START1 )

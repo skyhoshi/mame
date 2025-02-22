@@ -77,9 +77,9 @@ public:
 	void mikie(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	// memory pointers
@@ -100,24 +100,21 @@ private:
 	uint8_t m_irq_mask = 0;
 
 	uint8_t sh_timer_r();
-	DECLARE_WRITE_LINE_MEMBER(sh_irqtrigger_w);
-	template <uint8_t Which> DECLARE_WRITE_LINE_MEMBER(coin_counter_w);
-	DECLARE_WRITE_LINE_MEMBER(irq_mask_w);
+	void sh_irqtrigger_w(int state);
+	template <uint8_t Which> void coin_counter_w(int state);
+	void irq_mask_w(int state);
 	void videoram_w(offs_t offset, uint8_t data);
 	void colorram_w(offs_t offset, uint8_t data);
 	void palettebank_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(flipscreen_w);
 	TILE_GET_INFO_MEMBER(get_bg_tile_info);
 	void palette(palette_device &palette) const;
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	DECLARE_WRITE_LINE_MEMBER(vblank_irq);
+	void vblank_irq(int state);
 	void draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect);
-	void main_map(address_map &map);
-	void sound_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
 };
 
-
-// video
 
 /***************************************************************************
 
@@ -211,12 +208,6 @@ void mikie_state::palettebank_w(uint8_t data)
 	}
 }
 
-WRITE_LINE_MEMBER(mikie_state::flipscreen_w)
-{
-	flip_screen_set(state);
-	machine().tilemap().mark_all_dirty();
-}
-
 TILE_GET_INFO_MEMBER(mikie_state::get_bg_tile_info)
 {
 	int const code = m_videoram[tile_index] + ((m_colorram[tile_index] & 0x20) << 3);
@@ -269,8 +260,6 @@ uint32_t mikie_state::screen_update(screen_device &screen, bitmap_ind16 &bitmap,
 	return 0;
 }
 
-// machine
-
 /*************************************
  *
  *  Memory handlers
@@ -286,7 +275,7 @@ uint8_t mikie_state::sh_timer_r()
 	return clock;
 }
 
-WRITE_LINE_MEMBER(mikie_state::sh_irqtrigger_w)
+void mikie_state::sh_irqtrigger_w(int state)
 {
 	if (state)
 	{
@@ -296,12 +285,12 @@ WRITE_LINE_MEMBER(mikie_state::sh_irqtrigger_w)
 }
 
 template <uint8_t Which>
-WRITE_LINE_MEMBER(mikie_state::coin_counter_w)
+void mikie_state::coin_counter_w(int state)
 {
 	machine().bookkeeping().coin_counter_w(Which, state);
 }
 
-WRITE_LINE_MEMBER(mikie_state::irq_mask_w)
+void mikie_state::irq_mask_w(int state)
 {
 	m_irq_mask = state;
 	if (!m_irq_mask)
@@ -450,7 +439,7 @@ void mikie_state::machine_reset()
 	m_palettebank = 0;
 }
 
-WRITE_LINE_MEMBER(mikie_state::vblank_irq)
+void mikie_state::vblank_irq(int state)
 {
 	if (state && m_irq_mask)
 		m_maincpu->set_input_line(M6809_IRQ_LINE, ASSERT_LINE);
@@ -474,7 +463,7 @@ void mikie_state::mikie(machine_config &config)
 	mainlatch.q_out_cb<1>().set(FUNC(mikie_state::coin_counter_w<1>)); // COIN2
 	mainlatch.q_out_cb<2>().set(FUNC(mikie_state::sh_irqtrigger_w)); // SOUNDON
 	mainlatch.q_out_cb<3>().set_nop(); // END (not used?)
-	mainlatch.q_out_cb<6>().set(FUNC(mikie_state::flipscreen_w)); // FLIP
+	mainlatch.q_out_cb<6>().set(FUNC(mikie_state::flip_screen_set)); // FLIP
 	mainlatch.q_out_cb<7>().set(FUNC(mikie_state::irq_mask_w)); // INT
 
 	WATCHDOG_TIMER(config, "watchdog");

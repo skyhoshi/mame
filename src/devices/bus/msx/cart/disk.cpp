@@ -253,7 +253,7 @@ void msx_cart_disk_device::softlist_525(machine_config &config)
 template <bool Is35, bool IsDS>
 void msx_cart_disk_device::add_floppy_mconfig(machine_config &config)
 {
-	FLOPPY_CONNECTOR(config, "fdc:0", msx_floppies, Is35 ? (IsDS ? "35dd" : "35ssdd") : (IsDS ? "525dd" : "525ssdd"), msx_cart_disk_device::floppy_formats);
+	FLOPPY_CONNECTOR(config, "fdc:0", msx_floppies, Is35 ? (IsDS ? "35dd" : "35ssdd") : (IsDS ? "525dd" : "525ssdd"), msx_cart_disk_device::floppy_formats).enable_sound(true);
 	if (Is35)
 		softlist_35(config);
 	else
@@ -320,8 +320,8 @@ protected:
 		, m_control(0)
 	{ }
 
-	// device-level overrides
-	virtual void device_start() override;
+	// device_t implementation
+	virtual void device_start() override ATTR_COLD;
 	virtual void device_post_load() override;
 
 	u8 side_control_r();
@@ -597,8 +597,8 @@ protected:
 		, m_control(0)
 	{ }
 
-	// device-level overrides
-	virtual void device_start() override;
+	// device_t implementation
+	virtual void device_start() override ATTR_COLD;
 	virtual void device_post_load() override;
 
 	void set_control(u8 data);
@@ -731,8 +731,8 @@ protected:
 		, m_control(0)
 	{ }
 
-	// device-level overrides
-	virtual void device_start() override;
+	// device_t implementation
+	virtual void device_start() override ATTR_COLD;
 	virtual void device_post_load() override;
 
 	void control_w(u8 control);
@@ -849,7 +849,7 @@ public:
 	virtual std::error_condition initialize_cartridge(std::string &message) override;
 
 protected:
-	// device-level overrides
+	// device_t implementation
 	virtual void device_start() override { }
 	virtual void device_add_mconfig(machine_config &config) override
 	{
@@ -892,9 +892,9 @@ public:
 	virtual std::error_condition initialize_cartridge(std::string &message) override;
 
 protected:
-	// device-level overrides
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual void device_start() override;
+	// device_t implementation
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
 	virtual void device_post_load() override;
 
 	u8 status_r();
@@ -1043,9 +1043,9 @@ public:
 	virtual std::error_condition initialize_cartridge(std::string &message) override;
 
 protected:
-	// device-level overrides
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual void device_start() override;
+	// device_t implementation
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
 	virtual void device_post_load() override;
 
 	void set_side_motor();
@@ -1196,9 +1196,9 @@ public:
 	virtual std::error_condition initialize_cartridge(std::string &message) override;
 
 protected:
-	// device-level overrides
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual void device_start() override;
+	// device_t implementation
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
 	virtual void device_post_load() override;
 
 	void set_side_motor();
@@ -1299,9 +1299,9 @@ public:
 	virtual std::error_condition initialize_cartridge(std::string &message) override;
 
 protected:
-	// device-level overrides
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual void device_start() override;
+	// device_t implementation
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
 	virtual void device_post_load() override;
 
 	void control_w(u8 control);

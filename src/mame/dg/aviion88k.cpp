@@ -38,8 +38,6 @@
 
 #include "debugger.h"
 
-#define LOG_GENERAL (1U << 0)
-
 //#define VERBOSE (LOG_GENERAL)
 #include "logmacro.h"
 
@@ -74,13 +72,13 @@ public:
 
 protected:
 	// driver_device overrides
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	// address maps
-	void cpu_map(address_map &map);
+	void cpu_map(address_map &map) ATTR_COLD;
 
-	void pit_timer(int param) { LOG("pit_timer<%d> expired\n", param); }
+	void pit_timer(s32 param) { LOG("pit_timer<%d> expired\n", param); }
 
 	template <unsigned N> u32 pit_cnt_r() { return m_pit[N]->enabled() ? m_pit[N]->elapsed().as_ticks(m_cpu->clock()) : 0; }
 	template <unsigned N> u32 pit_sts_r() { return m_pit_cmd[N]; }
@@ -302,4 +300,4 @@ ROM_END
 } // anonymous namespace
 
 /*   YEAR   NAME         PARENT  COMPAT  MACHINE      INPUT  CLASS            INIT  COMPANY         FULLNAME       FLAGS */
-COMP(1991,  aviion_4600, 0,      0,      aviion_4600, 0,     aviion88k_state, init, "Data General", "AViiON 4600", MACHINE_IS_SKELETON)
+COMP(1991,  aviion_4600, 0,      0,      aviion_4600, 0,     aviion88k_state, init, "Data General", "AViiON 4600", MACHINE_NO_SOUND | MACHINE_NOT_WORKING)

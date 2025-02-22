@@ -7,7 +7,6 @@
 
 #include "cpu/m6502/rp2a03.h"
 #include "sound/nes_apu_vt.h"
-#include "m6502_vtscr.h"
 #include "m6502_swap_op_d5_d6.h"
 #include "video/ppu2c0x_vt.h"
 #include "screen.h"
@@ -18,7 +17,7 @@ class nes_vt02_vt03_soc_device : public device_t, public device_memory_interface
 public:
 	nes_vt02_vt03_soc_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
-	void program_map(address_map &map);
+	void program_map(address_map &map) ATTR_COLD;
 
 	void vt03_8000_mapper_w(offs_t offset, uint8_t data);
 
@@ -58,18 +57,18 @@ public:
 protected:
 	nes_vt02_vt03_soc_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock);
 
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 	virtual space_config_vector memory_space_config() const override;
-	virtual void device_add_mconfig(machine_config &config) override;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
 
 	required_device<cpu_device> m_maincpu;
 	required_device<screen_device> m_screen;
 	required_device<ppu_vt03_device> m_ppu;
 	required_device<nes_apu_vt_device> m_apu;
 
-	void nes_vt_map(address_map& map);
+	void nes_vt_map(address_map &map) ATTR_COLD;
 
 	uint32_t get_banks(uint8_t bnk);
 	void update_banks();
@@ -125,7 +124,7 @@ protected:
 	std::unique_ptr<uint8_t[]> m_ntram;
 	std::unique_ptr<uint8_t[]> m_chrram;
 
-	DECLARE_WRITE_LINE_MEMBER(apu_irq);
+	void apu_irq(int state);
 	uint8_t apu_read_mem(offs_t offset);
 
 	uint8_t external_space_read(offs_t offset);
@@ -177,8 +176,18 @@ protected:
 	virtual void device_add_mconfig(machine_config& config) override;
 };
 
+class nes_vt02_vt03_soc_scramble_pal_device : public nes_vt02_vt03_soc_device
+{
+public:
+	nes_vt02_vt03_soc_scramble_pal_device(const machine_config& mconfig, const char* tag, device_t* owner, uint32_t clock);
+
+protected:
+	virtual void device_add_mconfig(machine_config& config) override;
+};
+
 DECLARE_DEVICE_TYPE(NES_VT02_VT03_SOC, nes_vt02_vt03_soc_device)
 DECLARE_DEVICE_TYPE(NES_VT02_VT03_SOC_PAL, nes_vt02_vt03_soc_pal_device)
 DECLARE_DEVICE_TYPE(NES_VT02_VT03_SOC_SCRAMBLE, nes_vt02_vt03_soc_scramble_device)
+DECLARE_DEVICE_TYPE(NES_VT02_VT03_SOC_SCRAMBLE_PAL, nes_vt02_vt03_soc_scramble_pal_device)
 
 #endif // MAME_NINTENDO_NES_VT_SOC_H

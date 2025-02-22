@@ -32,19 +32,18 @@ public:
 	rtc3430042_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock, bool hasBigPRAM);
 	rtc3430042_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
-	DECLARE_WRITE_LINE_MEMBER( ce_w );
-	DECLARE_WRITE_LINE_MEMBER( clk_w );
-	DECLARE_READ_LINE_MEMBER( data_r );
-	DECLARE_WRITE_LINE_MEMBER( data_w );
+	void ce_w(int state);
+	void clk_w(int state);
+	int data_r();
+	void data_w(int state);
 
 	// 1 second square wave output
 	auto cko_cb() { return m_cko_cb.bind(); }
 
 protected:
 	// device-level overrides
-	virtual void device_resolve_objects() override;
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 	// device_rtc_interface overrides
 	virtual void rtc_clock_updated(int year, int month, int day, int day_of_week, int hour, int minute, int second) override;

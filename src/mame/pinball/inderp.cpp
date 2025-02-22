@@ -54,7 +54,7 @@ public:
 	void init_1player();
 
 private:
-	DECLARE_WRITE_LINE_MEMBER(clock_tick);
+	void clock_tick(int state);
 	u8 m_key_row = 0U;
 	u16 m_t_c = 0U;
 	u8 m_segment[5]{};
@@ -66,9 +66,9 @@ private:
 	void lamps_w(offs_t, u8);
 	void display_w(offs_t, u8);
 	u16 seg8to14(u16 data);
-	void mem_map(address_map &map);
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	void mem_map(address_map &map) ATTR_COLD;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 	required_device<m6504_device> m_maincpu;
 	required_ioport_array<11> m_io_keyboard;
 	output_finder<48> m_digits;
@@ -297,7 +297,7 @@ u16 inderp_state::seg8to14(u16 data)
 	return bitswap<10>(data,7,7,6,6,5,4,3,2,1,0);
 }
 
-WRITE_LINE_MEMBER( inderp_state::clock_tick )
+void inderp_state::clock_tick(int state)
 {
 	m_t_c++;
 	if (m_t_c == 0x173)
@@ -392,7 +392,7 @@ ROM_END
 
 } // Anonymous namespace
 
-GAME( 1979, centauri,  0,        inderp, inderp, inderp_state, init_1player, ROT0, "Inder", "Centaur (Inder) (set 1)", MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME( 1979, centauri2, centauri, inderp, inderp, inderp_state, init_1player, ROT0, "Inder", "Centaur (Inder) (set 2)", MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME( 1979, topaz,     0,        inderp, inderp, inderp_state, empty_init,   ROT0, "Inder", "Topaz (Inder)",           MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME( 1980, skatebrd,  0,        inderp, inderp, inderp_state, empty_init,   ROT0, "Inder", "Skate Board (Inder)",     MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
+GAME( 1979, centauri,  0,        inderp, inderp, inderp_state, init_1player, ROT0, "Inder", "Centaur (Inder) (set 1)", MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME( 1979, centauri2, centauri, inderp, inderp, inderp_state, init_1player, ROT0, "Inder", "Centaur (Inder) (set 2)", MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME( 1979, topaz,     0,        inderp, inderp, inderp_state, empty_init,   ROT0, "Inder", "Topaz (Inder)",           MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME( 1980, skatebrd,  0,        inderp, inderp, inderp_state, empty_init,   ROT0, "Inder", "Skate Board (Inder)",     MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )

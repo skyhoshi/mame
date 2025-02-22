@@ -105,7 +105,7 @@ void crtc_ega_device::register_w(uint8_t data)
 					m_vert_blank_start  = ((data & 0x08) << 5) | (m_vert_blank_start & 0x00ff);
 					m_line_compare      = ((data & 0x10) << 4) | (m_line_compare & 0x00ff);
 					break;
-		case 0x08:  m_preset_row_scan   =   data & 0x1f;
+		case 0x08:  m_preset_row_latch  =   data & 0x1f;
 					break;
 		case 0x09:  m_max_ras_addr      =   data & 0x1f;
 					break;
@@ -238,9 +238,7 @@ void crtc_ega_device::set_de(int state)
 	if (m_de != state)
 	{
 		m_de = state;
-
-		if (!m_res_out_de_cb.isnull())
-			m_res_out_de_cb(m_de);
+		m_res_out_de_cb(m_de);
 	}
 }
 
@@ -250,9 +248,7 @@ void crtc_ega_device::set_hsync(int state)
 	if (m_hsync != state)
 	{
 		m_hsync = state;
-
-		if (!m_res_out_hsync_cb.isnull())
-			m_res_out_hsync_cb(m_hsync);
+		m_res_out_hsync_cb(m_hsync);
 	}
 }
 
@@ -262,9 +258,7 @@ void crtc_ega_device::set_vsync(int state)
 	if (m_vsync != state)
 	{
 		m_vsync = state;
-
-		if (!m_res_out_vsync_cb.isnull())
-			m_res_out_vsync_cb(m_vsync);
+		m_res_out_vsync_cb(m_vsync);
 	}
 }
 
@@ -274,13 +268,14 @@ void crtc_ega_device::set_vblank(int state)
 	if (m_vblank != state)
 	{
 		m_vblank = state;
-
-		if (!m_res_out_vblank_cb.isnull())
-			m_res_out_vblank_cb(m_vblank);
-		if (!m_res_out_irq_cb.isnull() && !m_irq_enable)
+		m_res_out_vblank_cb(m_vblank);
+		if (!m_irq_enable)
 			m_res_out_irq_cb(m_vblank);
 		if (state)
+		{
 			m_disp_start_addr = m_start_addr_latch;
+			m_preset_row_scan = m_preset_row_latch;
+		}
 	}
 }
 
@@ -290,9 +285,7 @@ void crtc_ega_device::set_cur(int state)
 	if (m_cur != state)
 	{
 		m_cur = state;
-
-//      if (!m_res_out_cur_cb.isnull())
-//          m_res_out_cur_cb(m_cur);
+//      m_res_out_cur_cb(m_cur);
 	}
 }
 
@@ -596,13 +589,6 @@ void crtc_ega_device::device_start()
 	assert(m_clock > 0);
 	assert(m_hpixels_per_column > 0);
 
-	/* resolve callbacks */
-	m_res_out_de_cb.resolve();
-	m_res_out_hsync_cb.resolve();
-	m_res_out_vsync_cb.resolve();
-	m_res_out_vblank_cb.resolve();
-	m_res_out_irq_cb.resolve();
-
 	/* bind delegates */
 	m_begin_update_cb.resolve();
 	m_row_update_cb.resolve();
@@ -701,20 +687,11 @@ void crtc_ega_device::device_start()
 void crtc_ega_device::device_reset()
 {
 	/* internal registers other than status remain unchanged, all outputs go low */
-	if (!m_res_out_de_cb.isnull())
-		m_res_out_de_cb(false);
-
-	if (!m_res_out_hsync_cb.isnull())
-		m_res_out_hsync_cb(false);
-
-	if (!m_res_out_vsync_cb.isnull())
-		m_res_out_vsync_cb(false);
-
-	if (!m_res_out_vblank_cb.isnull())
-		m_res_out_vblank_cb(false);
-
-	if(!m_res_out_irq_cb.isnull())
-		m_res_out_irq_cb(false);
+	m_res_out_de_cb(false);
+	m_res_out_hsync_cb(false);
+	m_res_out_vsync_cb(false);
+	m_res_out_vblank_cb(false);
+	m_res_out_irq_cb(false);
 
 	if (!m_line_timer->enabled())
 	{

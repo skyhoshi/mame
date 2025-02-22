@@ -3,12 +3,13 @@
 #include "emu.h"
 #include "breakpointswindow.h"
 
-#include "debug/debugcon.h"
-#include "debug/debugcpu.h"
-
 #include "util/xmlfile.h"
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QtGui/QActionGroup>
+#else
 #include <QtWidgets/QActionGroup>
+#endif
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QMenuBar>

@@ -33,7 +33,7 @@ DEFINE_DEVICE_TYPE(NAMCO_62XX, namco_62xx_device, "namco62", "Namco 62xx")
 namco_62xx_device::namco_62xx_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
 	device_t(mconfig, NAMCO_62XX, tag, owner, clock),
 	m_cpu(*this, "mcu"),
-	m_in(*this),
+	m_in(*this, 0),
 	m_out(*this)
 {
 }
@@ -44,11 +44,6 @@ namco_62xx_device::namco_62xx_device(const machine_config &mconfig, const char *
 
 void namco_62xx_device::device_start()
 {
-	/* resolve our read callbacks */
-	m_in.resolve_all_safe(0);
-
-	/* resolve our write callbacks */
-	m_out.resolve_all_safe();
 }
 
 //-------------------------------------------------
@@ -57,7 +52,7 @@ void namco_62xx_device::device_start()
 
 void namco_62xx_device::device_add_mconfig(machine_config &config)
 {
-	MB8843(config, m_cpu, DERIVED_CLOCK(1,1)); /* parent clock, internally divided by 6 (TODO: Correct?) */
+	MB8843(config, m_cpu, DERIVED_CLOCK(1,1)); // parent clock, internally divided by 6 (TODO: Correct?)
 //  m_cpu->read_k().set(FUNC(namco_62xx_device::namco_62xx_K_r));
 //  m_cpu->write_o().set(FUNC(namco_62xx_device::namco_62xx_O_w));
 //  m_cpu->read_r<0>().set(FUNC(namco_62xx_device::namco_62xx_R0_r));

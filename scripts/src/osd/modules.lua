@@ -16,7 +16,7 @@ end
 function addlibfromstring(str)
 	if (str==nil) then return  end
 	for w in str:gmatch("%S+") do
-		if string.starts(w,"-l")==true then
+		if string.starts(w,"-l") then
 			links {
 				string.sub(w,3)
 			}
@@ -27,7 +27,7 @@ end
 function addoptionsfromstring(str)
 	if (str==nil) then return  end
 	for w in str:gmatch("%S+") do
-		if string.starts(w,"-l")==false then
+		if not string.starts(w,"-l") then
 			linkoptions {
 				w
 			}
@@ -60,6 +60,10 @@ function osdmodulesbuild()
 		MAME_DIR .. "src/osd/interface/inputman.h",
 		MAME_DIR .. "src/osd/interface/inputseq.cpp",
 		MAME_DIR .. "src/osd/interface/inputseq.h",
+		MAME_DIR .. "src/osd/interface/midiport.h",
+		MAME_DIR .. "src/osd/interface/nethandler.cpp",
+		MAME_DIR .. "src/osd/interface/nethandler.h",
+		MAME_DIR .. "src/osd/interface/uievents.h",
 		MAME_DIR .. "src/osd/modules/debugger/debug_module.h",
 		MAME_DIR .. "src/osd/modules/debugger/debuggdbstub.cpp",
 		MAME_DIR .. "src/osd/modules/debugger/debugimgui.cpp",
@@ -378,18 +382,28 @@ function qtdebuggerbuild()
 			MOC = "moc"
 		else
 			if _OPTIONS["QT_HOME"]~=nil then
-				QMAKETST = backtick(_OPTIONS["QT_HOME"] .. "/bin/qmake --version 2>/dev/null")
-				if (QMAKETST=='') then
-					print("Qt's Meta Object Compiler (moc) wasn't found!")
-					os.exit(1)
+				MOCTST = backtick(_OPTIONS["QT_HOME"] .. "/bin/moc --version 2>/dev/null")
+				if (MOCTST=='') then
+					local qt_host_libexecs = backtick(_OPTIONS["QT_HOME"] .. "/bin/qmake -query QT_HOST_LIBEXECS")
+					if not string.starts(qt_host_libexecs,"/") then
+						qt_host_libexecs = _OPTIONS["QT_HOME"] .. "/libexec"
+					end
+					MOCTST = backtick(qt_host_libexecs .. "/moc --version 2>/dev/null")
+					if MOCTST=='' then
+						print("Qt's Meta Object Compiler (moc) wasn't found!")
+						os.exit(1)
+					else
+						MOC = qt_host_libexecs .. "/moc"
+					end
+				else
+					MOC = _OPTIONS["QT_HOME"] .. "/bin/moc"
 				end
-				MOC = _OPTIONS["QT_HOME"] .. "/bin/moc"
 			else
 				MOCTST = backtick("which moc-qt5 2>/dev/null")
 				if (MOCTST=='') then
 					MOCTST = backtick("which moc 2>/dev/null")
 				end
-				if (MOCTST=='') then
+				if MOCTST=='' then
 					print("Qt's Meta Object Compiler (moc) wasn't found!")
 					os.exit(1)
 				end
@@ -494,14 +508,23 @@ function osdmodulestargetconf()
 			}
 		else
 			if _OPTIONS["QT_HOME"]~=nil then
+				local qt_version = str_to_version(backtick(_OPTIONS["QT_HOME"] .. "/bin/qmake -query QT_VERSION"))
 				linkoptions {
 					"-L" .. backtick(_OPTIONS["QT_HOME"] .. "/bin/qmake -query QT_INSTALL_LIBS"),
 				}
-				links {
-					"Qt5Core",
-					"Qt5Gui",
-					"Qt5Widgets",
-				}
+				if qt_version < 60000 then
+					links {
+						"Qt5Core",
+						"Qt5Gui",
+						"Qt5Widgets",
+					}
+				else
+					links {
+						"Qt6Core",
+						"Qt6Gui",
+						"Qt6Widgets",
+					}
+				end
 			else
 				local str = backtick(pkgconfigcmd() .. " --libs Qt5Widgets")
 				addlibfromstring(str)

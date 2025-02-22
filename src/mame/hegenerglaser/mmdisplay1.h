@@ -21,22 +21,21 @@ public:
 	auto output_digit() { return m_output_digit.bind(); }
 
 	void strobe_w(int state);
+	int strobe_r() { return m_strobe; }
 	void data_w(u8 data);
 
 protected:
 	// device-level overrides
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
 
 private:
 	output_finder<4> m_digits;
 	devcb_write8 m_output_digit;
 
-	void update_lcd();
-
 	int m_strobe;
-	u8 m_digit_idx;
-	u8 m_digit_data[4];
+	u32 m_digit_data;
+
+	void update_lcd();
 };
 
 

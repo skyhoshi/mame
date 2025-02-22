@@ -440,7 +440,7 @@ void turbo_base_state::digit_w(uint8_t data)
  *
  *************************************/
 
-CUSTOM_INPUT_MEMBER(turbo_base_state::pedal_r)
+ioport_value turbo_base_state::pedal_r()
 {
 	// inverted 2-bit Gray code from a pair of optos in mechanical pedal
 	uint8_t pedal = m_pedal->read();
@@ -480,19 +480,19 @@ void turbo_state::analog_reset_w(uint8_t data)
 }
 
 
-WRITE_LINE_MEMBER(turbo_state::coin_meter_1_w)
+void turbo_state::coin_meter_1_w(int state)
 {
 	machine().bookkeeping().coin_counter_w(0, state);
 }
 
 
-WRITE_LINE_MEMBER(turbo_state::coin_meter_2_w)
+void turbo_state::coin_meter_2_w(int state)
 {
 	machine().bookkeeping().coin_counter_w(1, state);
 }
 
 
-WRITE_LINE_MEMBER(turbo_state::start_lamp_w)
+void turbo_state::start_lamp_w(int state)
 {
 	m_lamp = state ? 1 : 0;
 }
@@ -660,7 +660,7 @@ void buckrog_state::sub_portmap(address_map &map)
 
 static INPUT_PORTS_START( turbo )
 	PORT_START("IN0") // IN0
-	PORT_BIT( 0x03, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(turbo_base_state, pedal_r)
+	PORT_BIT( 0x03, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(turbo_base_state::pedal_r))
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_BUTTON3 ) PORT_NAME("Gear Shift") PORT_TOGGLE
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_START1 )
 	PORT_SERVICE_NO_TOGGLE( 0x10, IP_ACTIVE_LOW )
@@ -823,7 +823,7 @@ static INPUT_PORTS_START( buckrog )
 	PORT_START("IN0")
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_UNUSED )  PORT_CONDITION("DSW2", 0x80, EQUALS, 0x00) // cockpit
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_START2 )  PORT_CONDITION("DSW2", 0x80, EQUALS, 0x80) // upright
-	PORT_BIT( 0x30, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CONDITION("DSW2", 0x02, EQUALS, 0x00) PORT_CUSTOM_MEMBER(turbo_base_state, pedal_r)
+	PORT_BIT( 0x30, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CONDITION("DSW2", 0x02, EQUALS, 0x00) PORT_CUSTOM_MEMBER(FUNC(turbo_base_state::pedal_r))
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_BUTTON2 ) PORT_CONDITION("DSW2", 0x02, EQUALS, 0x02) // fast
 	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_BUTTON3 ) PORT_CONDITION("DSW2", 0x02, EQUALS, 0x02) // slow
 	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_JOYSTICK_DOWN )
@@ -941,6 +941,13 @@ void turbo_state::turbo(machine_config &config)
 	m_i8255[3]->in_pb_callback().set_ioport("DSW2");
 	m_i8255[3]->out_pc_callback().set(FUNC(turbo_state::ppi3c_w));
 
+	for (int i = 0; i < 4; i++)
+	{
+		m_i8255[i]->tri_pa_callback().set_constant(0);
+		m_i8255[i]->tri_pb_callback().set_constant(0);
+		m_i8255[i]->tri_pc_callback().set_constant(0);
+	}
+
 	i8279_device &kbdc(I8279(config, "i8279", MASTER_CLOCK/16)); // clock = H1
 	kbdc.out_sl_callback().set(FUNC(turbo_state::scanlines_w));  // scan SL lines
 	kbdc.out_disp_callback().set(FUNC(turbo_state::digit_w));    // display A&B
@@ -982,6 +989,13 @@ void subroc3d_state::subroc3d(machine_config &config)
 	m_i8255[1]->out_pa_callback().set(FUNC(subroc3d_state::sound_a_w));
 	m_i8255[1]->out_pb_callback().set(FUNC(subroc3d_state::sound_b_w));
 	m_i8255[1]->out_pc_callback().set(FUNC(subroc3d_state::sound_c_w));
+
+	for (int i = 0; i < 2; i++)
+	{
+		m_i8255[i]->tri_pa_callback().set_constant(0);
+		m_i8255[i]->tri_pb_callback().set_constant(0);
+		m_i8255[i]->tri_pc_callback().set_constant(0);
+	}
 
 	i8279_device &kbdc(I8279(config, "i8279", MASTER_CLOCK/16));   // unknown clock
 	kbdc.out_sl_callback().set(FUNC(subroc3d_state::scanlines_w)); // scan SL lines
@@ -1026,6 +1040,13 @@ void buckrog_state::buckrog(machine_config &config)
 	m_i8255[1]->out_pa_callback().set(FUNC(buckrog_state::sound_a_w));
 	m_i8255[1]->out_pb_callback().set(FUNC(buckrog_state::sound_b_w));
 	m_i8255[1]->out_pc_callback().set(FUNC(buckrog_state::ppi1c_w));
+
+	for (int i = 0; i < 2; i++)
+	{
+		m_i8255[i]->tri_pa_callback().set_constant(0);
+		m_i8255[i]->tri_pb_callback().set_constant(0);
+		m_i8255[i]->tri_pc_callback().set_constant(0);
+	}
 
 	i8279_device &kbdc(I8279(config, "i8279", MASTER_CLOCK/16));  // unknown clock
 	kbdc.out_sl_callback().set(FUNC(buckrog_state::scanlines_w)); // scan SL lines

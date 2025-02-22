@@ -126,7 +126,7 @@ public:
 	void vcombat(machine_config &config);
 
 protected:
-	virtual void machine_reset() override;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	required_device<tlc34076_device> m_tlc34076;
@@ -160,17 +160,17 @@ private:
 	void v1_fb_w(offs_t offset, uint64_t data, uint64_t mem_mask = ~0);
 	void crtc_w(uint16_t data);
 	void vcombat_dac_w(uint16_t data);
-	DECLARE_WRITE_LINE_MEMBER(sound_update);
+	void sound_update(int state);
 
 	uint32_t update_screen(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect, int index);
 	uint32_t screen_update_vcombat_main(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	uint32_t screen_update_vcombat_aux(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
-	void single_i860_map(address_map &map);
-	void dual_i860_map(address_map &map);
-	void sound_map(address_map &map);
-	void vid_0_map(address_map &map);
-	void vid_1_map(address_map &map);
+	void single_i860_map(address_map &map) ATTR_COLD;
+	void dual_i860_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
+	void vid_0_map(address_map &map) ATTR_COLD;
+	void vid_1_map(address_map &map) ATTR_COLD;
 
 	uint16_t m_c_r(offs_t offset, uint64_t *v);
 	void m_c_w(offs_t offset, uint16_t data, uint16_t mem_mask, uint64_t *v);
@@ -680,7 +680,7 @@ static INPUT_PORTS_START( shadfgtr )
 INPUT_PORTS_END
 
 
-WRITE_LINE_MEMBER(vcombat_state::sound_update)
+void vcombat_state::sound_update(int state)
 {
 	/* Seems reasonable */
 	m_soundcpu->set_input_line(M68K_IRQ_1, state ? ASSERT_LINE : CLEAR_LINE);

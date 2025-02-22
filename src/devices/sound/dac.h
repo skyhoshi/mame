@@ -51,7 +51,7 @@ stream_buffer::sample_t dac_mapper_ones_complement(u32 input, u8 bits);
 class dac_bit_interface
 {
 public:
-	virtual DECLARE_WRITE_LINE_MEMBER(write) = 0;
+	virtual void write(int state) = 0;
 	virtual void data_w(u8 data) = 0;
 };
 
@@ -85,7 +85,7 @@ protected:
 	dac_device_base(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock, u8 bits, dac_mapper_callback mapper, stream_buffer::sample_t gain);
 
 	// device startup
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	// stream generation
 	virtual void sound_stream_update(sound_stream &stream, std::vector<read_stream_view> const &inputs, std::vector<write_stream_view> &outputs) override;
@@ -134,7 +134,7 @@ protected:
 	}
 
 public:
-	virtual WRITE_LINE_MEMBER(write) override { this->set_value(state); }
+	virtual void write(int state) override { this->set_value(state); }
 	virtual void data_w(u8 data) override { this->set_value(data); }
 };
 

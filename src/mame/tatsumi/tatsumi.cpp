@@ -835,7 +835,7 @@ GFXDECODE_END
 
 static GFXDECODE_START( gfx_roundup5 )
 	GFXDECODE_ENTRY( "sprites", 0, spritelayout,     1024, 256)
-	GFXDECODE_ENTRY(  nullptr,  0, roundup5_vramlayout, 0,  16)
+	GFXDECODE_RAM(   nullptr,   0, roundup5_vramlayout, 0,  16)
 GFXDECODE_END
 
 static GFXDECODE_START( gfx_cyclwarr )
@@ -850,7 +850,7 @@ INTERRUPT_GEN_MEMBER(tatsumi_state::v30_interrupt)
 	device.execute().set_input_line_and_vector(0, HOLD_LINE, 0xc8/4);   /* V30 - VBL */
 }
 
-WRITE_LINE_MEMBER(apache3_state::apache3_68000_reset)
+void apache3_state::apache3_68000_reset(int state)
 {
 	m_subcpu2->pulse_input_line(INPUT_LINE_RESET, attotime::zero);
 }

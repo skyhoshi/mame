@@ -126,8 +126,8 @@ public:
 	void vp101(machine_config &config);
 
 private:
-	virtual void machine_reset() override;
-	virtual void machine_start() override;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void machine_start() override ATTR_COLD;
 
 	uint32_t tty_ready_r();
 	void tty_w(uint32_t data);
@@ -145,7 +145,7 @@ private:
 
 	void dmaaddr_w(uint32_t data);
 
-	DECLARE_WRITE_LINE_MEMBER(dmarq_w);
+	void dmarq_w(int state);
 
 	uint32_t tty_4925_rdy_r() { return 0x2; }
 
@@ -157,8 +157,8 @@ private:
 	uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	uint32_t vp50_screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
-	void main_map(address_map &map);
-	void vp50_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void vp50_map(address_map &map) ATTR_COLD;
 
 	// devices
 	required_device<mips3_device> m_maincpu;
@@ -166,7 +166,7 @@ private:
 	required_device<ata_interface_device> m_ata;
 
 	// driver_device overrides
-	virtual void video_start() override;
+	virtual void video_start() override ATTR_COLD;
 	int pic_cmd = 0;
 	int pic_state = 0;
 	int m_dmarq_state = 0;
@@ -201,7 +201,7 @@ void vp10x_state::dmaaddr_w(uint32_t data)
 	m_dma_ptr = (data & 0x07ffffff);
 }
 
-WRITE_LINE_MEMBER(vp10x_state::dmarq_w)
+void vp10x_state::dmarq_w(int state)
 {
 	if (state != m_dmarq_state)
 	{

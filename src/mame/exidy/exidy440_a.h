@@ -19,20 +19,20 @@ public:
 	void exidy440_sound_command(uint8_t param);
 	uint8_t exidy440_sound_command_ack();
 
-	DECLARE_WRITE_LINE_MEMBER(sound_interrupt_w);
-	DECLARE_WRITE_LINE_MEMBER(sound_reset_w);
+	void sound_interrupt_w(int state);
+	void sound_reset_w(int state);
 
 protected:
 	// device-level overrides
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual void device_start() override;
-	virtual void device_stop() override;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_stop() override ATTR_COLD;
 
 	// sound stream update overrides
 	virtual void sound_stream_update(sound_stream &stream, std::vector<read_stream_view> const &inputs, std::vector<write_stream_view> &outputs) override;
 
 private:
-	void exidy440_audio_map(address_map &map);
+	void exidy440_audio_map(address_map &map) ATTR_COLD;
 
 	/* channel_data structure holds info about each 6844 DMA channel */
 	struct m6844_channel_data

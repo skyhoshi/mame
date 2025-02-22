@@ -88,12 +88,12 @@ public:
 	// computer interface
 	uint8_t read(offs_t offset, uint8_t data) { if (m_card) data = m_card->read(offset, data); return data; }
 	void write(offs_t offset, uint8_t data) { if (m_card) m_card->write(offset, data); }
-	DECLARE_WRITE_LINE_MEMBER( romoeh_w ) { if (m_card) m_card->romoeh_w(state); }
+	void romoeh_w(int state) { if (m_card) m_card->romoeh_w(state); }
 
 protected:
 	// device_t implementation
-	virtual void device_resolve_objects() override;
-	virtual void device_start() override;
+	virtual void device_resolve_objects() override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
 
 	// device_image_interface implementation
 	virtual std::pair<std::error_condition, std::string> call_load() override;

@@ -45,11 +45,11 @@ public: // construction/destruction
 
 	void write(offs_t offset, u8 data);
 
-	DECLARE_WRITE_LINE_MEMBER(axi_w);
+	void axi_w(int state);
 
 protected:
 	// device-level overrides
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 };
 
 // device type declaration

@@ -1,7 +1,7 @@
 // license:BSD-3-Clause
 // copyright-holders:Olivier Galibert
-#ifndef MAME_MACHINE_NSCSI_S1410_H
-#define MAME_MACHINE_NSCSI_S1410_H
+#ifndef MAME_BUS_NSCSI_S1410_H
+#define MAME_BUS_NSCSI_S1410_H
 
 #pragma once
 
@@ -43,7 +43,7 @@ protected:
 	// SCSI commands
 	enum {
 		SC_TEST_UNIT_READY      = 0x00,
-		SC_REZERO               = 0x01,
+		SC_REZERO_UNIT          = 0x01,
 		SC_REQUEST_SENSE        = 0x03,
 		SC_FORMAT_UNIT          = 0x04,
 		SC_CHECK_TRACK_FORMAT   = 0x05,
@@ -71,7 +71,7 @@ protected:
 		SK_FORMAT_ERROR         = 0x1a
 	};
 
-	virtual void device_reset() override;
+	virtual void device_reset() override ATTR_COLD;
 
 	virtual bool scsi_command_done(uint8_t command, uint8_t length) override;
 	virtual void scsi_command() override;

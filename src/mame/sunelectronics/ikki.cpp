@@ -47,9 +47,9 @@ public:
 	void ikki(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -77,12 +77,10 @@ private:
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	TIMER_DEVICE_CALLBACK_MEMBER(irq);
 	void draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect);
-	void main_map(address_map &map);
-	void sub_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void sub_map(address_map &map) ATTR_COLD;
 };
 
-
-// video
 
 void ikki_state::palette(palette_device &palette)
 {
@@ -272,8 +270,6 @@ uint32_t ikki_state::screen_update(screen_device &screen, bitmap_ind16 &bitmap, 
 	return 0;
 }
 
-
-// machine
 
 /*************************************
  *
@@ -492,21 +488,19 @@ TIMER_DEVICE_CALLBACK_MEMBER(ikki_state::irq)
 }
 
 
-
-
 void ikki_state::ikki(machine_config &config)
 {
-	static constexpr XTAL MASTER_CLOCK = 20_MHz_XTAL;
-	static constexpr XTAL PIXEL_CLOCK = MASTER_CLOCK / 4; // guess
-	static constexpr XTAL CPU_CLOCK = 8_MHz_XTAL;
+	constexpr XTAL MASTER_CLOCK = 20_MHz_XTAL;
+	constexpr XTAL PIXEL_CLOCK = MASTER_CLOCK / 4; // guess
+	constexpr XTAL CPU_CLOCK = 8_MHz_XTAL;
 
 	// also a guess
-	static constexpr int HTOTAL  = (320);
-	static constexpr int HBEND   = (8);
-	static constexpr int HBSTART = (248);
-	static constexpr int VTOTAL  = (262);
-	static constexpr int VBEND   = (16);
-	static constexpr int VBSTART = (240);
+	constexpr int HTOTAL  = 320;
+	constexpr int HBEND   = 8;
+	constexpr int HBSTART = 248;
+	constexpr int VTOTAL  = 262;
+	constexpr int VBEND   = 16;
+	constexpr int VBSTART = 240;
 
 	// basic machine hardware
 	Z80(config, m_maincpu, CPU_CLOCK / 2); // 4.000MHz

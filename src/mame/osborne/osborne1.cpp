@@ -158,15 +158,15 @@ public:
 	DECLARE_INPUT_CHANGED_MEMBER(reset_key);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 	void osborne1_base(machine_config &config);
 
-	void osborne1_mem(address_map &map);
-	void osborne1_op(address_map &map);
-	void osborne1_io(address_map &map);
+	void osborne1_mem(address_map &map) ATTR_COLD;
+	void osborne1_op(address_map &map) ATTR_COLD;
+	void osborne1_io(address_map &map) ATTR_COLD;
 
 	u8 bank2_peripherals_r(offs_t offset);
 	void bank2_peripherals_w(offs_t offset, u8 data);
@@ -174,7 +174,7 @@ protected:
 	void attrram_w(offs_t offset, u8 data);
 	u8 opcode_r(offs_t offset);
 	void bankswitch_w(offs_t offset, u8 data);
-	DECLARE_WRITE_LINE_MEMBER(irqack_w);
+	void irqack_w(int state);
 
 	bool rom_mode() const { return 0 != m_rom_mode; }
 	u8 scroll_x() const { return m_scroll_x; }
@@ -192,14 +192,14 @@ protected:
 private:
 	u8 ieee_pia_pb_r();
 	void ieee_pia_pb_w(u8 data);
-	DECLARE_WRITE_LINE_MEMBER(ieee_pia_irq_a_func);
+	void ieee_pia_irq_a_func(int state);
 
 	void video_pia_port_a_w(u8 data);
 	void video_pia_port_b_w(u8 data);
-	DECLARE_WRITE_LINE_MEMBER(video_pia_out_cb2_dummy);
-	DECLARE_WRITE_LINE_MEMBER(video_pia_irq_a_func);
+	void video_pia_out_cb2_dummy(int state);
+	void video_pia_irq_a_func(int state);
 
-	DECLARE_WRITE_LINE_MEMBER(serial_acia_irq_func);
+	void serial_acia_irq_func(int state);
 
 	u32 screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
@@ -267,10 +267,10 @@ public:
 	void osborne1sp(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
-	void osborne1sp_mem(address_map &map);
+	void osborne1sp_mem(address_map &map) ATTR_COLD;
 
 	u8 bank2_peripherals_r(offs_t offset);
 	void bank2_peripherals_w(offs_t offset, u8 data);
@@ -297,7 +297,7 @@ public:
 	void osborne1nv(machine_config &config);
 
 private:
-	void osborne1nv_io(address_map &map);
+	void osborne1nv_io(address_map &map) ATTR_COLD;
 
 	MC6845_UPDATE_ROW(crtc_update_row);
 	MC6845_ON_UPDATE_ADDR_CHANGED(crtc_update_addr_changed);
@@ -422,7 +422,7 @@ void osborne1_state::bankswitch_w(offs_t offset, u8 data)
 	}
 }
 
-WRITE_LINE_MEMBER( osborne1_state::irqack_w )
+void osborne1_state::irqack_w(int state)
 {
 	// Update the flipflops that control bank selection and NMI
 	if (!rom_mode())
@@ -478,7 +478,7 @@ void osborne1_state::ieee_pia_pb_w(u8 data)
 	m_ieee->host_nrfd_w(BIT(data, 7));
 }
 
-WRITE_LINE_MEMBER( osborne1_state::ieee_pia_irq_a_func )
+void osborne1_state::ieee_pia_irq_a_func(int state)
 {
 	update_irq();
 }
@@ -511,17 +511,17 @@ void osborne1_state::video_pia_port_b_w(u8 data)
 	}
 }
 
-WRITE_LINE_MEMBER( osborne1_state::video_pia_out_cb2_dummy )
+void osborne1_state::video_pia_out_cb2_dummy(int state)
 {
 }
 
-WRITE_LINE_MEMBER( osborne1_state::video_pia_irq_a_func )
+void osborne1_state::video_pia_irq_a_func(int state)
 {
 	update_irq();
 }
 
 
-WRITE_LINE_MEMBER( osborne1_state::serial_acia_irq_func )
+void osborne1_state::serial_acia_irq_func(int state)
 {
 	m_acia_irq_state = state;
 	update_irq();
@@ -912,7 +912,7 @@ static INPUT_PORTS_START( osborne1 )
 	PORT_BIT(0x01, IP_ACTIVE_LOW, IPT_UNUSED)
 
 	PORT_START("RESET")
-	PORT_BIT(0x80, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_CODE(KEYCODE_F12) PORT_NAME("RESET") PORT_CHANGED_MEMBER(DEVICE_SELF, osborne1_state, reset_key, 0)
+	PORT_BIT(0x80, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_CODE(KEYCODE_F12) PORT_NAME("RESET") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(osborne1_state::reset_key), 0)
 	PORT_BIT(0x7f, IP_ACTIVE_LOW, IPT_UNUSED)
 
 	PORT_START("CNF")

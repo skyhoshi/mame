@@ -76,12 +76,12 @@ private:
 	// video
 	void thedealr_palette(palette_device &palette) const;
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	DECLARE_WRITE_LINE_MEMBER(screen_vblank);
+	void screen_vblank(int state);
 
-	void thedealr_main(address_map &map);
-	void thedealr_sub(address_map &map);
+	void thedealr_main(address_map &map) ATTR_COLD;
+	void thedealr_sub(address_map &map) ATTR_COLD;
 
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 	// devices
 	required_device<cpu_device> m_maincpu;
@@ -118,7 +118,7 @@ uint32_t thedealr_state::screen_update(screen_device &screen, bitmap_ind16 &bitm
 	return 0;
 }
 
-WRITE_LINE_MEMBER(thedealr_state::screen_vblank)
+void thedealr_state::screen_vblank(int state)
 {
 	// rising edge
 	if (state)

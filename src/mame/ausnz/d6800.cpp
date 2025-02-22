@@ -85,21 +85,21 @@ private:
 	void d6800_cassette_w(uint8_t data);
 	uint8_t d6800_keyboard_r();
 	void d6800_keyboard_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER( d6800_screen_w );
+	void d6800_screen_w(int state);
 	uint32_t screen_update_d6800(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	INTERRUPT_GEN_MEMBER(rtc_interrupt);
 	TIMER_DEVICE_CALLBACK_MEMBER(kansas_w);
 	TIMER_DEVICE_CALLBACK_MEMBER(kansas_r);
 	DECLARE_QUICKLOAD_LOAD_MEMBER(quickload_cb);
 
-	void d6800_map(address_map &map);
+	void d6800_map(address_map &map) ATTR_COLD;
 
 	bool m_cb2 = 0;
 	bool m_cassold = 0;
 	uint8_t m_cass_data[4]{};
 	uint8_t m_portb = 0U;
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 	required_device<cpu_device> m_maincpu;
 	required_device<cassette_image_device> m_cass;
 	required_device<pia6821_device> m_pia;
@@ -157,10 +157,10 @@ static INPUT_PORTS_START( d6800 )
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("FN") PORT_CODE(KEYCODE_LSHIFT)
 
 	PORT_START("RESET")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_NAME("RST") PORT_CODE(KEYCODE_LALT) PORT_CHANGED_MEMBER(DEVICE_SELF, d6800_state, reset_button, 0)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_NAME("RST") PORT_CODE(KEYCODE_LALT) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(d6800_state::reset_button), 0)
 
 	PORT_START("VS")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_VBLANK("screen")
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_DEVICE_MEMBER("screen", FUNC(screen_device::vblank))
 INPUT_PORTS_END
 
 INPUT_CHANGED_MEMBER(d6800_state::reset_button)
@@ -240,7 +240,7 @@ TIMER_DEVICE_CALLBACK_MEMBER(d6800_state::kansas_r)
 }
 
 
-WRITE_LINE_MEMBER( d6800_state::d6800_screen_w )
+void d6800_state::d6800_screen_w(int state)
 {
 	m_cb2 = state;
 	m_maincpu->set_unscaled_clock(state ? 589744 : 1e6); // effective clock is ~590kHz while screen is on
@@ -392,7 +392,7 @@ void d6800_state::d6800(machine_config &config)
 	BEEP(config, "beeper", 1200).add_route(ALL_OUTPUTS, "mono", 0.50);
 
 	/* devices */
-	PIA6821(config, m_pia, 0);
+	PIA6821(config, m_pia);
 	m_pia->readpa_handler().set(FUNC(d6800_state::d6800_keyboard_r));
 	m_pia->readpb_handler().set(FUNC(d6800_state::d6800_cassette_r));
 	m_pia->writepa_handler().set(FUNC(d6800_state::d6800_keyboard_w));

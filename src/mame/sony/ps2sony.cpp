@@ -224,8 +224,8 @@ public:
 	void ps2sony(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
@@ -251,10 +251,10 @@ protected:
 	uint64_t ee_iop_ram_r(offs_t offset);
 	void iop_debug_w(uint32_t data);
 
-	DECLARE_WRITE_LINE_MEMBER(iop_timer_irq);
+	void iop_timer_irq(int state);
 
-	void mem_map(address_map &map);
-	void iop_map(address_map &map);
+	void mem_map(address_map &map) ATTR_COLD;
+	void iop_map(address_map &map) ATTR_COLD;
 
 	required_device<r5900le_device> m_maincpu;
 	required_device<iop_device>     m_iop;
@@ -514,7 +514,7 @@ void ps2sony_state::ipu_fifo_w(offs_t offset, uint64_t data, uint64_t mem_mask)
 	}
 }
 
-WRITE_LINE_MEMBER(ps2sony_state::iop_timer_irq)
+void ps2sony_state::iop_timer_irq(int state)
 {
 	logerror("%s: iop_timer_irq: %d\n", machine().describe_context(), state);
 	if (state)
@@ -928,4 +928,4 @@ ROM_END
 } // anonymous namespace
 
 
-CONS( 2000, ps2, 0, 0, ps2sony, ps2sony, ps2sony_state, empty_init, "Sony", "PlayStation 2", MACHINE_IS_SKELETON )
+CONS( 2000, ps2, 0, 0, ps2sony, ps2sony, ps2sony_state, empty_init, "Sony", "PlayStation 2", MACHINE_NO_SOUND | MACHINE_NOT_WORKING )

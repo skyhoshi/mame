@@ -28,12 +28,12 @@ public:
 	void tvcapcom(machine_config &config);
 
 private:
-	virtual void machine_start() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 	uint32_t screen_update_tvcapcom(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	required_device<ppc_device> m_maincpu;
 
-	void gc_map(address_map &map);
+	void gc_map(address_map &map) ATTR_COLD;
 };
 
 void tvcapcom_state::gc_map(address_map &map)
@@ -79,7 +79,7 @@ void tvcapcom_state::tvcapcom(machine_config &config)
 }
 
 ROM_START( tvcapcom )
-	// Bios??
+	// BIOS??
 
 	ROM_REGION( 0x21000898, "flash", ROMREGION_ERASE) // it's possible all these dumps are bad
 
@@ -94,4 +94,4 @@ ROM_END
 } // anonymous namespace
 
 
-GAME( 2008, tvcapcom,  0, tvcapcom,    tvcapcom, tvcapcom_state, empty_init, ROT0, "Capcom",            "Tatsunoko Vs Capcom : Cross Generation of Heroes", MACHINE_IS_SKELETON )
+GAME( 2008, tvcapcom,  0, tvcapcom,    tvcapcom, tvcapcom_state, empty_init, ROT0, "Capcom",            "Tatsunoko Vs Capcom : Cross Generation of Heroes", MACHINE_NO_SOUND | MACHINE_NOT_WORKING )

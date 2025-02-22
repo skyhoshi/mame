@@ -60,10 +60,9 @@ public:
 	uint8_t intack_r();
 
 protected:
-	// device-level overrides
-	virtual void device_resolve_objects() override;
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	// device_t implementation
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 	// internal callbacks
 	TIMER_CALLBACK_MEMBER(sector_tick);

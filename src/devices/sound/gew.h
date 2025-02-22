@@ -24,8 +24,8 @@ protected:
 	gew_pcm_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock,
 		uint32_t voices, uint32_t clock_divider);
 
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 	virtual void device_clock_changed() override;
 
 	// sound stream update overrides
@@ -89,6 +89,7 @@ protected:
 		uint8_t m_octave = 0;
 		uint16_t m_pitch = 0;
 		uint32_t m_step = 0;
+		bool m_reverse = false;
 		uint32_t m_pan = 0;
 		uint32_t m_total_level = 0;
 		uint32_t m_dest_total_level = 0;

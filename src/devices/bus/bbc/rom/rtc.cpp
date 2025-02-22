@@ -33,8 +33,8 @@ void bbc_stlrtc_device::device_add_mconfig(machine_config &config)
 
 void bbc_pmsrtc_device::device_add_mconfig(machine_config &config)
 {
-	/* Dallas DS1216 SmartWatch RAM */
-	DS1315(config, m_rtc, 0);
+	/* Dallas DS1216 SmartWatch ROM */
+	DS1216E(config, m_rtc);
 }
 
 //**************************************************************************
@@ -82,22 +82,22 @@ uint8_t bbc_stlrtc_device::read(offs_t offset)
 	switch (offset & 0x3fc0)
 	{
 	case 0x3e00:
-		data = m_rtc->read(1);
+		data = m_rtc->data_r();
 		break;
 	case 0x3e40:
 		if (!machine().side_effects_disabled())
-			m_rtc->write(0, data);
+			m_rtc->address_w(data);
 		break;
 	case 0x3e80:
 	case 0x3ec0:
-		data = m_rtc->read(0);
+		data = m_rtc->get_address(); // FIXME: really?
 		break;
 	case 0x3f00:
 	case 0x3f40:
 	case 0x3f80:
 	case 0x3fc0:
 		if (!machine().side_effects_disabled())
-			m_rtc->write(1, data);
+			m_rtc->data_w(data);
 		break;
 	}
 	return data;
@@ -107,18 +107,10 @@ uint8_t bbc_pmsrtc_device::read(offs_t offset)
 {
 	uint8_t data = get_rom_base()[offset & 0x1fff];
 
-	switch (offset)
-	{
-	case 0x00:
-		data |= m_rtc->read_0();
-		break;
-	case 0x01:
-		data |= m_rtc->read_1();
-		break;
-	case 0x04:
-		if (m_rtc->chip_enable())
-			data = m_rtc->read_data() & 0x01;
-		break;
-	}
+	if (m_rtc->ceo_r())
+		data = m_rtc->read(offset);
+	else
+		m_rtc->read(offset);
+
 	return data;
 }

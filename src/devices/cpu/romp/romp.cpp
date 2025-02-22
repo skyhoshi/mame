@@ -18,7 +18,6 @@
 #include "romp.h"
 #include "rompdasm.h"
 
-#define LOG_GENERAL   (1U << 0)
 #define LOG_INTERRUPT (1U << 1)
 
 //#define VERBOSE     (LOG_INTERRUPT)
@@ -123,6 +122,7 @@ void romp_device::execute_run()
 
 		if (m_branch_state == WAIT)
 		{
+			debugger_wait_hook();
 			m_icount = 0;
 			return;
 		}

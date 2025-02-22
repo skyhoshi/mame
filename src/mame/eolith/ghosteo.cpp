@@ -59,7 +59,6 @@ ToDo: verify QS1000 hook-up
 #include "emu.h"
 
 #include "cpu/arm7/arm7.h"
-#include "cpu/arm7/arm7core.h"
 #include "machine/gen_latch.h"
 #include "machine/i2cmem.h"
 //#include "machine/nandflash.h"
@@ -145,9 +144,9 @@ private:
 	void s3c2410_nand_address_w(uint8_t data);
 	uint8_t s3c2410_nand_data_r();
 	void s3c2410_nand_data_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(s3c2410_i2c_scl_w );
-	DECLARE_READ_LINE_MEMBER(s3c2410_i2c_sda_r );
-	DECLARE_WRITE_LINE_MEMBER(s3c2410_i2c_sda_w );
+	void s3c2410_i2c_scl_w(int state);
+	int s3c2410_i2c_sda_r();
+	void s3c2410_i2c_sda_w(int state);
 	void bballoon_map(address_map &map) ATTR_COLD;
 	void touryuu_map(address_map &map) ATTR_COLD;
 };
@@ -394,13 +393,13 @@ void ghosteo_state::s3c2410_nand_data_w(uint8_t data)
 
 // I2C
 
-WRITE_LINE_MEMBER(ghosteo_state::s3c2410_i2c_scl_w )
+void ghosteo_state::s3c2410_i2c_scl_w(int state)
 {
 //  logerror( "s3c2410_i2c_scl_w %d\n", state ? 1 : 0);
 	m_i2cmem->write_scl(state);
 }
 
-READ_LINE_MEMBER(ghosteo_state::s3c2410_i2c_sda_r )
+int ghosteo_state::s3c2410_i2c_sda_r()
 {
 	int state;
 	state = m_i2cmem->read_sda();
@@ -408,7 +407,7 @@ READ_LINE_MEMBER(ghosteo_state::s3c2410_i2c_sda_r )
 	return state;
 }
 
-WRITE_LINE_MEMBER(ghosteo_state::s3c2410_i2c_sda_w )
+void ghosteo_state::s3c2410_i2c_sda_w(int state)
 {
 //  logerror( "s3c2410_i2c_sda_w %d\n", state ? 1 : 0);
 	m_i2cmem->write_sda(state);

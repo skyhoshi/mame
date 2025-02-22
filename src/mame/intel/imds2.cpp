@@ -106,13 +106,13 @@ public:
 
 	void imds2(machine_config &config);
 
-	DECLARE_WRITE_LINE_MEMBER(xack);
+	void xack(int state);
 
 private:
 	uint8_t ipc_mem_read(offs_t offset);
 	void ipc_mem_write(offs_t offset, uint8_t data);
 	void ipc_control_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(ipc_intr_w);
+	void ipc_intr_w(int state);
 	uint8_t ipcsyspic_r(offs_t offset);
 	uint8_t ipclocpic_r(offs_t offset);
 	void ipcsyspic_w(offs_t offset, uint8_t data);
@@ -121,8 +121,8 @@ private:
 	virtual void driver_start() override;
 	virtual void driver_reset() override;
 
-	void ipc_io_map(address_map &map);
-	void ipc_mem_map(address_map &map);
+	void ipc_io_map(address_map &map) ATTR_COLD;
+	void ipc_mem_map(address_map &map) ATTR_COLD;
 
 	u8 bus_pio_r(offs_t offset) { return m_bus->space(AS_IO).read_byte(offset); }
 	void bus_pio_w(offs_t offset, u8 data) { m_bus->space(AS_IO).write_byte(offset, data); }
@@ -188,8 +188,8 @@ imds2_state::imds2_state(const machine_config &mconfig, device_type type, const 
 	m_ipcctrl(*this, "ipcctrl"),
 	m_serial(*this, "serial%u", 0U),
 	m_ioc(*this, "ioc"),
-	m_bus(*this, "slot"),
-	m_slot(*this, "slot:1"),
+	m_bus(*this, "bus"),
+	m_slot(*this, "slot1"),
 	m_ram(*this, "ram"),
 	m_boot(*this, "boot")
 {
@@ -210,7 +210,7 @@ void imds2_state::ipc_control_w(uint8_t data)
 		m_boot.disable();
 }
 
-WRITE_LINE_MEMBER(imds2_state::ipc_intr_w)
+void imds2_state::ipc_intr_w(int state)
 {
 	m_ipccpu->set_input_line(I8085_INTR_LINE, (state != 0) && m_ipcctrl->q2_r());
 }
@@ -313,7 +313,7 @@ void imds2_state::imds2(machine_config &config)
 	MULTIBUS_SLOT(config, m_slot, m_bus, imds2_cards, nullptr, false); // FIXME: isbc202
 }
 
-WRITE_LINE_MEMBER(imds2_state::xack)
+void imds2_state::xack(int state)
 {
 	if (state) {
 		// Put CPU in wait state

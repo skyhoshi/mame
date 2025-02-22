@@ -1172,6 +1172,19 @@ license:CC0-1.0
 		</part>
 	</software>
 
+	<software name="panica" cloneof="panic">
+		<description>Space Panic (alt)</description>
+		<year>1983</year>
+		<publisher>Coleco / CBS</publisher>
+		<info name="developer" value="Universal" />
+		<part name="cart" interface="coleco_cart">
+			<dataarea name="rom" size="16384">
+				<rom name="panica.1" size="8192" crc="1c0353f2" sha1="edbba9d2b75cf49369c0bb019ef1d5d7d6838be9" offset="0x0000" />
+				<rom name="panica.2" size="8192" crc="9d938cbd" sha1="d1d4e224470f2a4b997c71428ce9e6e1bb720ecc" offset="0x2000" />
+			</dataarea>
+		</part>
+	</software>
+
 	<software name="pepper2">
 		<!-- Pepper II (1983)(Coleco).bin -->
 		<description>Pepper II</description>
@@ -1201,6 +1214,19 @@ license:CC0-1.0
 		</part>
 	</software>
 
+	<software name="pitfalla" cloneof="pitfall">
+		<description>Pitfall! (alt)</description>
+		<year>1983</year>
+		<publisher>Activision</publisher>
+		<info name="serial" value="VS-001-04" />
+		<part name="cart" interface="coleco_cart">
+			<dataarea name="rom" size="16384">
+				<rom name="pitfalla.1" size="8192" crc="d504e3ab" sha1="bb6eced4bd49af8f86a8943cbcc0164bfb411105" offset="0x0000" />
+				<rom name="pitfalla.2" size="8192" crc="4d470f40" sha1="be14494896f3993db1ef35d20ad99f1406097d69" offset="0x2000" />
+			</dataarea>
+		</part>
+	</software>
+
 	<software name="pitfall2">
 		<!-- Pitfall II - Lost Caverns (1984)(Activision).bin -->
 		<description>Pitfall II: Lost Caverns</description>
@@ -1215,10 +1241,10 @@ license:CC0-1.0
 		</part>
 	</software>
 
-<!-- This was found in multiple carts with Coleco-style shell, both from USA, Euro and Canada -->
+	<!-- This was found in multiple carts with Coleco-style shell, both from USA, Euro and Canada -->
 	<software name="pitstop">
 		<!-- Pitstop (1983)(Epyx)[a].bin -->
-		<description>Pitstop (Euro, USA, Canada)</description>
+		<description>Pitstop (Europe, USA, Canada)</description>
 		<year>1983</year>
 		<publisher>Epyx</publisher>
 		<info name="serial" value="600" />
@@ -1231,7 +1257,7 @@ license:CC0-1.0
 		</part>
 	</software>
 
-<!-- This was found in multiple carts with Imagic-style shell, USA only -->
+	<!-- This was found in multiple carts with Imagic-style shell, USA only -->
 	<software name="pitstopa" cloneof="pitstop">
 		<!-- Pitstop (1983)(Epyx).bin -->
 		<!-- 0x26a7 : 0x20 ('pitstop') - 0x10 ('pitstopa') -->
@@ -1277,7 +1303,7 @@ license:CC0-1.0
 		</part>
 	</software>
 
-<!-- This has been verified with a real cart -->
+	<!-- This has been verified with a real cart -->
 	<software name="qbertqub">
 		<description>Q*bert Qubes</description>
 		<year>1984</year>
@@ -1508,6 +1534,19 @@ license:CC0-1.0
 			<dataarea name="rom" size="16384">
 				<rom name="smurfrgc.1"  size="8192" crc="675bf14d" sha1="4ba14cce2e022d039188d7faeee78a679e1f451f" offset="0x0000" />
 				<rom name="smurfrgca.2" size="8192" crc="993ed67c" sha1="b924e2c63d1edb271a65b21ac74a8221c9445ffc" offset="0x2000" />
+			</dataarea>
+		</part>
+	</software>
+
+	<software name="smurfp" cloneof="smurf">
+		<description>Smurf Rescue in Gargamel's Castle (prototype)</description>
+		<year>1982</year>
+		<publisher>Coleco / CBS</publisher>
+		<part name="cart" interface="coleco_cart">
+			<dataarea name="rom" size="20480">
+				<rom name="c-smurf prgm.1" size="8192" crc="d9af8c4e" sha1="6cd393ebe301f1ff160c6c359ec4ad7971386c51" offset="0x0000" />
+				<rom name="c-smurf prgm.2" size="8192" crc="865ac4e5" sha1="0793c3dfcf830a4b6ff0fdcc80c00477b8633214" offset="0x2000" />
+				<rom name="smurf-3"        size="4096" crc="b7d79c6e" sha1="43827b40094a0c070874c13141c48301750a9e80" offset="0x4000" />
 			</dataarea>
 		</part>
 	</software>
@@ -2305,7 +2344,7 @@ license:CC0-1.0
 	<software name="victory">
 		<!-- Victory (1983)(Coleco).bin -->
 		<!-- 0x5000-0x5fff : Filled with 0xff -->
-		<description>Victory (Euro)</description>
+		<description>Victory (Europe)</description>
 		<year>1983</year>
 		<publisher>CBS</publisher>
 		<info name="developer" value="Exidy" />
@@ -2528,7 +2567,7 @@ license:CC0-1.0
 <!-- The dump with title "Super Action Soccer" is likely hacked -->
 	<software name="safootb">
 		<!-- Super Action Football (1984)(Coleco)[a].bin -->
-		<description>Super Action Football (Euro)</description>
+		<description>Super Action Football (Europe)</description>
 		<year>1984</year>
 		<publisher>Coleco / CBS</publisher>
 		<info name="serial" value="2422" />
@@ -2838,6 +2877,18 @@ license:CC0-1.0
 				<rom name="power.2" size="8192" crc="4c872266" sha1="b7ac12e02d31734fa1eac91bd01f9366b5143a81" offset="0x2000" />
 				<rom name="power.3" size="8192" crc="5f20b4e1" sha1="7979b12c89c089bbb2635b5ea4aff1a03b3e6264" offset="0x4000" />
 				<rom name="power.4" size="8192" crc="560207f3" sha1="32e9b8a1e0d56ea3b2d3375c109fb63b2ec9b8ae" offset="0x6000" />
+			</dataarea>
+		</part>
+	</software>
+
+	<software name="powheman">
+		<!-- Title screen has been hacked to show "NOT FOR RESALE" -->
+		<description>Masters of the Universe: The Power of He-Man (prototype, hacked)</description>
+		<year>1984</year>
+		<publisher>Mattel Electronics</publisher>
+		<part name="cart" interface="coleco_cart">
+			<dataarea name="rom" size="32768">
+				<rom name="motu-notforresale.rom" size="32768" crc="2277f82b" sha1="be034ef23af778b986b59bf6609dff0c90b6f8de" offset="0x0000" status="baddump" />
 			</dataarea>
 		</part>
 	</software>
@@ -3338,33 +3389,6 @@ license:CC0-1.0
 				<rom name="ttennis.2" size="8192" crc="b72f9ff8" sha1="d960b0f6207a64d6330a5dee458f1a18f6ec6a87" offset="0x2000" />
 				<rom name="ttennis.3" size="8192" crc="b4293435" sha1="5e2b96c19c4f5c63a5afa2de504d29fe64a4c908" offset="0x4000" /> <!-- All FF bytes -->
 				<rom name="ttennis.4" size="8192" crc="b4293435" sha1="5e2b96c19c4f5c63a5afa2de504d29fe64a4c908" offset="0x6000" /> <!-- All FF bytes -->
-			</dataarea>
-		</part>
-	</software>
-
-<!-- Unofficial multicarts -->
-
-	<software name="31in1">
-		<description>31-in-1</description>
-		<year>201?</year>
-		<publisher>&lt;unknown&gt;</publisher>
-		<part name="cart" interface="coleco_cart">
-			<feature name="slot" value="xin1" />
-			<dataarea name="rom" size="1048576">
-				<rom name="31in1-eprom-15012013-rev2.rom" size="1048576" crc="3f4ebe58" sha1="bf7fc70b25b9654c86f644474ef9e6906df82a46" />
-			</dataarea>
-		</part>
-	</software>
-
-	<software name="63in1">
-		<description>63-in-1</description>
-		<year>201?</year>
-		<publisher>&lt;unknown&gt;</publisher>
-		<part name="cart" interface="coleco_cart">
-			<feature name="slot" value="xin1" />
-			<dataarea name="rom" size="2097152">
-				<rom name="eprom-flash-63in1-part1.rom" size="1048576" crc="3b21137f" sha1="a22b1a4ea96507c87269db50c0d21052e987e83f" offset="0x000000" />
-				<rom name="eprom-flash-63in1-part2.rom" size="1048576" crc="f4d18722" sha1="e5a6d0071a0b1d813f03713133b48ba3a073c2cd" offset="0x100000" />
 			</dataarea>
 		</part>
 	</software>

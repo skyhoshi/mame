@@ -9,11 +9,11 @@ All Platforms
 -------------
 
 * To compile MAME, you need a C++17 compiler and runtime library.  We
-  support building with GCC version 7.2 or later and clang version 6 or
-  later.  MAME should run with GNU libstdc++ version 7.2 or later or
-  libc++ version 7 or later.  The initial release of any major version
+  support building with GCC version 10.3 or later and clang version 11
+  or later.  MAME should run with GNU libstdc++ version 10.3 or later or
+  libc++ version 11 or later.  The initial release of any major version
   of GCC should be avoided.  For example, if you want to compile MAME
-  with GCC 10, you should use version 10.3 or later.
+  with GCC 12, you should use version 12.1 or later.
 
 * Whenever you are changing build parameters, (for example changing
   optimisation settings, or adding tools to the compile list), or system
@@ -98,7 +98,7 @@ building MAME on a 64-bit system.  Instructions may need to be adjusted for
   use the portable SDL (Simple DirectMedia Layer) interfaces instead, you can
   add **OSD=sdl** to the make options.  The main emulator binary will have an
   ``sdl`` prefix prepended (e.g. ``sdlmame.exe``).  You
-  will need to install the MSYS2 packages for SDL 2 version 2.0.6 or later.
+  will need to install the MSYS2 packages for SDL 2 version 2.0.14 or later.
 * By default, MAME will include the native Windows debugger.  To also include
   the portable Qt debugger, add **USE_QTDEBUG=1** to the make options.  You
   will need to install the MSYS2 packages for Qt 5.
@@ -184,9 +184,9 @@ configuration::
 Building with Microsoft Visual Studio
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* You can generate Visual Studio 2019 projects using **make vs2019**.  The
+* You can generate Visual Studio 2022 projects using **make vs2022**.  The
   solution and project files will be created in
-  ``build/projects/windows/mame/vs2019`` by default (the name of the ``build``
+  ``build/projects/windows/mame/vs2022`` by default (the name of the ``build``
   folder can be changed using the ``BUILDDIR`` option).  This will always
   regenerate the settings, so **REGENIE=1** is *not* needed.
 * Adding **MSBUILD=1** to the make options will build the solution using
@@ -251,9 +251,14 @@ Fedora Linux
 ------------
 
 You’ll need a few prerequisites from your Linux distribution.  Make sure you get
-SDL2 2.0.6 or later as earlier versions lack required functionality::
+SDL 2 version 2.0.14 or later as earlier versions lack required functionality::
 
     sudo dnf install gcc gcc-c++ SDL2-devel SDL2_ttf-devel libXi-devel libXinerama-devel qt5-qtbase-devel qt5-qttools expat-devel fontconfig-devel alsa-lib-devel pulseaudio-libs-devel
+
+If you want to use the more efficient LLVM tools for archiving static libraries
+and linking, you’ll need to install the corresponding packages::
+
+    sudo dnf install lld llvm
 
 Compilation is exactly as described above in All Platforms.
 
@@ -273,7 +278,7 @@ Debian and Ubuntu (including Raspberry Pi and ODROID devices)
 -------------------------------------------------------------
 
 You’ll need a few prerequisites from your Linux distribution.  Make sure you get
-SDL2 2.0.6 or later as earlier versions lack required functionality::
+SDL 2 version 2.0.14 or later as earlier versions lack required functionality::
 
     sudo apt-get install git build-essential python3 libsdl2-dev libsdl2-ttf-dev libfontconfig-dev libpulse-dev qtbase5-dev qtbase5-dev-tools qtchooser qt5-qmake
 
@@ -299,9 +304,8 @@ Compilation is exactly as described above in All Platforms.
 Apple macOS
 -----------
 
-You’ll need a few prerequisites to get started. Make sure you’re on OS X 10.14
-Mojave or later for Intel Macs or macOS 11.0 Big Sur for Apple Silicon. You will
-need SDL2 2.0.6 or later for Intel or SDL2 2.0.14 on Apple Silicon.  You’ll also
+You’ll need a few prerequisites to get started.  Make sure you’re on macOS 11.0
+Big Sur or later.  You will need SDL 2 version 2.0.14 or later.  You’ll also
 need to install Python 3 – it’s currently included with the Xcode command line
 tools, but you can also install a stand-alone version or get it via the Homebrew
 package manager.
@@ -317,7 +321,7 @@ package manager.
 * Type **xcode-select --install** to install additional tools necessary for MAME
   (also available as a package on ADC).
 
-Next you’ll need to get SDL2 installed.
+Next you’ll need to get SDL 2 installed.
 
 * Go to `this site <http://libsdl.org/download-2.0.php>`_ and download the
   *macOS* .dmg file
@@ -349,7 +353,7 @@ above in All Platforms.
 Emscripten Javascript and HTML
 ------------------------------
 
-First, download and install Emscripten 2.0.25 or later by following the
+First, download and install Emscripten 3.1.35 or later by following the
 instructions at the `official site <https://emscripten.org/docs/getting_started/downloads.html>`_.
 
 Once Emscripten has been installed, it should be possible to compile MAME
@@ -559,6 +563,10 @@ Optional features
 TOOLS
     Set to **1** to build additional tools along with the emulator, including
     **unidasm**, **chdman**, **romcmp**, and **srcclean**.
+EMULATOR
+    When set to **0**, the main emulator target will not be created.  This is
+    intended to be used in conjunction with setting **TOOLS** to **1** to build
+    the additional tools without building the emulator.
 NO_OPENGL
     Set to **1** to disable building the OpenGL video output module.
 NO_USE_PORTAUDIO
@@ -567,6 +575,9 @@ NO_USE_PORTAUDIO
 NO_USE_PULSEAUDIO
     Set to **1** to disable building the PulseAudio sound output module on
     Linux.
+USE_WAYLAND
+    Set to **1** to include support for bgfx video output with the Wayland
+    display server.
 USE_TAPTUN
     Set to **1** to include the tap/tun network module, or set to **0** to
     disable building the tap/tun network module.  The tap/tun network module is
@@ -649,6 +660,9 @@ USE_SYSTEM_LIB_EXPAT
 USE_SYSTEM_LIB_ZLIB
     Set to **1** to prefer the system installation of the zlib data compression
     library over the version provided with the MAME source.
+USE_SYSTEM_LIB_ZSTD
+    Set to **1** to prefer the system installation of the Zstandard data
+    compression library over the version provided with the MAME source.
 USE_SYSTEM_LIB_JPEG
     Set to **1** to prefer the system installation of the libjpeg image
     compression library over the version provided with the MAME source.
@@ -667,11 +681,6 @@ USE_SYSTEM_LIB_PORTMIDI
 USE_SYSTEM_LIB_PORTAUDIO
     Set to **1** to prefer the system installation of the PortAudio library over
     the version provided with the MAME source.
-USE_BUNDLED_LIB_SDL2
-    Set to **1** to prefer the version of SDL provided with the MAME source over
-    the system installation.  (This is enabled by default for Visual Studio and
-    Android builds.  For other configurations, the system installation of SDL is
-    preferred.)
 USE_SYSTEM_LIB_UTF8PROC
     Set to **1** to prefer the system installation of the Julia utf8proc library
     over the version provided with the MAME source.
@@ -748,21 +757,16 @@ the Microsoft Windows SDK, you must do one of the following:
   Visual Studio project files.  This will set the target Windows version to
   Windows 8 (6.2).  The resulting binaries may not run on earlier versions of
   Windows.
-* Install the DirectX SDL and configure the **osd_windows** project to search
-  the DirectX header/library paths before searching the Microsoft Windows SDK
-  paths.
+* Install the `DirectX SDK <https://www.microsoft.com/en-US/download/details.aspx?id=6812>`_ (already included since Windows 8.0 SDK and
+  automatically installed with Visual Studio 2013 and later).  Configure the
+  **osd_windows** project to search the DirectX header/library paths before
+  searching the Microsoft Windows SDK paths.
 
 The MSVC compiler produces spurious warnings about potentially uninitialised
 local variables.  You currently need to add ``NOWERROR=1`` to the options passed
 to make when generating the Visual Studio project files.  This stops warnings
 from being treated as errors.  (MSVC seems to lack options to control which
-specific warnings are treated as error, which other compilers support.)
-
-There is an as-yet unresolved issue with duplicate COM GUIDS being defined in
-the PortAudio library when the target Windows version is set to Windows Vista
-(6.0) or later.  To work around this, add ``NO_USE_PORTAUDIO=1`` to the options
-passed to make when generating the Visual Studio project files.  MAME will be
-built without support for sound output via PortAudio.
+specific warnings are treated as errors, which other compilers support.)
 
 
 .. _compiling-unusual:

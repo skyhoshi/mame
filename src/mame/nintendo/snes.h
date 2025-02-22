@@ -319,8 +319,8 @@ public:
 	uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	/* misc */
 	uint16_t                m_hblank_offset = 0;
@@ -427,7 +427,7 @@ protected:
 	TIMER_CALLBACK_MEMBER(snes_update_io);
 	TIMER_CALLBACK_MEMBER(snes_scanline_tick);
 	TIMER_CALLBACK_MEMBER(snes_hblank_tick);
-	DECLARE_WRITE_LINE_MEMBER(snes_extern_irq_w);
+	void snes_extern_irq_w(int state);
 	void snes_init_timers();
 	void scpu_irq_refresh();
 };

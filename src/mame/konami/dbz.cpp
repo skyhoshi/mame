@@ -99,9 +99,9 @@ public:
 	void init_dbz2();
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	/* memory pointers */
@@ -135,17 +135,17 @@ private:
 	void dbz_sound_cause_nmi(uint16_t data);
 	void dbz_bg2_videoram_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 	void dbz_bg1_videoram_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
-	DECLARE_WRITE_LINE_MEMBER(dbz_irq2_ack_w);
+	void dbz_irq2_ack_w(int state);
 	TILE_GET_INFO_MEMBER(get_dbz_bg2_tile_info);
 	TILE_GET_INFO_MEMBER(get_dbz_bg1_tile_info);
 	uint32_t screen_update_dbz(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	TIMER_DEVICE_CALLBACK_MEMBER(dbz_scanline);
 	K056832_CB_MEMBER(tile_callback);
 	K053246_CB_MEMBER(sprite_callback);
-	void dbz_map(address_map &map);
-	void dbz2bl_map(address_map &map);
-	void dbz_sound_io_map(address_map &map);
-	void dbz_sound_map(address_map &map);
+	void dbz_map(address_map &map) ATTR_COLD;
+	void dbz2bl_map(address_map &map) ATTR_COLD;
+	void dbz_sound_io_map(address_map &map) ATTR_COLD;
+	void dbz_sound_map(address_map &map) ATTR_COLD;
 };
 
 
@@ -525,7 +525,7 @@ GFXDECODE_END
 
 /**********************************************************************************/
 
-WRITE_LINE_MEMBER(dbz_state::dbz_irq2_ack_w)
+void dbz_state::dbz_irq2_ack_w(int state)
 {
 	m_maincpu->set_input_line(M68K_IRQ_2, CLEAR_LINE);
 }

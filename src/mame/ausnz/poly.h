@@ -43,7 +43,6 @@
 #include "machine/kr2376.h"
 #include "machine/clock.h"
 #include "machine/mc6854.h"
-#include "machine/bankdev.h"
 #include "machine/ram.h"
 #include "machine/input_merger.h"
 #include "machine/wd_fdc.h"
@@ -61,8 +60,8 @@ class poly_state : public driver_device
 public:
 	poly_state(const machine_config &mconfig, device_type type, const char *tag)
 		: driver_device(mconfig, type, tag)
+		, m_memview(*this, "memview")
 		, m_maincpu(*this, "maincpu")
-		, m_bankdev(*this, "bankdev")
 		, m_ram(*this, RAM_TAG)
 		, m_trom(*this, "saa5050_%u", 1U)
 		, m_pia(*this, "pia%u", 0U)
@@ -90,27 +89,27 @@ public:
 
 	void init_poly();
 
-	virtual void poly_bank(address_map &map);
+	virtual void poly_mem(address_map &map) ATTR_COLD;
+
+	memory_view m_memview;
 
 private:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-
-	void poly_mem(address_map &map);
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	uint8_t logical_mem_r(offs_t offset);
 	void logical_mem_w(offs_t offset, uint8_t data);
 	uint8_t vector_r(offs_t offset);
 	void kbd_put(u8 data); // remove when KR2376 is implemented
-	DECLARE_READ_LINE_MEMBER( kbd_shift_r );
-	DECLARE_READ_LINE_MEMBER( kbd_control_r );
+	int kbd_shift_r();
+	int kbd_control_r();
 	void pia0_pa_w(uint8_t data);
 	void pia0_pb_w(uint8_t data);
 	uint8_t pia1_b_in();
 	uint8_t videoram_1_r(offs_t offset);
 	uint8_t videoram_2_r(offs_t offset);
-	DECLARE_WRITE_LINE_MEMBER( ptm_o2_callback );
-	DECLARE_WRITE_LINE_MEMBER( ptm_o3_callback );
+	void ptm_o2_callback(int state);
+	void ptm_o3_callback(int state);
 	void baud_rate_w(uint8_t data);
 	TIMER_CALLBACK_MEMBER( set_protect );
 	void set_protect_w(uint8_t data);
@@ -119,12 +118,11 @@ private:
 	void select_map2_w(uint8_t data);
 	uint8_t network_r(offs_t offset);
 	void network_w(offs_t offset, uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER( network_clk_w );
+	void network_clk_w(int state);
 
 	uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
-	required_device<cpu_device> m_maincpu;
-	required_device<address_map_bank_device> m_bankdev;
+	required_device<mc6809_device> m_maincpu;
 	required_device<ram_device> m_ram;
 	required_device_array<saa5050_device, 2> m_trom;
 	required_device_array<pia6821_device, 2> m_pia;
@@ -170,12 +168,12 @@ public:
 private:
 	void drive_register_w(uint8_t data);
 	uint8_t drive_register_r();
-	DECLARE_WRITE_LINE_MEMBER(motor_w);
+	void motor_w(int state);
 	uint8_t fdc_inv_r(offs_t offset);
 	void fdc_inv_w(offs_t offset, uint8_t data);
 
 
-	virtual void poly_bank(address_map &map) override;
+	virtual void poly_mem(address_map &map) override ATTR_COLD;
 
 	static void floppy_formats(format_registration &fr);
 

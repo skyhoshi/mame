@@ -52,15 +52,15 @@ public:
 	virtual uint8_t in_r() override;
 	virtual void out_w(uint8_t data, uint8_t mem_mask) override;
 
-	DECLARE_WRITE_LINE_MEMBER(rapid_changed);
+	void rapid_changed(int state);
 
 protected:
 	// device_t implementation
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual ioport_constructor device_input_ports() const override;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual ioport_constructor device_input_ports() const override ATTR_COLD;
 	virtual void device_config_complete() override;
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 private:
 	required_device<sms_control_port_device> m_subctrl_port;
@@ -75,8 +75,8 @@ private:
 INPUT_PORTS_START( sms_rapid_fire )
 	PORT_START("rfu_sw")
 	PORT_BIT( 0x00, IP_ACTIVE_HIGH, IPT_UNUSED )
-	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_TOGGLE PORT_NAME("Rapid Fire 1") PORT_WRITE_LINE_MEMBER(sms_rapid_fire_device, rapid_changed)
-	PORT_BIT( 0x20, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_TOGGLE PORT_NAME("Rapid Fire 2") PORT_WRITE_LINE_MEMBER(sms_rapid_fire_device, rapid_changed)
+	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_TOGGLE PORT_NAME("Rapid Fire 1") PORT_WRITE_LINE_MEMBER(FUNC(sms_rapid_fire_device::rapid_changed))
+	PORT_BIT( 0x20, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_TOGGLE PORT_NAME("Rapid Fire 2") PORT_WRITE_LINE_MEMBER(FUNC(sms_rapid_fire_device::rapid_changed))
 INPUT_PORTS_END
 
 
@@ -102,7 +102,7 @@ sms_rapid_fire_device::sms_rapid_fire_device(const machine_config &mconfig, cons
 }
 
 
-WRITE_LINE_MEMBER(sms_rapid_fire_device::rapid_changed)
+void sms_rapid_fire_device::rapid_changed(int state)
 {
 	m_rapid = m_rfire_sw->read();
 	m_subctrl_port->out_w(m_in | m_rapid, m_drive & ~m_rapid);

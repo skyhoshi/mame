@@ -78,13 +78,13 @@ public:
 	void cd2650(machine_config &config);
 
 private:
-	void data_map(address_map &map);
-	void io_map(address_map &map);
-	void mem_map(address_map &map);
+	void data_map(address_map &map) ATTR_COLD;
+	void io_map(address_map &map) ATTR_COLD;
+	void mem_map(address_map &map) ATTR_COLD;
 	u8 keyin_r();
 	void kbd_put(u8 data);
-	DECLARE_WRITE_LINE_MEMBER(tape_deck_on_w);
-	DECLARE_READ_LINE_MEMBER(cass_r);
+	void tape_deck_on_w(int state);
+	int cass_r();
 	TIMER_DEVICE_CALLBACK_MEMBER(kansas_w);
 	TIMER_DEVICE_CALLBACK_MEMBER(kansas_r);
 	DECLARE_QUICKLOAD_LOAD_MEMBER(quickload_cb);
@@ -93,8 +93,8 @@ private:
 	bool m_cassbit = 0;
 	bool m_cassold = 0;
 	u8 m_cass_data[4]{};
-	void machine_reset() override;
-	void machine_start() override;
+	void machine_reset() override ATTR_COLD;
+	void machine_start() override ATTR_COLD;
 	required_device<s2650_device> m_maincpu;
 	required_shared_ptr<u8> m_p_videoram;
 	required_region_ptr<u8> m_p_chargen;
@@ -132,12 +132,12 @@ TIMER_DEVICE_CALLBACK_MEMBER(cd2650_state::kansas_r)
 	}
 }
 
-WRITE_LINE_MEMBER(cd2650_state::tape_deck_on_w)
+void cd2650_state::tape_deck_on_w(int state)
 {
 	m_cass->change_state(state ? CASSETTE_MOTOR_ENABLED : CASSETTE_MOTOR_DISABLED, CASSETTE_MASK_MOTOR);
 }
 
-READ_LINE_MEMBER(cd2650_state::cass_r)
+int cd2650_state::cass_r()
 {
 	return m_cass_data[2];
 }

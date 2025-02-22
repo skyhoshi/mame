@@ -30,11 +30,11 @@ public:
 
 	u32 read(offs_t offset);
 	void write(offs_t offset, u32 data);
-	DECLARE_WRITE_LINE_MEMBER(set_reg);
+	void set_reg(int state);
 
 protected:
 	// device-level overrides
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 	virtual void device_reset() override { }
 	virtual void device_post_load() override { }
 	virtual void device_clock_changed() override { }

@@ -29,19 +29,19 @@ public:
 	uint8_t handshake_r();
 	void handshake_w(uint8_t data);
 
-	DECLARE_WRITE_LINE_MEMBER(halt_w) { m_z8000->set_input_line(INPUT_LINE_HALT, state); }
-	DECLARE_WRITE_LINE_MEMBER(int_w) { m_z8000->set_input_line(z8001_device::VI_LINE, state); }
+	void halt_w(int state) { m_z8000->set_input_line(INPUT_LINE_HALT, state); }
+	void int_w(int state) { m_z8000->set_input_line(z8001_device::VI_LINE, state); }
 
 	bool halted() const { return m_z8000_halt; }
 
-	void z8000_data(address_map &map);
-	void z8000_io(address_map &map);
-	void z8000_prog(address_map &map);
+	void z8000_data(address_map &map) ATTR_COLD;
+	void z8000_io(address_map &map) ATTR_COLD;
+	void z8000_prog(address_map &map) ATTR_COLD;
 protected:
-	void device_start() override;
-	void device_reset() override;
-	virtual const tiny_rom_entry *device_rom_region() const override;
-	virtual void device_add_mconfig(machine_config &config) override;
+	void device_start() override ATTR_COLD;
+	void device_reset() override ATTR_COLD;
+	virtual const tiny_rom_entry *device_rom_region() const override ATTR_COLD;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
 
 private:
 	required_device<z8001_device> m_z8000;
@@ -53,8 +53,8 @@ private:
 	uint8_t m_handshake, m_irq;
 	bool m_z8000_halt, m_z8000_mem, m_timer_irq;
 
-	DECLARE_WRITE_LINE_MEMBER(mo_w);
-	DECLARE_WRITE_LINE_MEMBER(timer_irq_w);
+	void mo_w(int state);
+	void timer_irq_w(int state);
 	uint16_t nviack_r();
 	uint16_t viack_r();
 };

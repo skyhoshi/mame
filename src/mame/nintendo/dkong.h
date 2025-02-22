@@ -160,7 +160,7 @@ public:
 	void init_dkong3();
 	void init_dkong3hs();
 
-	DECLARE_WRITE_LINE_MEMBER(dk_braze_a15);
+	void dk_braze_a15(int state);
 
 private:
 	/* devices */
@@ -261,7 +261,7 @@ private:
 	uint8_t dkong_in2_r(offs_t offset);
 	uint8_t epos_decrypt_rom(offs_t offset);
 	void s2650_data_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(s2650_fo_w);
+	void s2650_fo_w(int state);
 	uint8_t s2650_port0_r();
 	uint8_t s2650_port1_r();
 	void dkong3_2a03_reset_w(uint8_t data);
@@ -310,10 +310,9 @@ private:
 	uint32_t screen_update_dkong(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	uint32_t screen_update_pestplce(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	uint32_t screen_update_spclforc(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	DECLARE_WRITE_LINE_MEMBER(s2650_interrupt);
-	DECLARE_WRITE_LINE_MEMBER(vblank_irq);
+	void s2650_interrupt(int state);
+	void vblank_irq(int state);
 	TIMER_CALLBACK_MEMBER(scanline_callback);
-	DECLARE_WRITE_LINE_MEMBER(busreq_w);
 
 	void braze_decrypt_rom(uint8_t *dest);
 	void dk_braze_decrypt();
@@ -322,22 +321,22 @@ private:
 	void memory_write_byte(offs_t offset, uint8_t data);
 	double CD4049(double x);
 
-	void dkong3_io_map(address_map &map);
-	void dkong3_map(address_map &map);
-	void dkong3_sound1_map(address_map &map);
-	void dkong3_sound2_map(address_map &map);
-	void dkong_map(address_map &map);
-	void dkong_sound_io_map(address_map &map);
-	void dkong_sound_map(address_map &map);
-	void dkongjr_map(address_map &map);
-	void dkongjr_sound_io_map(address_map &map);
-	void epos_readport(address_map &map);
-	void radarscp1_sound_io_map(address_map &map);
+	void dkong3_io_map(address_map &map) ATTR_COLD;
+	void dkong3_map(address_map &map) ATTR_COLD;
+	void dkong3_sound1_map(address_map &map) ATTR_COLD;
+	void dkong3_sound2_map(address_map &map) ATTR_COLD;
+	void dkong_map(address_map &map) ATTR_COLD;
+	void dkong_sound_io_map(address_map &map) ATTR_COLD;
+	void dkong_sound_map(address_map &map) ATTR_COLD;
+	void dkongjr_map(address_map &map) ATTR_COLD;
+	void dkongjr_sound_io_map(address_map &map) ATTR_COLD;
+	void epos_readport(address_map &map) ATTR_COLD;
+	void radarscp1_sound_io_map(address_map &map) ATTR_COLD;
 
-	void s2650_map(address_map &map);
-	void s2650_io_map(address_map &map);
-	void s2650_data_map(address_map &map);
-	void spclforc_data_map(address_map &map);
+	void s2650_map(address_map &map) ATTR_COLD;
+	void s2650_io_map(address_map &map) ATTR_COLD;
+	void s2650_data_map(address_map &map) ATTR_COLD;
+	void spclforc_data_map(address_map &map) ATTR_COLD;
 
 	// video/dkong.c
 	void radarscp_step(int line_cnt);

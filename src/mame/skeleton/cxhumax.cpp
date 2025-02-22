@@ -95,7 +95,7 @@ void cxhumax_state::cx_gxa_w(offs_t offset, uint32_t data, uint32_t mem_mask)
 
 			if((m_intctrl_regs[INTREG(INTGROUP2, INTIRQ)] & m_intctrl_regs[INTREG(INTGROUP2, INTENABLE)])
 				|| (m_intctrl_regs[INTREG(INTGROUP1, INTIRQ)] & m_intctrl_regs[INTREG(INTGROUP1, INTENABLE)]))
-					m_maincpu->set_input_line(ARM7_IRQ_LINE, ASSERT_LINE);
+					m_maincpu->set_input_line(arm7_cpu_device::ARM7_IRQ_LINE, ASSERT_LINE);
 
 			break;
 		default:
@@ -143,23 +143,6 @@ uint32_t cxhumax_state::cx_scratch_r(offs_t offset)
 {
 	uint32_t data = m_scratch_reg;
 	LOG("%s: (SCRATCH) %08X -> %08X\n", machine().describe_context(), 0xE0400024 + (offset << 2), data);
-
-	if((m_maincpu->pc()==0xF0003BB8) || (m_maincpu->pc()==0x01003724) || (m_maincpu->pc()==0x00005d8c)) { // HDCI-2000
-		//we're in disabled debug_printf
-		unsigned char* buf = (unsigned char *)alloca(200);
-		unsigned char temp;
-		address_space &program = m_maincpu->space(AS_PROGRAM);
-
-		memset(buf,0,200);
-
-		int i = 0;
-		while ((temp=program.read_byte(m_maincpu->state_int(ARM7_R0)+i))) {
-			buf[i++]=temp;
-			//m_terminal->write(temp);
-		}
-		osd_printf_debug("%s", buf);
-		LOG("%s: (DEBUG) %s", machine().describe_context(), buf);
-	}
 	return data;
 }
 
@@ -315,7 +298,7 @@ TIMER_CALLBACK_MEMBER(cxhumax_state::timer_tick)
 
 			/* Interrupt if Timer interrupt is not masked in ITC_INTENABLE_REG */
 			if (m_intctrl_regs[INTREG(INTGROUP2, INTENABLE)] & INT_TIMER_BIT)
-				m_maincpu->set_input_line(ARM7_IRQ_LINE, ASSERT_LINE);
+				m_maincpu->set_input_line(arm7_cpu_device::ARM7_IRQ_LINE, ASSERT_LINE);
 		}
 	}
 	attotime period = attotime::from_hz(XTAL(54'000'000))*m_timer_regs.timer[param].timebase;
@@ -411,7 +394,7 @@ void cxhumax_state::cx_uart2_w(offs_t offset, uint32_t data, uint32_t mem_mask)
 
 					/* If INT is enabled at INT Ctrl raise it */
 					if(m_intctrl_regs[INTREG(INTGROUP1, INTENABLE)]&INT_UART2_BIT) {
-						m_maincpu->set_input_line(ARM7_IRQ_LINE, ASSERT_LINE);
+						m_maincpu->set_input_line(arm7_cpu_device::ARM7_IRQ_LINE, ASSERT_LINE);
 					}
 				}
 			}
@@ -542,9 +525,9 @@ void cxhumax_state::cx_intctrl_w(offs_t offset, uint32_t data, uint32_t mem_mask
 	/* check if */
 	if((m_intctrl_regs[INTREG(INTGROUP2, INTIRQ)] & m_intctrl_regs[INTREG(INTGROUP2, INTENABLE)])
 		|| (m_intctrl_regs[INTREG(INTGROUP1, INTIRQ)] & m_intctrl_regs[INTREG(INTGROUP1, INTENABLE)]))
-		m_maincpu->set_input_line(ARM7_IRQ_LINE, ASSERT_LINE);
+		m_maincpu->set_input_line(arm7_cpu_device::ARM7_IRQ_LINE, ASSERT_LINE);
 	else
-		m_maincpu->set_input_line(ARM7_IRQ_LINE, CLEAR_LINE);
+		m_maincpu->set_input_line(arm7_cpu_device::ARM7_IRQ_LINE, CLEAR_LINE);
 
 }
 
@@ -728,7 +711,7 @@ void cxhumax_state::cx_i2c1_w(offs_t offset, uint32_t data, uint32_t mem_mask)
 			m_intctrl_regs[INTREG(INTGROUP1, INTSTATSET)] |= 1<<7;
 			if (m_intctrl_regs[INTREG(INTGROUP1, INTENABLE)] & (1<<7)) {
 					LOG("%s: (I2C1) Int\n",  machine().describe_context());
-					m_maincpu->set_input_line(ARM7_IRQ_LINE, ASSERT_LINE);
+					m_maincpu->set_input_line(arm7_cpu_device::ARM7_IRQ_LINE, ASSERT_LINE);
 			}
 			break;
 		case I2C_STAT_REG:

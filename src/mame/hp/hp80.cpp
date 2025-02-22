@@ -153,12 +153,12 @@ public:
 protected:
 	void hp80_base(machine_config &config);
 
-	virtual void cpu_mem_map(address_map &map);
-	virtual void rombank_mem_map(address_map &map);
+	virtual void cpu_mem_map(address_map &map) ATTR_COLD;
+	virtual void rombank_mem_map(address_map &map) ATTR_COLD;
 	virtual void unmap_optroms(address_space &space);
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	uint8_t intack_r();
 
@@ -990,11 +990,11 @@ public:
 	void hp85(machine_config &config);
 
 private:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
-	DECLARE_WRITE_LINE_MEMBER(vblank_w);
+	void vblank_w(int state);
 
 	uint8_t crtc_r(offs_t offset);
 	void crtc_w(offs_t offset, uint8_t data);
@@ -1008,7 +1008,7 @@ private:
 	TIMER_DEVICE_CALLBACK_MEMBER(vm_timer);
 	TIMER_DEVICE_CALLBACK_MEMBER(prt_busy_timer);
 
-	virtual void cpu_mem_map(address_map &map) override;
+	virtual void cpu_mem_map(address_map &map) override ATTR_COLD;
 	virtual void unmap_optroms(address_space &space) override;
 
 	required_device<screen_device> m_screen;
@@ -1098,7 +1098,7 @@ uint32_t hp85_state::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, 
 	return 0;
 }
 
-WRITE_LINE_MEMBER(hp85_state::vblank_w)
+void hp85_state::vblank_w(int state)
 {
 	COPY_BIT(!state , m_crt_sts , CRT_STS_DISPLAY_BIT);
 	if (state) {
@@ -1633,16 +1633,16 @@ public:
 	void hp86(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
-	virtual void cpu_mem_map(address_map &map) override;
-	virtual void rombank_mem_map(address_map &map) override;
+	virtual void cpu_mem_map(address_map &map) override ATTR_COLD;
+	virtual void rombank_mem_map(address_map &map) override ATTR_COLD;
 	virtual void unmap_optroms(address_space &space) override;
 
 private:
 	uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
-	DECLARE_WRITE_LINE_MEMBER(vblank_w);
+	void vblank_w(int state);
 	attotime time_to_video_mem_availability() const;
 
 	required_device<screen_device> m_screen;
@@ -1697,7 +1697,7 @@ private:
 	void emc_w(offs_t offset, uint8_t data);
 	uint32_t& get_ptr();
 	void ptr12_decrement();
-	DECLARE_WRITE_LINE_MEMBER(lma_cycle);
+	void lma_cycle(int state);
 	void opcode_cb(uint8_t opcode);
 };
 
@@ -1809,7 +1809,7 @@ uint32_t hp86_state::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, 
 	return 0;
 }
 
-WRITE_LINE_MEMBER(hp86_state::vblank_w)
+void hp86_state::vblank_w(int state)
 {
 	COPY_BIT(state , m_crt_sts , 4);
 	if (state) {
@@ -2098,7 +2098,7 @@ void hp86_state::ptr12_decrement()
 	}
 }
 
-WRITE_LINE_MEMBER(hp86_state::lma_cycle)
+void hp86_state::lma_cycle(int state)
 {
 	m_lmard = state;
 	if (m_emc_state == EMC_INDIRECT_1) {
@@ -2250,7 +2250,7 @@ public:
 	hp86_int_state(const machine_config &mconfig, device_type type, const char *tag);
 
 protected:
-	virtual void rombank_mem_map(address_map &map) override;
+	virtual void rombank_mem_map(address_map &map) override ATTR_COLD;
 	virtual void unmap_optroms(address_space &space) override;
 };
 

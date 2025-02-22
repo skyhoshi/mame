@@ -30,12 +30,11 @@ public:
 	virtual ~sgi_kbd_port_device();
 
 	auto rxd_handler() { return m_rxd_handler.bind(); }
-	DECLARE_WRITE_LINE_MEMBER(write_txd);
+	void write_txd(int state);
 
 protected:
 	virtual void device_config_complete() override;
-	virtual void device_resolve_objects() override;
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 private:
 	devcb_write_line m_rxd_handler;
@@ -46,13 +45,13 @@ class device_sgi_kbd_port_interface
 	: public device_interface
 {
 public:
-	virtual DECLARE_WRITE_LINE_MEMBER(write_txd) = 0;
+	virtual void write_txd(int state) = 0;
 
 protected:
 	device_sgi_kbd_port_interface(machine_config const &mconfig, device_t &device);
 	virtual ~device_sgi_kbd_port_interface() override;
 
-	DECLARE_WRITE_LINE_MEMBER(write_rxd) { m_port->m_rxd_handler(state); }
+	void write_rxd(int state) { m_port->m_rxd_handler(state); }
 
 private:
 	sgi_kbd_port_device *m_port;
@@ -65,17 +64,17 @@ class sgi_kbd_device
 public:
 	sgi_kbd_device(machine_config const &mconfig, char const *tag, device_t *owner, uint32_t clock);
 
-	virtual DECLARE_WRITE_LINE_MEMBER(write_txd) override;
+	virtual void write_txd(int state) override;
 
 protected:
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual void device_start() override;
-	virtual tiny_rom_entry const *device_rom_region() const override;
-	virtual ioport_constructor device_input_ports() const override;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
+	virtual tiny_rom_entry const *device_rom_region() const override ATTR_COLD;
+	virtual ioport_constructor device_input_ports() const override ATTR_COLD;
 
 private:
-	virtual void map_mem(address_map &map);
-	virtual void map_pio(address_map &map);
+	virtual void map_mem(address_map &map) ATTR_COLD;
+	virtual void map_pio(address_map &map) ATTR_COLD;
 
 	void scan_matrix(int state);
 	void led_w(u8 data);

@@ -40,7 +40,7 @@ File Names and Directory Paths
 ------------------------------
 
 A number of options for specifying directories support multiple paths (for
-for example to search for ROMs in multiple locations).  MAME expects multiple
+example to search for ROMs in multiple locations).  MAME expects multiple
 paths to be separated with semicolons ( ``;`` ).
 
 MAME expands environment variable expressions in paths.  The syntax used depends
@@ -775,24 +775,24 @@ OSD-related Options
     * - **Microsoft Windows**
       - win
       - dwrite
-      - none
       - auto
       -
-      - sdl [#UIFPSDLWindows]_.
+      - sdl [#UIFPSDLWindows]_
+      - none
     * - **macOS**
       -
       -
-      - none
       - auto
       - osx
       - sdl
+      - none
     * - **Linux**
       -
       -
-      - none
       - auto
       -
       - sdl
+      - none
 
 ..  rubric:: Footnotes
 
@@ -816,26 +816,19 @@ Example:
     :stub-columns: 0
 
     * - **Microsoft Windows**
-      - auto [#KBIPAutoWindows]_.
+      - auto [#KBIPAutoWindows]_
       - rawinput
       - dinput
       - win32
+      - sdl [#KBIPSDLWindows]_
       - none
-      - sdl [#KBIPSDLWindows]_.
     * - **SDL (macOS and Linux)**
-      - auto [#KBIPAutoSDL]_.
+      - auto [#KBIPAutoSDL]_
       -
       -
       -
-      - none
       - sdl
-    * - **Linux**
-      - auto [#KBIPAutoSDL]_.
-      -
-      -
-      -
       - none
-      - sdl
 
 ..  rubric:: Footnotes
 
@@ -868,26 +861,19 @@ Example:
     :stub-columns: 0
 
     * - **Microsoft Windows**
-      - auto [#MIPAutoWindows]_.
+      - auto [#MIPAutoWindows]_
       - rawinput
       - dinput
       - win32
+      - sdl [#MIPSDLWindows]_
       - none
-      - sdl [#MIPSDLWindows]_.
     * - **SDL (macOS and Linux)**
-      - auto [#MIPAutoSDL]_.
+      - auto [#MIPAutoSDL]_
       -
       -
       -
-      - none
       - sdl
-    * - **Linux**
-      - auto [#MIPAutoSDL]_.
-      -
-      -
-      -
       - none
-      - sdl
 
 ..  rubric:: Footnotes
 
@@ -916,36 +902,37 @@ Example:
     :stub-columns: 0
 
     * - **Microsoft Windows**
-      - auto [#LGIPAutoWindows]_.
+      - auto [#LGIPAutoWindows]_
       - rawinput
       - win32
+      - sdl [#LGIPSDLWindows]_
+      -
       - none
-      -
-      -
     * - **macOS**
-      - auto [#LGIPAutoSDL]_.
+      - auto [#LGIPAutoSDL]_
       -
+      -
+      - sdl
       -
       - none
-      -
-      -
     * - **Linux**
-      - auto [#LGIPAutoLinux]_.
+      - auto [#LGIPAutoSDL]_
       -
       -
-      - none
-      -
+      - sdl
       - x11
+      - none
 
 ..  rubric:: Footnotes
 
 ..  [#LGIPAutoWindows] On Windows, auto will try ``rawinput`` with fallback to
                        ``win32``, or ``none`` if it doesn't find any.
 
-..  [#LGIPAutoSDL] On non-Linux SDL, ``auto`` will default to ``none``.
+..  [#LGIPSDLWindows] SDL support on Windows requires that you compile MAME with
+                      the support in. By default SDL is not included in Windows
+                      builds of MAME.
 
-..  [#LGIPAutoLinux] On SDL/Linux, ``auto`` will default to ``x11``, or ``none``
-                     if it doesn't find any.
+..  [#LGIPAutoSDL] On SDL, ``auto`` will default to ``sdl``.
 
 Example:
     .. code-block:: bash
@@ -964,15 +951,15 @@ Example:
     :stub-columns: 0
 
     * - **Microsoft Windows**
-      - auto [#JIPAutoWindows]_.
+      - auto [#JIPAutoWindows]_
       - winhybrid
       - dinput
       - xinput
-      - sdlgame
-      - sdljoy
+      - sdlgame [#JIPSDLWindows]_
+      - sdljoy [#JIPSDLWindows]_
       - none
     * - **SDL**
-      - auto [#JIPAutoSDL]_.
+      - auto [#JIPAutoSDL]_
       -
       -
       -
@@ -983,6 +970,10 @@ Example:
 ..  rubric:: Footnotes
 
 ..  [#JIPAutoWindows] On Windows native, auto will default to ``winhybrid``.
+
+..  [#JIPSDLWindows] SDL support on Windows requires that you compile MAME with
+                      the support in. By default SDL is not included in Windows
+                      builds of MAME.
 
 ..  [#JIPAutoSDL] On SDL, auto will default to ``sdlgame``.
 
@@ -1674,7 +1665,7 @@ Core State/Playback Options
     Example:
         .. code-block:: bash
 
-            mame pacman -wavewrite pacsounds
+            mame pacman -wavwrite pacsounds
 
 .. _mame-commandline-snapname:
 
@@ -1905,7 +1896,7 @@ Core Performance Options
 
 **-[no]throttle**
 
-   Enable or disable thottling emulation speed.  When throttling is enabled,
+   Enable or disable throttling emulation speed.  When throttling is enabled,
    MAME limits emulation speed to so the emulated system will not run faster
    than the original hardware.  When throttling is disabled, MAME runs the
    emulation as fast as possible. Depending on your settings and the
@@ -2334,7 +2325,7 @@ Core Video Options
 
     The default is ``1``.
 
-    This is supported with all video output types ( ``bgfx``, ``d3d``, etc) on
+    This is supported with all video output types ( ``bgfx``, ``d3d``, etc.) on
     Windows and is supported with BGFX and OpenGL on other platforms.
 
     Example:
@@ -2369,7 +2360,7 @@ Core Video Options
 **-[no]unevenstretch**
 
     Allow non-integer scaling factors allowing for great window sizing
-    flexability.
+    flexibility.
 
     The default is ON. (**-unevenstretch**)
 
@@ -2896,7 +2887,7 @@ Core Video OpenGL GLSL Options
 
 **-glsl_shader_mame9**
 
-    Set a custom OpenGL GLSL shader effect to the internal systcm screen in the
+    Set a custom OpenGL GLSL shader effect to the internal system screen in the
     given slot. MAME does not include a vast selection of shaders by default;
     more can be found online.
 
@@ -2917,7 +2908,7 @@ Core Video OpenGL GLSL Options
 
 
     Set a custom OpenGL GLSL shader effect to the whole scaled-up output screen
-    that will be rendered by your graphics card.MAME does not include a vast
+    that will be rendered by your graphics card. MAME does not include a vast
     selection of shaders by default; more can be found online.
 
     Example:
@@ -3458,7 +3449,7 @@ Core Input Options
 
     Allows user to specify whether or not to use a natural keyboard or not.
     This allows you to start your system in a 'native' mode, depending on your
-    region, allowing compatability for non-"QWERTY" style keyboards.
+    region, allowing compatibility for non-"QWERTY" style keyboards.
 
     The default is OFF (**-nonatural**)
 
@@ -3686,8 +3677,9 @@ Debugging Options
         Acts as a remote debugging server for the GNU debugger (GDB).  Only a
         small subset of the CPUs emulated by MAME are supported.  Use the
         :ref:`debugger_port <mame-commandline-debuggerport>` option to set the
-        listening port on the loopback interface.  Supported on all platforms
-        with TCP socket support.
+        listening port and the
+        :ref:`debugger_host <mame-commandline-debuggerhost>` option to set the
+        address to bind to.  Supported on all platforms with TCP socket support.
 
     Example:
         .. code-block:: bash
@@ -3741,11 +3733,26 @@ Debugging Options
 
             mame ibm_5150 -watchdog 30
 
+.. _mame-commandline-debuggerhost:
+
+**-debugger_host** *<address>*
+
+    Set the IP address to listen on to accept GDB connections when using the
+    GDB stub debugger module (see the
+    :ref:`debugger <mame-commandline-debugger>` option).
+
+    The default is ``localhost``.
+
+    Example:
+        .. code-block:: bash
+
+            mame rfjet -debug -debugger gdbstub -debugger_host 0.0.0.0
+
 .. _mame-commandline-debuggerport:
 
 **-debugger_port** *<port>*
 
-    Set the TCP port number to listen on for GDB connections when using the GDB
+    Set the TCP port number to accept GDB connections on when using the GDB
     stub debugger module (see the :ref:`debugger <mame-commandline-debugger>`
     option).
 
@@ -3989,7 +3996,7 @@ Core Misc Options
 
     Specifies the type of UI to use, either ``simple`` or ``cabinet``.
 
-    The default is Cabinet (**-ui cabinet**).
+    The default is cabinet (**-ui cabinet**).
 
     Example:
         .. code-block:: bash
@@ -4025,9 +4032,9 @@ Core Misc Options
 
 **\-[no]ui_mouse**
 
-    Displays a mouse cursor when using the built-in UI for MAME.
+    Displays a mouse cursor when using the built-in MAME user interface.
 
-    The default is (**-noui_mouse**).
+    The default is ON (**-ui_mouse**).
 
 .. _mame-commandline-language:
 
@@ -4072,8 +4079,8 @@ Scripting Options
 **-autoboot_command** *"<command>"*
 
     Command string to execute after machine boot (in quotes " "). To issue a
-    quote to the emulation, use """ in the string. Using **\\n** will issue a
-    create a new line, issuing what was typed prior as a command.
+    quote to the emulation, use """ in the string. Using **\\n** will create
+    a new line, issuing what was typed prior as a command.
 
     This works only with systems that support natural keyboard mode.
 

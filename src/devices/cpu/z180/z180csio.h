@@ -23,8 +23,8 @@ public:
 	auto cks_handler() { return m_cks_cb.bind(); }
 	auto txs_handler() { return m_txs_cb.bind(); }
 
-	DECLARE_WRITE_LINE_MEMBER(cks_wr);
-	DECLARE_WRITE_LINE_MEMBER(rxs_wr);
+	void cks_wr(int state);
+	void rxs_wr(int state);
 
 	u8 cntr_r();
 	u8 trdr_r();
@@ -37,9 +37,9 @@ public:
 
 protected:
 	// device_t implementation
-	virtual void device_resolve_objects() override;
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_resolve_objects() override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 	void clock_edge(u8 cks);
 

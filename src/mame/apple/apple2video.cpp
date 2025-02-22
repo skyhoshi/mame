@@ -76,6 +76,7 @@ void a2_video_device::device_start()
 	save_item(NAME(m_GSbg));
 	save_item(NAME(m_GSborder));
 	save_item(NAME(m_newvideo));
+	save_item(NAME(m_GS_langsel));
 	save_item(NAME(m_monochrome));
 	save_item(NAME(m_rgbmode));
 	save_item(NAME(m_shr_palette));
@@ -100,7 +101,7 @@ void a2_video_device::device_reset()
 	m_monochrome = 0; // TODO: never set, but if left uninitialized could cause the emulation to start in monochrome by accident. Default to color for now
 }
 
-WRITE_LINE_MEMBER(a2_video_device::txt_w)
+void a2_video_device::txt_w(int state)
 {
 	if (m_graphics == state) // avoid flickering from II+ refresh polling
 	{
@@ -110,14 +111,14 @@ WRITE_LINE_MEMBER(a2_video_device::txt_w)
 	}
 }
 
-WRITE_LINE_MEMBER(a2_video_device::mix_w)
+void a2_video_device::mix_w(int state)
 {
 	// select mixed mode or nomix
 	screen().update_now();
 	m_mix = state;
 }
 
-WRITE_LINE_MEMBER(a2_video_device::scr_w)
+void a2_video_device::scr_w(int state)
 {
 	// select primary or secondary page
 	if (!m_80col)
@@ -125,14 +126,14 @@ WRITE_LINE_MEMBER(a2_video_device::scr_w)
 	m_page2 = state;
 }
 
-WRITE_LINE_MEMBER(a2_video_device::res_w)
+void a2_video_device::res_w(int state)
 {
 	// select lo-res or hi-res
 	screen().update_now();
 	m_hires = state;
 }
 
-WRITE_LINE_MEMBER(a2_video_device::dhires_w)
+void a2_video_device::dhires_w(int state)
 {
 	// select double hi-res
 	screen().update_now();
@@ -147,11 +148,16 @@ WRITE_LINE_MEMBER(a2_video_device::dhires_w)
 	m_dhires = !state;
 }
 
-WRITE_LINE_MEMBER(a2_video_device::an2_w)
+void a2_video_device::an2_w(int state)
 {
 	m_an2 = state;
 }
 
+void a2_video_device::a80col_w(bool b80Col)
+{
+	screen().update_now();
+	m_80col = b80Col;
+}
 
 // 4-bit left rotate. Bits 4-6 of n must be a copy of bits 0-2.
 static constexpr unsigned rotl4b(unsigned n, unsigned count) { return (n >> (-count & 3)) & 0x0f; }
@@ -382,10 +388,6 @@ unsigned a2_video_device::get_text_character(uint32_t code, int row)
 				}
 			}
 		}
-		else if (Model == model::IIGS)
-		{
-			code |= 0x100;
-		}
 		else
 		{
 			if ((code >= 0x60) && (code <= 0x7f))
@@ -393,6 +395,14 @@ unsigned a2_video_device::get_text_character(uint32_t code, int row)
 				code |= 0x80;    // map to lowercase normal
 				invert_mask ^= 0x7f;  // and flip the color
 			}
+		}
+		if (Model == model::IIE)
+		{
+			code |= get_iie_langsw() * 0x100;
+		}
+		else if (Model == model::IIGS)
+		{
+			code |= get_GS_language() * 0x100;
 		}
 	}
 	else    // original II and II Plus
@@ -440,8 +450,11 @@ void a2_video_device::lores_update(screen_device &screen, bitmap_ind16 &bitmap, 
 	const int stopcol = ((cliprect.right() / 14) + 1);
 
 	bool const monochrome = monochrome_monitor();
-	bool const render_perfect_blocks = !monochrome && (rgb_monitor() || !composite_lores_artifacts());
-
+	bool render_perfect_blocks = !monochrome && (rgb_monitor() || !composite_lores_artifacts());
+	if (!Double && m_dhires)
+	{
+		render_perfect_blocks = false;
+	}
 	//printf("GR: row %d startcol %d stopcol %d left %d right %d\n", beginrow, startcol, stopcol, cliprect.left(), cliprect.right());
 
 	for (int row = startrow; row <= stoprow; row += 4)
@@ -450,7 +463,6 @@ void a2_video_device::lores_update(screen_device &screen, bitmap_ind16 &bitmap, 
 		uint32_t const address = start_address + ((((row/8) & 0x07) << 7) | (((row/8) & 0x18) * 5));
 		uint8_t const *const vram = m_ram_ptr + address;
 		uint8_t const *const vaux = Double ? (m_aux_ptr + address) : nullptr;
-
 		auto const NIBBLE = [&row] (auto byte) { return ((byte) >> (row & 4)) & 0x0f; };
 		if (render_perfect_blocks)
 		{
@@ -490,8 +502,17 @@ void a2_video_device::lores_update(screen_device &screen, bitmap_ind16 &bitmap, 
 				}
 				else
 				{
-					words[col+0] = (NIBBLE(vram[col+0]) * 0x1111) & 0x3fff;
-					words[col+1] = (NIBBLE(vram[col+1]) * 0x1111) >> 2;
+					if (m_dhires)
+					{
+						// TODO: lo-res in 7M drawing here (should be just black/white/green/purple)
+						words[col+0] = (NIBBLE(vram[col+0]) * 0x1111) & 0x3fff;
+						words[col+1] = (NIBBLE(vram[col+1]) * 0x1111) >> 2;
+					}
+					else
+					{
+						words[col+0] = (NIBBLE(vram[col+0]) * 0x1111) & 0x3fff;
+						words[col+1] = (NIBBLE(vram[col+1]) * 0x1111) >> 2;
+					}
 				}
 			}
 
@@ -527,7 +548,6 @@ void a2_video_device::text_update(screen_device &screen, bitmap_ind16 &bitmap, c
 
 	bool const is_80_column = (Model == model::IIE || Model == model::IIGS) && m_80col;
 	bool const monochrome = !(m_graphics && composite_monitor() && composite_text_color(is_80_column));
-
 	for (int row = startrow; row < stoprow; row++)
 	{
 		uint32_t const address = start_address + ((((row / 8) & 0x07) << 7) | (((row / 8) & 0x18) * 5));
@@ -640,7 +660,6 @@ void a2_video_device::dhgr_update(screen_device &screen, bitmap_ind16 &bitmap, c
 	endrow = (std::min)(endrow, cliprect.bottom());
 	int const startcol = (cliprect.left() / 14);
 	int const stopcol = (cliprect.right() / 14) + 1;
-	const bool bIsRGBMonitor = rgb_monitor();
 
 	uint8_t const *const vram = &m_ram_ptr[page];
 	uint8_t const *const vaux = (m_aux_ptr ? m_aux_ptr : vram) + page;
@@ -688,8 +707,9 @@ void a2_video_device::dhgr_update(screen_device &screen, bitmap_ind16 &bitmap, c
 				words[col] = (vaux_row[col] & 0x7f) + ((vram_row[col] & 0x7f) << 7);
 			}
 
-			if (monochrome)
+			if (rgbmode < 0 || monochrome)
 			{
+				// Composite or monochrome, use the renderer that supports artifact rendering.
 				render_line(p, words, startcol, stopcol, monochrome, true);
 			}
 			else
@@ -715,7 +735,7 @@ void a2_video_device::dhgr_update(screen_device &screen, bitmap_ind16 &bitmap, c
 				{
 					unsigned const w = words[col] + (words[col+1] << 14);
 
-					unsigned const color_mask = (rgbmode == 3 || !bIsRGBMonitor) ? -1u :
+					unsigned const color_mask = (rgbmode == 3) ? -1u :
 							(vaux_row[col] >> 7) * 0x7f + (vram_row[col] >> 7) * 0x3f80
 							+ (vaux_row[col+1] >> 7) * 0x1fc000 + (vram_row[col+1] >> 7) * 0xfe00000;
 
@@ -951,7 +971,7 @@ uint32_t a2_video_device::screen_update(screen_device &screen, bitmap_ind16 &bit
 
 		if (m_hires)
 		{
-			if ((Model == model::IIE || Model == model::IIGS) && m_dhires && m_80col)
+			if ((Model == model::IIE || Model == model::IIGS) && m_dhires && m_80col && m_aux_ptr)
 			{
 				dhgr_update(screen, bitmap, cliprect, 0, text_start_row - 1);
 			}
@@ -962,7 +982,7 @@ uint32_t a2_video_device::screen_update(screen_device &screen, bitmap_ind16 &bit
 		}
 		else    // lo-res
 		{
-			if ((Model == model::IIE || Model == model::IIGS) && m_dhires && m_80col)
+			if ((Model == model::IIE || Model == model::IIGS) && m_dhires && m_80col && m_aux_ptr)
 			{
 				lores_update<true>(screen, bitmap, cliprect, 0, text_start_row - 1);
 			}

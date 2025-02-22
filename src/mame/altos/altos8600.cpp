@@ -68,21 +68,21 @@ private:
 	void romport_w(offs_t offset, u8 data);
 	void clrsys_w(u8 data);
 	void mode_w(u16 data);
-	DECLARE_WRITE_LINE_MEMBER(cpuif_w);
-	DECLARE_WRITE_LINE_MEMBER(fddrq_w);
-	DECLARE_WRITE_LINE_MEMBER(sintr1_w);
+	void cpuif_w(int state);
+	void fddrq_w(int state);
+	void sintr1_w(int state);
 	void ics_attn_w(offs_t offset, u8 data);
 	IRQ_CALLBACK_MEMBER(inta);
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	void code_mem(address_map &map);
-	void cpu_io(address_map &map);
-	void cpu_mem(address_map &map);
-	void dmac_io(address_map &map);
-	void dmac_mem(address_map &map);
-	void extra_mem(address_map &map);
-	void stack_mem(address_map &map);
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	void code_mem(address_map &map) ATTR_COLD;
+	void cpu_io(address_map &map) ATTR_COLD;
+	void cpu_mem(address_map &map) ATTR_COLD;
+	void dmac_io(address_map &map) ATTR_COLD;
+	void dmac_mem(address_map &map) ATTR_COLD;
+	void extra_mem(address_map &map) ATTR_COLD;
+	void stack_mem(address_map &map) ATTR_COLD;
 
 	u16 xlate_r(offs_t offset, u16 mem_mask, int permbit);
 	void xlate_w(offs_t offset, u16 data, u16 mem_mask, int permbit);
@@ -338,7 +338,7 @@ void altos8600_state::hd_w(offs_t offset, u8 data)
 	}
 }
 
-WRITE_LINE_MEMBER(altos8600_state::cpuif_w)
+void altos8600_state::cpuif_w(int state)
 {
 	if(m_user)
 	{
@@ -350,13 +350,13 @@ WRITE_LINE_MEMBER(altos8600_state::cpuif_w)
 		m_user = true;
 }
 
-WRITE_LINE_MEMBER(altos8600_state::fddrq_w)
+void altos8600_state::fddrq_w(int state)
 {
 	if(!m_dmamplex)
 		m_dmac->drq2_w(state);
 }
 
-WRITE_LINE_MEMBER(altos8600_state::sintr1_w)
+void altos8600_state::sintr1_w(int state)
 {
 	if(state)
 	{

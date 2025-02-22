@@ -90,6 +90,8 @@ Scanline 0 is the start of vblank.
 
 #include "bus/mackbd/mackbd.h"
 #include "bus/macpds/hyperdrive.h"
+#include "bus/nscsi/cd.h"
+#include "bus/nscsi/devices.h"
 #include "cpu/m68000/m68000.h"
 #include "machine/6522via.h"
 #include "machine/iwm.h"
@@ -141,9 +143,9 @@ public:
 		m_adbmodem(*this, "adbmodem"),
 		m_macadb(*this, "macadb"),
 		m_ram(*this, RAM_TAG),
-		m_scsibus(*this, "scsibus"),
+		m_scsibus(*this, "scsi"),
 		m_scsihelp(*this, "scsihelp"),
-		m_ncr5380(*this, "scsibus:7:ncr5380"),
+		m_ncr5380(*this, "scsi:7:ncr5380"),
 		m_iwm(*this, "fdc"),
 		m_floppy(*this, "fdc:%d", 0U),
 		m_mackbd(*this, "kbd"),
@@ -193,13 +195,12 @@ private:
 
 	optional_ioport m_mouse0, m_mouse1, m_mouse2;
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	void scc_mouse_irq( int x, int y );
 	void set_via_interrupt(int value);
 	void field_interrupts();
-	void vblank_irq();
 	void mouse_callback();
 
 	uint16_t ram_r(offs_t offset);
@@ -217,13 +218,13 @@ private:
 	void macplus_scsi_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 	uint16_t macse_scsi_r(offs_t offset, uint16_t mem_mask = ~0);
 	void macse_scsi_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
-	DECLARE_WRITE_LINE_MEMBER(scsi_irq_w);
-	DECLARE_WRITE_LINE_MEMBER(scsi_drq_w);
+	void scsi_irq_w(int state);
+	void scsi_drq_w(int state);
 	void scsi_berr_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(set_scc_interrupt);
-	DECLARE_WRITE_LINE_MEMBER(vblank_w);
+	void set_scc_interrupt(int state);
+	void vblank_w(int state);
 
-	WRITE_LINE_MEMBER(adb_irq_w) { m_adb_irq_pending = state; }
+	void adb_irq_w(int state) { m_adb_irq_pending = state; }
 
 	TIMER_CALLBACK_MEMBER(mac_scanline);
 	TIMER_CALLBACK_MEMBER(mac_hblank);
@@ -236,12 +237,12 @@ private:
 	void mac_via_out_b(uint8_t data);
 	void mac_via_out_a_se(uint8_t data);
 	void mac_via_out_b_se(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(mac_via_irq);
+	void mac_via_irq(int state);
 	void update_volume();
 
-	void mac512ke_map(address_map &map);
-	void macplus_map(address_map &map);
-	void macse_map(address_map &map);
+	void mac512ke_map(address_map &map) ATTR_COLD;
+	void macplus_map(address_map &map) ATTR_COLD;
+	void macse_map(address_map &map) ATTR_COLD;
 
 	floppy_image_device *m_cur_floppy;
 	int m_hdsel, m_devsel;
@@ -400,7 +401,7 @@ void mac128_state::field_interrupts()
 	}
 }
 
-WRITE_LINE_MEMBER(mac128_state::set_scc_interrupt)
+void mac128_state::set_scc_interrupt(int state)
 {
 //  printf("SCC IRQ: %d\n", state);
 	m_scc_interrupt = state;
@@ -411,14 +412,6 @@ void mac128_state::set_via_interrupt(int value)
 {
 	m_via_interrupt = value;
 	field_interrupts();
-}
-
-void mac128_state::vblank_irq()
-{
-	if (m_macadb)
-	{
-		m_macadb->adb_vblank();
-	}
 }
 
 void mac128_state::update_volume()
@@ -450,7 +443,7 @@ void mac128_state::update_volume()
 	m_volfilter->opamp_mfb_lowpass_modify(res_ohm_tbl[m_snd_vol&7], RES_K(0), RES_K(200), CAP_U(0), CAP_P(220)); // variable based on cd4016, short, R15, absent, C10
 }
 
-WRITE_LINE_MEMBER(mac128_state::vblank_w)
+void mac128_state::vblank_w(int state)
 {
 	m_via->write_ca1(state);
 }
@@ -458,11 +451,6 @@ WRITE_LINE_MEMBER(mac128_state::vblank_w)
 TIMER_CALLBACK_MEMBER(mac128_state::mac_scanline)
 {
 	const int scanline = param;
-
-	if (scanline == 0)
-	{
-		vblank_irq();
-	}
 
 	/* video beam in display (! VBLANK && ! HBLANK basically) */
 	if (scanline >= 28)
@@ -598,11 +586,11 @@ void mac128_state::pwm_push(uint8_t data)
 	}
 }
 
-WRITE_LINE_MEMBER(mac128_state::scsi_irq_w)
+void mac128_state::scsi_irq_w(int state)
 {
 }
 
-WRITE_LINE_MEMBER(mac128_state::scsi_drq_w)
+void mac128_state::scsi_drq_w(int state)
 {
 	m_scsi_drq = state;
 }
@@ -714,7 +702,7 @@ void mac128_state::mac_iwm_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 		m_iwm->write((offset >> 8) & 0xf, data>>8);
 }
 
-WRITE_LINE_MEMBER(mac128_state::mac_via_irq)
+void mac128_state::mac_via_irq(int state)
 {
 	/* interrupt the 68k (level 1) */
 	set_via_interrupt(state);
@@ -1081,6 +1069,7 @@ void mac128_state::mac512ke(machine_config &config)
 	M68000(config, m_maincpu, C7M);        /* 7.8336 MHz */
 	m_maincpu->set_addrmap(AS_PROGRAM, &mac128_state::mac512ke_map);
 	m_maincpu->set_dasm_override(std::function(&mac68k_dasm_override), "mac68k_dasm_override");
+	m_maincpu->set_tas_write_callback(NAME([] (offs_t offset, uint8_t data) { })); // TAS read-modify-write cycles are not supported on pre-SE Macs
 	config.set_maximum_quantum(attotime::from_hz(60));
 
 	/* video hardware */
@@ -1136,8 +1125,9 @@ void mac128_state::mac512ke(machine_config &config)
 	MACPDS_SLOT(config, "pds", "macpds", mac_pds_cards, nullptr);
 
 	// software list
+	SOFTWARE_LIST(config, "flop_mac35_orig").set_original("mac_flop_orig");
+	SOFTWARE_LIST(config, "flop_mac35_clean").set_original("mac_flop_clcracked");
 	SOFTWARE_LIST(config, "flop35_list").set_original("mac_flop");
-	SOFTWARE_LIST(config, "hdd_list").set_original("mac_hdd");
 }
 
 void mac128_state::mac128k(machine_config &config)
@@ -1169,19 +1159,32 @@ void mac128_state::macplus(machine_config &config)
 	m_mackbd->set_default_option("usp");
 
 	// SCSI bus and devices
+	// These machines were strictly external CD-ROMs so sound didn't route back into them; the AppleCD SC had
+	// RCA jacks for connection to speakers/a stereo.
+	SPEAKER(config, "lspeaker").front_left();
+	SPEAKER(config, "rspeaker").front_right();
+
 	NSCSI_BUS(config, m_scsibus);
-	NSCSI_CONNECTOR(config, "scsibus:0", mac_scsi_devices, nullptr);
-	NSCSI_CONNECTOR(config, "scsibus:1", mac_scsi_devices, nullptr);
-	NSCSI_CONNECTOR(config, "scsibus:2", mac_scsi_devices, nullptr);
-	NSCSI_CONNECTOR(config, "scsibus:3", mac_scsi_devices, nullptr);
-	NSCSI_CONNECTOR(config, "scsibus:4", mac_scsi_devices, nullptr);
-	NSCSI_CONNECTOR(config, "scsibus:5", mac_scsi_devices, nullptr);
-	NSCSI_CONNECTOR(config, "scsibus:6", mac_scsi_devices, "harddisk");
-	NSCSI_CONNECTOR(config, "scsibus:7").option_set("ncr5380", NCR5380).machine_config([this](device_t *device) {
+	NSCSI_CONNECTOR(config, "scsi:0", mac_scsi_devices, nullptr);
+	NSCSI_CONNECTOR(config, "scsi:1", mac_scsi_devices, nullptr);
+	NSCSI_CONNECTOR(config, "scsi:2", mac_scsi_devices, nullptr);
+	NSCSI_CONNECTOR(config, "scsi:3").option_set("cdrom", NSCSI_CDROM_APPLE).machine_config(
+		[](device_t *device)
+		{
+			device->subdevice<cdda_device>("cdda")->add_route(0, "^^lspeaker", 1.0);
+			device->subdevice<cdda_device>("cdda")->add_route(1, "^^rspeaker", 1.0);
+		});
+	NSCSI_CONNECTOR(config, "scsi:4", mac_scsi_devices, nullptr);
+	NSCSI_CONNECTOR(config, "scsi:5", mac_scsi_devices, nullptr);
+	NSCSI_CONNECTOR(config, "scsi:6", mac_scsi_devices, "harddisk");
+	NSCSI_CONNECTOR(config, "scsi:7").option_set("ncr5380", NCR5380).machine_config([this](device_t *device) {
 		ncr5380_device &adapter = downcast<ncr5380_device &>(*device);
 		adapter.irq_handler().set(*this, FUNC(mac128_state::scsi_irq_w));
 		adapter.drq_handler().set(*this, FUNC(mac128_state::scsi_drq_w));
 	});
+
+	SOFTWARE_LIST(config, "hdd_list").set_original("mac_hdd");
+	SOFTWARE_LIST(config, "cd_list").set_original("mac_cdrom").set_filter("MC68000");
 
 	/* internal ram */
 	m_ram->set_default_size("4M");
@@ -1196,7 +1199,9 @@ static void mac_sepds_cards(device_slot_interface &device)
 void mac128_state::macse(machine_config &config)
 {
 	macplus(config);
+	M68000(config.replace(), m_maincpu, C7M);
 	m_maincpu->set_addrmap(AS_PROGRAM, &mac128_state::macse_map);
+	m_maincpu->set_dasm_override(std::function(&mac68k_dasm_override), "mac68k_dasm_override");
 
 	config.device_remove("kbd");
 	config.device_remove("pds");
@@ -1216,7 +1221,7 @@ void mac128_state::macse(machine_config &config)
 	m_scsihelp->cpu_halt_callback().set_inputline(m_maincpu, INPUT_LINE_HALT);
 	m_scsihelp->timeout_error_callback().set(FUNC(mac128_state::scsi_berr_w));
 
-	subdevice<nscsi_connector>("scsibus:7")->set_option_machine_config("ncr5380", [this](device_t *device) {
+	subdevice<nscsi_connector>("scsi:7")->set_option_machine_config("ncr5380", [this](device_t *device) {
 		ncr5380_device &adapter = downcast<ncr5380_device &>(*device);
 		adapter.irq_handler().set(*this, FUNC(mac128_state::scsi_irq_w));
 		adapter.drq_handler().set(m_scsihelp, FUNC(mac_scsi_helper_device::drq_w));
@@ -1265,10 +1270,10 @@ void mac128_state::macclasc(machine_config &config)
 {
 	macsefd(config);
 
-	config.device_remove("pds");
-	config.device_remove("sepds");
+//  config.device_remove("pds");
+//  config.device_remove("sepds");
 
-	NSCSI_CONNECTOR(config.replace(), "scsibus:7").option_set("ncr5380", NCR53C80).machine_config([this](device_t *device) {
+	NSCSI_CONNECTOR(config.replace(), "scsi:7").option_set("ncr5380", NCR53C80).machine_config([this](device_t *device) {
 		ncr5380_device &adapter = downcast<ncr5380_device &>(*device);
 		adapter.irq_handler().set(*this, FUNC(mac128_state::scsi_irq_w));
 		adapter.drq_handler().set(m_scsihelp, FUNC(mac_scsi_helper_device::drq_w));

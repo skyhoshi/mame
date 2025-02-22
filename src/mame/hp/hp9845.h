@@ -26,9 +26,9 @@ public:
 	DECLARE_INPUT_CHANGED_MEMBER(togglekey_changed);
 
 protected:
-	virtual void machine_start() override;
-	virtual void device_reset() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	TIMER_DEVICE_CALLBACK_MEMBER(gv_timer);
 
@@ -42,11 +42,11 @@ protected:
 	void kb_irq_clear_w(uint16_t data);
 	TIMER_DEVICE_CALLBACK_MEMBER(beeper_off);
 
-	DECLARE_WRITE_LINE_MEMBER(prt_irl_w);
+	void prt_irl_w(int state);
 
 	void hp9845_base(machine_config &config);
-	void global_mem_map(address_map &map);
-	void ppu_io_map(address_map &map);
+	void global_mem_map(address_map &map) ATTR_COLD;
+	void ppu_io_map(address_map &map) ATTR_COLD;
 
 	required_device<hp_5061_3001_cpu_device> m_lpu;
 	required_device<hp_5061_3001_cpu_device> m_ppu;

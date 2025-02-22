@@ -608,6 +608,7 @@ public:
 		logical_operation_enabled = false;
 		logical_operation = NV2A_LOGIC_OP::COPY;
 		fog_color = 0;
+		bilinear_filter = false;
 		for (int n = 0; n < 4; n++) {
 			texture[n].enabled = 0;
 			texture[n].mode = 0;
@@ -652,7 +653,7 @@ public:
 	running_machine &machine() { return mach; }
 	uint32_t geforce_r(offs_t offset, uint32_t mem_mask = ~0);
 	void geforce_w(address_space &space, offs_t offset, uint32_t data, uint32_t mem_mask = ~0);
-	DECLARE_WRITE_LINE_MEMBER(vblank_callback);
+	void vblank_callback(int state);
 	uint32_t screen_update_callback(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	bool update_interrupts();
 	void set_irq_callbaclk(std::function<void(int state)> callback) { irq_callback = callback; }
@@ -845,6 +846,7 @@ public:
 	uint32_t blend_color;
 	NV2A_LOGIC_OP logical_operation;
 	uint32_t fog_color;
+	bool bilinear_filter;
 	struct {
 		float modelview[4][4];
 		float modelview_inverse[4][4];
@@ -872,7 +874,7 @@ public:
 		offs_t destination_address = 0;
 		int op = 0;
 		int width = 0;
-		int heigth = 0;
+		int height = 0;
 		uint32_t sourcex = 0;
 		uint32_t sourcey = 0;
 		uint32_t destinationx = 0;

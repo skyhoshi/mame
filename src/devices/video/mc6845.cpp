@@ -82,6 +82,7 @@ DEFINE_DEVICE_TYPE(AMS40489, ams40489_device, "ams40489", "AMS40489 ASIC (CRTC)"
 mc6845_device::mc6845_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock)
 	: device_t(mconfig, type, tag, owner, clock)
 	, device_video_interface(mconfig, *this, false)
+	, m_line_timer(nullptr)
 	, m_show_border_area(true)
 	, m_noninterlace_adjust(0)
 	, m_interlace_adjust(0)
@@ -380,25 +381,25 @@ void hd6345_device::register_w(uint8_t data)
 }
 
 
-READ_LINE_MEMBER( mc6845_device::de_r )
+int mc6845_device::de_r()
 {
 	return m_de;
 }
 
 
-READ_LINE_MEMBER( mc6845_device::cursor_r )
+int mc6845_device::cursor_r()
 {
 	return m_cur;
 }
 
 
-READ_LINE_MEMBER( mc6845_device::hsync_r )
+int mc6845_device::hsync_r()
 {
 	return m_hsync;
 }
 
 
-READ_LINE_MEMBER( mc6845_device::vsync_r )
+int mc6845_device::vsync_r()
 {
 	return m_vsync;
 }
@@ -504,6 +505,10 @@ void mc6845_device::recompute_parameters(bool postload)
 		m_hsync_off_pos = hsync_off_pos;
 		m_vsync_on_pos = vsync_on_pos;
 		m_vsync_off_pos = vsync_off_pos;
+		if (m_line_timer && !m_line_timer->enabled() && m_has_valid_parameters)
+		{
+			m_line_timer->adjust(cclks_to_attotime(m_horiz_char_total + 1));
+		}
 		if ( (!m_reconfigure_cb.isnull()) && (!postload) )
 			m_line_counter = 0;
 	}
@@ -976,8 +981,6 @@ uint32_t mc6845_device::screen_update(screen_device &screen, bitmap_rgb32 &bitma
 
 	if (m_has_valid_parameters)
 	{
-		assert(!m_update_row_cb.isnull());
-
 		if (m_display_disabled_msg_shown == true)
 		{
 			logerror("M6845: Valid screen parameters - display reenabled!!!\n");
@@ -985,8 +988,7 @@ uint32_t mc6845_device::screen_update(screen_device &screen, bitmap_rgb32 &bitma
 		}
 
 		/* call the set up function if any */
-		if (!m_begin_update_cb.isnull())
-			m_begin_update_cb(bitmap, cliprect);
+		m_begin_update_cb(bitmap, cliprect);
 
 		if (cliprect.min_y == 0)
 		{
@@ -1001,8 +1003,7 @@ uint32_t mc6845_device::screen_update(screen_device &screen, bitmap_rgb32 &bitma
 		}
 
 		/* call the tear down function if any */
-		if (!m_end_update_cb.isnull())
-			m_end_update_cb(bitmap, cliprect);
+		m_end_update_cb(bitmap, cliprect);
 	}
 	else
 	{
@@ -1024,16 +1025,10 @@ void mc6845_device::device_start()
 
 	/* bind delegates */
 	m_reconfigure_cb.resolve();
-	m_begin_update_cb.resolve();
-	m_update_row_cb.resolve();
-	m_end_update_cb.resolve();
+	m_begin_update_cb.resolve_safe();
+	m_update_row_cb.resolve_safe();
+	m_end_update_cb.resolve_safe();
 	m_on_update_addr_changed_cb.resolve();
-
-	/* resolve callbacks */
-	m_out_de_cb.resolve_safe();
-	m_out_cur_cb.resolve_safe();
-	m_out_hsync_cb.resolve_safe();
-	m_out_vsync_cb.resolve_safe();
 
 	/* create the timers */
 	m_line_timer = timer_alloc(FUNC(mc6845_device::handle_line_timer), this);
@@ -1278,16 +1273,20 @@ void mc6845_device::device_reset()
 
 	m_out_vsync_cb(false);
 
-	if (!m_line_timer->enabled())
+	if (!m_line_timer->enabled() && m_has_valid_parameters)
+	{
 		m_line_timer->adjust(cclks_to_attotime(m_horiz_char_total + 1));
+	}
 
 	m_light_pen_latched = false;
 
+	// TODO: as per the note above, none of these should reset unless otherwise proven.
 	m_cursor_addr = 0;
 	m_line_address = 0;
-	m_horiz_disp = 0;
+	// bml3 in particular disagrees with these two.
+	//m_horiz_disp = 0;
+	//m_mode_control = 0;
 	m_cursor_x = 0;
-	m_mode_control = 0;
 	m_register_address_latch = 0;
 	m_update_addr = 0;
 	m_light_pen_addr = 0;

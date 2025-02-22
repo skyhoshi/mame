@@ -207,9 +207,11 @@ TODO:
 #include "v4psi.lh"
 #include "v4strike.lh"
 
+#define VERBOSE (0)
+#include "logmacro.h"
+
 
 #define VIDEO_MASTER_CLOCK          XTAL(10'000'000)
-
 
 namespace {
 
@@ -273,9 +275,9 @@ public:
 	void init_bwbhack();
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	required_device<m68000_base_device> m_videocpu;
@@ -299,37 +301,37 @@ private:
 	int8_t m_cur[2];
 
 	SCN2674_DRAW_CHARACTER_MEMBER(display_pixels);
-	DECLARE_WRITE_LINE_MEMBER(m6809_acia_irq);
-	DECLARE_WRITE_LINE_MEMBER(m68k_acia_irq);
-	DECLARE_WRITE_LINE_MEMBER(cpu1_ptm_irq);
-	DECLARE_WRITE_LINE_MEMBER(vid_o1_callback);
-	DECLARE_WRITE_LINE_MEMBER(vid_o2_callback);
-	DECLARE_WRITE_LINE_MEMBER(vid_o3_callback);
+	void m6809_acia_irq(int state);
+	void m68k_acia_irq(int state);
+	void cpu1_ptm_irq(int state);
+	void vid_o1_callback(int state);
+	void vid_o2_callback(int state);
+	void vid_o3_callback(int state);
 	uint8_t pia_ic5_porta_track_r();
-	DECLARE_WRITE_LINE_MEMBER(update_mpu68_interrupts);
+	void update_mpu68_interrupts(int state);
 	uint16_t mpu4_vid_vidram_r(offs_t offset);
 	void mpu4_vid_vidram_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 	EF9369_COLOR_UPDATE(ef9369_color_update);
 
 	void vidcharacteriser_w(offs_t offset, uint8_t data);
 	uint8_t vidcharacteriser_r(offs_t offset);
-	DECLARE_WRITE_LINE_MEMBER(mpu_video_reset);
+	void mpu_video_reset(int state);
 	void vram_w(offs_t offset, uint8_t data);
 	uint8_t vram_r(offs_t offset);
 	void ic3ss_vid_w(offs_t offset, uint8_t data);
 
-	void bwbvidoki_68k_base_map(address_map &map);
-	void bwbvidoki_68k_map(address_map &map);
-	void bwbvidoki_68k_bt471_map(address_map &map);
-	void bwbvid_68k_map(address_map &map);
-	void mpu4_68k_map_base(address_map &map);
-	void mpu4_68k_map(address_map &map);
-	void mpu4_68k_map_strike(address_map &map);
-	void mpu4_vram(address_map &map);
-	void mpu4oki_68k_map(address_map &map);
+	void bwbvidoki_68k_base_map(address_map &map) ATTR_COLD;
+	void bwbvidoki_68k_map(address_map &map) ATTR_COLD;
+	void bwbvidoki_68k_bt471_map(address_map &map) ATTR_COLD;
+	void bwbvid_68k_map(address_map &map) ATTR_COLD;
+	void mpu4_68k_map_base(address_map &map) ATTR_COLD;
+	void mpu4_68k_map(address_map &map) ATTR_COLD;
+	void mpu4_68k_map_strike(address_map &map) ATTR_COLD;
+	void mpu4_vram(address_map &map) ATTR_COLD;
+	void mpu4oki_68k_map(address_map &map) ATTR_COLD;
 
-	void mpu4_6809_map(address_map &map);
-	void mpu4_6809_german_map(address_map &map);
+	void mpu4_6809_map(address_map &map) ATTR_COLD;
+	void mpu4_6809_german_map(address_map &map) ATTR_COLD;
 
 	uint8_t vidcharacteriser_4k_lookup_r(offs_t offset);
 
@@ -366,7 +368,7 @@ private:
 */
 
 
-WRITE_LINE_MEMBER(mpu4vid_state::update_mpu68_interrupts)
+void mpu4vid_state::update_mpu68_interrupts(int state)
 {
 	m_videocpu->set_input_line(1, m_m6840_irq_state ? ASSERT_LINE : CLEAR_LINE);
 	m_videocpu->set_input_line(2, m_m6850_irq_state ? ASSERT_LINE : CLEAR_LINE);
@@ -374,13 +376,13 @@ WRITE_LINE_MEMBER(mpu4vid_state::update_mpu68_interrupts)
 
 /* Communications with 6809 board */
 
-WRITE_LINE_MEMBER(mpu4vid_state::m6809_acia_irq)
+void mpu4vid_state::m6809_acia_irq(int state)
 {
 	m_acia_1->write_cts(state);
 	m_maincpu->set_input_line(M6809_IRQ_LINE, state);
 }
 
-WRITE_LINE_MEMBER(mpu4vid_state::m68k_acia_irq)
+void mpu4vid_state::m68k_acia_irq(int state)
 {
 	m_acia_0->write_cts(state);
 	m_m6850_irq_state = state;
@@ -388,14 +390,14 @@ WRITE_LINE_MEMBER(mpu4vid_state::m68k_acia_irq)
 }
 
 
-WRITE_LINE_MEMBER(mpu4vid_state::cpu1_ptm_irq)
+void mpu4vid_state::cpu1_ptm_irq(int state)
 {
 	m_m6840_irq_state = state;
 	update_mpu68_interrupts(1);
 }
 
 
-WRITE_LINE_MEMBER(mpu4vid_state::vid_o1_callback)
+void mpu4vid_state::vid_o1_callback(int state)
 {
 	m_ptm->set_c2(state); /* this output is the clock for timer2 */
 
@@ -406,13 +408,13 @@ WRITE_LINE_MEMBER(mpu4vid_state::vid_o1_callback)
 }
 
 
-WRITE_LINE_MEMBER(mpu4vid_state::vid_o2_callback)
+void mpu4vid_state::vid_o2_callback(int state)
 {
 	m_ptm->set_c3(state); /* this output is the clock for timer3 */
 }
 
 
-WRITE_LINE_MEMBER(mpu4vid_state::vid_o3_callback)
+void mpu4vid_state::vid_o3_callback(int state)
 {
 	m_ptm->set_c1(state); /* this output is the clock for timer1 */
 }
@@ -548,7 +550,7 @@ uint8_t mpu4vid_state::pia_ic5_porta_track_r()
 	We invert the X and Y data at source due to the use of Schmitt triggers in the interface, which
 	clean up the pulses and flip the active phase.*/
 
-	LOG(("%s: IC5 PIA Read of Port A (AUX1)\n",machine().describe_context()));
+	LOG("%s: IC5 PIA Read of Port A (AUX1)\n",machine().describe_context());
 
 
 	uint8_t data = m_aux1_port->read();
@@ -1858,7 +1860,7 @@ static INPUT_PORTS_START( v4cybcas )
 INPUT_PORTS_END
 
 
-WRITE_LINE_MEMBER(mpu4vid_state::mpu_video_reset)
+void mpu4vid_state::mpu_video_reset(int state)
 {
 	m_ptm->reset();
 	m_acia_1->reset();
@@ -3439,7 +3441,7 @@ ROM_START( v4redhtpunk )
 	ROM_REGION( 0x10000, "maincpu", 0 )
 	ROM_LOAD( "rhp20ac6", 0x0000, 0x010000, CRC(d6a842b4) SHA1(94f6cc6a9e0efa8a2eeee14f981f9d2407dfb092) )
 
-	ROM_REGION( 0x800000, "video", 0 ) // none of the ROMs are have are commpatible with this?
+	ROM_REGION( 0x800000, "video", 0 ) // none of the ROMs we have are compatible with this?
 	ROM_LOAD("video_board_roms", 0x0000, 0x10000, NO_DUMP )
 
 	ROM_REGION( 0x200000, "okicard:msm6376", ROMREGION_ERASE00 )
@@ -5438,6 +5440,26 @@ ROM_START( v4bulblxc )
 
 	ROM_REGION( 0x200000, "okicard:msm6376", ROMREGION_ERASE00 )
 	/* none present */
+ROM_END
+
+ROM_START( v4bulblxd )
+	ROM_REGION( 0x10000, "maincpu", 0 ) // main PCB wasn't present
+	ROM_LOAD( "program.bin", 0x00000, 0x010000, NO_DUMP )
+
+	ROM_REGION( 0x800000, "video", 0 ) // on BARCREST VIDEO MEMORY CARD 681868 18185-2 PCB
+	ROM_LOAD16_BYTE( "bvm_____.1_1.ic9",  0x000000, 0x010000, CRC(c3868e84) SHA1(991bad401a2853c3ea95adf9861c565fedc22b3a) ) // 1xxxxxxxxxxxxxxx = 0xFF
+	ROM_LOAD16_BYTE( "bvm_____.1_2.ic1",  0x000001, 0x010000, CRC(e97ba9ff) SHA1(40afefb7215ef968613b06e2aeb345b0f8bbc2c1) ) // 1xxxxxxxxxxxxxxx = 0xFF
+	ROM_LOAD16_BYTE( "bvm_____.1_3.ic10", 0x020000, 0x010000, CRC(4277e41c) SHA1(f2cab567be22714de42aff14755fda05d353a4fa) )
+	ROM_LOAD16_BYTE( "bvm_____.1_4.ic2",  0x020001, 0x010000, CRC(d1d8e1f1) SHA1(e875085257782ba97058e637f15dc1d1b7ff63ba) )
+	ROM_LOAD16_BYTE( "bvm_____.1_5.ic11", 0x040000, 0x010000, CRC(5aa44716) SHA1(256972701112bfd446d5f5fcdf741c6240ca6b3b) )
+	ROM_LOAD16_BYTE( "bvm_____.1_6.ic3",  0x040001, 0x010000, CRC(ff698218) SHA1(f8dcd49ccdb47a6cf0d4012d22f2adf689d7f5e1) )
+	// 10 more empty ROM sockets
+
+	ROM_REGION( 0x200000, "okicard:msm6376", ROMREGION_ERASE00 )
+	// none present
+
+	ROM_REGION( 0x117, "plds", 0 ) // on BARCREST VIDEO MEMORY CARD 681868 18185-2 PCB
+	ROM_LOAD( "bvm__.g.ic18", 0x000, 0x117, NO_DUMP ) // GAL16V8
 ROM_END
 
 
@@ -8803,10 +8825,11 @@ GAME(  1994, v4pzteta,   v4pztet,  bwbvid,     v4pztet,    mpu4vid_state, init_b
 GAME(  1994, v4pztetb,   v4pztet,  bwbvid,     v4pztet,    mpu4vid_state, init_bwbhack,     ROT0, "BWB",           "Prize Tetris (BWB) (Showcase) (MPU4 Video)",GAME_FLAGS_OK ) // screen telling you to exchange tickets for prizes in the 'showcase' during attract
 GAME(  1994, v4pztetc,   v4pztet,  bwbvid,     v4pztet,    mpu4vid_state, init_bwbhack,     ROT0, "BWB",           "Prize Tetris (BWB) (Showcase) (Datapak) (MPU4 Video)",GAME_FLAGS_OK )
 // this appears to be a version of Prize Tetris without the Tetris license. These don't have proper alarms, eg coin1 stuck is 'undefined'
-GAME(  1994, v4bulblx,   0,        bwbvid,     v4bulblx,   mpu4vid_state, init_bwbhack,     ROT0, "BWB",           "Bullion Blox (BWB) (set 1) (MPU4 Video)",GAME_FLAGS )
-GAME(  1994, v4bulblxb,  v4bulblx, bwbvid,     v4bulblx,   mpu4vid_state, init_bwbhack,     ROT0, "BWB",           "Bullion Blox (BWB) (set 2) (MPU4 Video)",GAME_FLAGS )
-GAME(  1994, v4bulblxa,  v4bulblx, bwbvid,     v4bulblx,   mpu4vid_state, init_bwbhack,     ROT0, "BWB",           "Bullion Blox (BWB) (Datapak) (set 1) (MPU4 Video)",GAME_FLAGS )
-GAME(  1994, v4bulblxc,  v4bulblx, bwbvid,     v4bulblx,   mpu4vid_state, init_bwbhack,     ROT0, "BWB",           "Bullion Blox (BWB) (Datapak) (set 2) (MPU4 Video)",GAME_FLAGS )
+GAME(  1994, v4bulblx,   0,        bwbvid,     v4bulblx,   mpu4vid_state, init_bwbhack,     ROT0, "BWB",           "Bullion Blox (BWB) (BV_50___.2__) (MPU4 Video)",GAME_FLAGS )
+GAME(  1994, v4bulblxb,  v4bulblx, bwbvid,     v4bulblx,   mpu4vid_state, init_bwbhack,     ROT0, "BWB",           "Bullion Blox (BWB) (BV_1P___.2__) (MPU4 Video)",GAME_FLAGS )
+GAME(  1994, v4bulblxd,  v4bulblx, bwbvid,     v4bulblx,   mpu4vid_state, init_bwbhack,     ROT0, "BWB",           "Bullion Blox (BWB) (BVM_____.1__) (MPU4 Video)",GAME_FLAGS )
+GAME(  1994, v4bulblxa,  v4bulblx, bwbvid,     v4bulblx,   mpu4vid_state, init_bwbhack,     ROT0, "BWB",           "Bullion Blox (BWB) (Datapak) (BV_50___.2__) (MPU4 Video)",GAME_FLAGS )
+GAME(  1994, v4bulblxc,  v4bulblx, bwbvid,     v4bulblx,   mpu4vid_state, init_bwbhack,     ROT0, "BWB",           "Bullion Blox (BWB) (Datapak) (BV_1P___.2__) (MPU4 Video)",GAME_FLAGS )
 
 // doesn't have payout so no shelf error (no payout on prototype?), runs with door closed
 

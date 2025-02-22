@@ -45,19 +45,19 @@ private:
 	void psg_latch_w(offs_t offset, u8 data);
 	void port1_w(u8 data);
 	void port2_w(u8 data);
-	DECLARE_READ_LINE_MEMBER(contacts_r);
-	DECLARE_WRITE_LINE_MEMBER(displays_w);
+	int contacts_r();
+	void displays_w(int state);
 	void driver_clk_w(offs_t offset, u8 data);
-	DECLARE_READ_LINE_MEMBER(phase_detect_r);
+	int phase_detect_r();
 	void lights_a_w(u8 data);
 	void lights_b_w(u8 data);
 
-	void main_io_map(address_map &map);
-	void main_map(address_map &map);
-	void sound_io_map(address_map &map);
-	void sound_map(address_map &map);
+	void main_io_map(address_map &map) ATTR_COLD;
+	void main_map(address_map &map) ATTR_COLD;
+	void sound_io_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
 
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 	required_device<i8085a_cpu_device> m_maincpu;
 	required_device<i8035_device> m_soundcpu;
@@ -147,12 +147,12 @@ void supstarf_state::port2_w(u8 data)
 	m_latch_select = !BIT(data, 7);
 }
 
-READ_LINE_MEMBER(supstarf_state::contacts_r)
+int supstarf_state::contacts_r()
 {
 	return 1;
 }
 
-WRITE_LINE_MEMBER(supstarf_state::displays_w)
+void supstarf_state::displays_w(int state)
 {
 }
 
@@ -160,7 +160,7 @@ void supstarf_state::driver_clk_w(offs_t offset, u8 data)
 {
 }
 
-READ_LINE_MEMBER(supstarf_state::phase_detect_r)
+int supstarf_state::phase_detect_r()
 {
 	return 0;
 }
@@ -281,5 +281,5 @@ ROM_END
 } // anonymous namespace
 
 
-GAME( 1986, supstarf,  0,        supstarf, supstarf, supstarf_state, empty_init, ROT0, "Recreativos Franco", "Super Star (Recreativos Franco, set 1)", MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME( 1986, supstarfa, supstarf, supstarf, supstarf, supstarf_state, empty_init, ROT0, "Recreativos Franco", "Super Star (Recreativos Franco, set 2)", MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
+GAME( 1986, supstarf,  0,        supstarf, supstarf, supstarf_state, empty_init, ROT0, "Recreativos Franco", "Super Star (Recreativos Franco, set 1)", MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME( 1986, supstarfa, supstarf, supstarf, supstarf, supstarf_state, empty_init, ROT0, "Recreativos Franco", "Super Star (Recreativos Franco, set 2)", MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )

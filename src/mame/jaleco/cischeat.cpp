@@ -186,7 +186,6 @@ Cisco Heat.
 
 #include "cpu/m68000/m68000.h"
 #include "machine/adc0804.h"
-#include "jalcrpt.h"
 #include "machine/nvram.h"
 #include "sound/okim6295.h"
 #include "sound/ymopm.h"
@@ -723,6 +722,14 @@ void armchamp2_state::armchmp2_map(address_map &map)
 #define RIGHT 0
 #define LEFT  1
 
+void captflag_state::machine_start()
+{
+	cischeat_state::machine_start();
+
+	m_motor_left_output.resolve();
+	m_motor_right_output.resolve();
+}
+
 void captflag_state::leds_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 {
 	COMBINE_DATA( &m_captflag_leds );
@@ -824,18 +831,18 @@ void captflag_state::motor_move(int side, uint16_t data)
 		dev.reset();
 	}
 
-	output().set_value((side == RIGHT) ? "right" : "left", pos);
+	((side == RIGHT) ? m_motor_right_output : m_motor_left_output) = pos;
 }
 
 template <int N>
-CUSTOM_INPUT_MEMBER(captflag_state::motor_pos_r)
+ioport_value captflag_state::motor_pos_r()
 {
 	const uint8_t pos[4] = {1,0,2,3}; // -> 2,3,1,0 offsets -> 0123
 	return ~pos[m_motor_pos[N]];
 }
 
 template <int N>
-READ_LINE_MEMBER(captflag_state::motor_busy_r)
+int captflag_state::motor_busy_r()
 {
 //  timer_device & dev = ((side == RIGHT) ? m_motor_right : m_motor_left);
 //  return (dev.remaining() == attotime::never) ? 0 : 1;
@@ -1661,19 +1668,19 @@ INPUT_PORTS_END
                             Arm Champs II
 **************************************************************************/
 
-CUSTOM_INPUT_MEMBER(armchamp2_state::left_sensor_r)
+ioport_value armchamp2_state::left_sensor_r()
 {
 	int arm_x = ioport("ARM")->read();
 	return (arm_x < 0x40);
 }
 
-CUSTOM_INPUT_MEMBER(armchamp2_state::right_sensor_r)
+ioport_value armchamp2_state::right_sensor_r()
 {
 	int arm_x = ioport("ARM")->read();
 	return (arm_x > 0xc0);
 }
 
-CUSTOM_INPUT_MEMBER(armchamp2_state::center_sensor_r)
+ioport_value armchamp2_state::center_sensor_r()
 {
 	int arm_x = ioport("ARM")->read();
 	return ((arm_x > 0x60) && (arm_x < 0xa0));
@@ -1682,9 +1689,9 @@ CUSTOM_INPUT_MEMBER(armchamp2_state::center_sensor_r)
 
 static INPUT_PORTS_START( armchmp2 )
 	PORT_START("IN0")   // Buttons + Sensors
-	PORT_BIT( 0x0001, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(armchamp2_state, left_sensor_r)
-	PORT_BIT( 0x0002, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(armchamp2_state, right_sensor_r)
-	PORT_BIT( 0x0004, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(armchamp2_state, center_sensor_r)
+	PORT_BIT( 0x0001, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(armchamp2_state::left_sensor_r))
+	PORT_BIT( 0x0002, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(armchamp2_state::right_sensor_r))
+	PORT_BIT( 0x0004, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(armchamp2_state::center_sensor_r))
 	PORT_BIT( 0x0008, IP_ACTIVE_LOW, IPT_SERVICE1 )
 	PORT_SERVICE_NO_TOGGLE( 0x0010, IP_ACTIVE_LOW )
 	PORT_BIT( 0x0020, IP_ACTIVE_LOW, IPT_COIN1 )
@@ -1769,7 +1776,7 @@ static INPUT_PORTS_START( captflag )
 	PORT_BIT( 0x0800, IP_ACTIVE_LOW, IPT_SERVICE1 ) // service
 	PORT_BIT( 0x1000, IP_ACTIVE_LOW, IPT_SERVICE  ) // test
 	PORT_BIT( 0x2000, IP_ACTIVE_LOW, IPT_BUTTON1  ) PORT_NAME("Select Button") // select
-	PORT_BIT( 0x4000, IP_ACTIVE_HIGH,IPT_OUTPUT   ) PORT_READ_LINE_DEVICE_MEMBER("hopper", ticket_dispenser_device, line_r) // prize sensor
+	PORT_BIT( 0x4000, IP_ACTIVE_HIGH,IPT_OUTPUT   ) PORT_READ_LINE_DEVICE_MEMBER("hopper", FUNC(ticket_dispenser_device::line_r)) // prize sensor
 	PORT_BIT( 0x8000, IP_ACTIVE_LOW, IPT_UNKNOWN  ) // potery on schems?
 
 	PORT_START("SW1_2")
@@ -1807,11 +1814,11 @@ static INPUT_PORTS_START( captflag )
 	PORT_DIPUNKNOWN_DIPLOC( 0x8000, 0x8000, "SW2:8" )
 
 	PORT_START("SW01")
-	PORT_BIT( 0x0003, IP_ACTIVE_LOW, IPT_CUSTOM) PORT_CUSTOM_MEMBER(captflag_state, motor_pos_r<LEFT>)
-	PORT_BIT( 0x000c, IP_ACTIVE_LOW, IPT_CUSTOM) PORT_CUSTOM_MEMBER(captflag_state, motor_pos_r<RIGHT>)
+	PORT_BIT( 0x0003, IP_ACTIVE_LOW, IPT_CUSTOM) PORT_CUSTOM_MEMBER(FUNC(captflag_state::motor_pos_r<LEFT>))
+	PORT_BIT( 0x000c, IP_ACTIVE_LOW, IPT_CUSTOM) PORT_CUSTOM_MEMBER(FUNC(captflag_state::motor_pos_r<RIGHT>))
 
-	PORT_BIT( 0x0040, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_MEMBER(captflag_state, motor_busy_r<LEFT>)
-	PORT_BIT( 0x0080, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_MEMBER(captflag_state, motor_busy_r<RIGHT>)
+	PORT_BIT( 0x0040, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_MEMBER(FUNC(captflag_state::motor_busy_r<LEFT>))
+	PORT_BIT( 0x0080, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_MEMBER(FUNC(captflag_state::motor_busy_r<RIGHT>))
 
 	PORT_DIPNAME( 0x0300, 0x0300, DEF_STR( Difficulty ) ) PORT_DIPLOCATION("SW01:1,2")
 	PORT_DIPSETTING(      0x0000, DEF_STR( Easy ) )
@@ -1855,14 +1862,14 @@ static INPUT_PORTS_START( vscaptfl )
 	PORT_BIT( 0x0800, IP_ACTIVE_LOW, IPT_SERVICE1 ) // service
 	PORT_BIT( 0x1000, IP_ACTIVE_LOW, IPT_SERVICE  ) // test
 	PORT_BIT( 0x2000, IP_ACTIVE_LOW, IPT_BUTTON1  ) PORT_NAME("Select Button") // select
-	PORT_BIT( 0x4000, IP_ACTIVE_HIGH,IPT_OUTPUT   ) PORT_READ_LINE_DEVICE_MEMBER("hopper", ticket_dispenser_device, line_r) // prize sensor
+	PORT_BIT( 0x4000, IP_ACTIVE_HIGH,IPT_OUTPUT   ) PORT_READ_LINE_DEVICE_MEMBER("hopper", FUNC(ticket_dispenser_device::line_r)) // prize sensor
 	PORT_BIT( 0x8000, IP_ACTIVE_LOW, IPT_UNKNOWN  ) // potery on schems?
 
 	PORT_START("Buttons2")
-	PORT_BIT( 0x0003, IP_ACTIVE_LOW, IPT_CUSTOM) PORT_CUSTOM_MEMBER(captflag_state, motor_pos_r<LEFT>)
-	PORT_BIT( 0x000c, IP_ACTIVE_LOW, IPT_CUSTOM) PORT_CUSTOM_MEMBER(captflag_state, motor_pos_r<RIGHT>)
-	PORT_BIT( 0x0040, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_MEMBER(captflag_state, motor_busy_r<LEFT>)
-	PORT_BIT( 0x0080, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_MEMBER(captflag_state, motor_busy_r<RIGHT>)
+	PORT_BIT( 0x0003, IP_ACTIVE_LOW, IPT_CUSTOM) PORT_CUSTOM_MEMBER(FUNC(captflag_state::motor_pos_r<LEFT>))
+	PORT_BIT( 0x000c, IP_ACTIVE_LOW, IPT_CUSTOM) PORT_CUSTOM_MEMBER(FUNC(captflag_state::motor_pos_r<RIGHT>))
+	PORT_BIT( 0x0040, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_MEMBER(FUNC(captflag_state::motor_busy_r<LEFT>))
+	PORT_BIT( 0x0080, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_MEMBER(FUNC(captflag_state::motor_busy_r<RIGHT>))
 	PORT_BIT( 0x0100, IP_ACTIVE_LOW, IPT_JOYSTICKLEFT_UP ) PORT_NAME("P2 Left Red Stick Up") PORT_PLAYER(2)
 	PORT_BIT( 0x0200, IP_ACTIVE_LOW, IPT_JOYSTICKLEFT_DOWN ) PORT_NAME("P2 Left Red Stick Down") PORT_PLAYER(2)
 	PORT_BIT( 0x0400, IP_ACTIVE_LOW, IPT_JOYSTICKRIGHT_UP ) PORT_NAME("P2 Right White Stick Up") PORT_PLAYER(2)
@@ -2060,7 +2067,7 @@ TIMER_DEVICE_CALLBACK_MEMBER(cischeat_state::bigrun_scanline)
 		m_cpu1->set_input_line(2, HOLD_LINE);
 }
 
-WRITE_LINE_MEMBER(cischeat_state::sound_irq)
+void cischeat_state::sound_irq(int state)
 {
 	if(state)
 		m_soundcpu->set_input_line(4, HOLD_LINE);
@@ -2130,6 +2137,13 @@ void cischeat_state::bigrun(machine_config &config)
 	m_oki2->add_route(ALL_OUTPUTS, "rspeaker", 0.25);
 }
 
+void cischeat_state::bigrun_d65006(machine_config &config)
+{
+	bigrun(config);
+	MEGASYS1_GATEARRAY_D65006(config, m_gatearray, 0);
+	m_gatearray->set_cpu_tag(m_soundcpu);
+	m_gatearray->set_cpuregion_tag("soundcpu");
+}
 
 void cischeat_state::cischeat(machine_config &config)
 {
@@ -2159,6 +2173,14 @@ void cischeat_state::cischeat(machine_config &config)
 
 	m_tmap[2]->set_colorbase(0x6c00/2);
 	m_tmap[2]->set_bits_per_color_code(5);
+}
+
+void cischeat_state::cischeat_gs88000(machine_config &config)
+{
+	cischeat(config);
+	MEGASYS1_GATEARRAY_GS88000(config, m_gatearray, 0);
+	m_gatearray->set_cpu_tag(m_soundcpu);
+	m_gatearray->set_cpuregion_tag("soundcpu");
 }
 
 
@@ -2347,7 +2369,7 @@ void captflag_state::captflag(machine_config &config)
 	m_maincpu->set_addrmap(AS_PROGRAM, &captflag_state::captflag_map);
 	TIMER(config, "scantimer").configure_scanline(FUNC(captflag_state::captflag_scanline), "screen", 0, 1);
 
-	TICKET_DISPENSER(config, m_hopper, attotime::from_msec(2000), TICKET_MOTOR_ACTIVE_HIGH, TICKET_STATUS_ACTIVE_HIGH );
+	TICKET_DISPENSER(config, m_hopper, attotime::from_msec(2000));
 
 	WATCHDOG_TIMER(config, m_watchdog);
 	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
@@ -2670,7 +2692,6 @@ ROM_END
 void cischeat_state::init_bigrun()
 {
 	cischeat_untangle_sprites("sprites");   // Untangle sprites
-	phantasm_rom_decode(machine(), "soundcpu");                 // Decrypt sound cpu code
 }
 
 
@@ -2789,9 +2810,7 @@ ROM_END
 void cischeat_state::init_cischeat()
 {
 	cischeat_untangle_sprites("sprites");   // Untangle sprites
-	astyanax_rom_decode(machine(), "soundcpu");                 // Decrypt sound cpu code
 }
-
 
 /***************************************************************************
 
@@ -4114,10 +4133,10 @@ void captflag_state::init_vscaptfl()
 
 ***************************************************************************/
 
-GAMEL( 1989, bigrun,    0,        bigrun,   bigrun,   cischeat_state,  init_bigrun,   ROT0,   "Jaleco", "Big Run (11th Rallye version, Europe?)", MACHINE_NODEVICE_LAN, layout_cischeat ) // there's a 13th Rallye version (1991) (only on the SNES? Could just be updated title, 1989 -> 11th Paris-Dakar ...)
-GAMEL( 1989, bigrunu,   bigrun,   bigrun,   bigrun,   cischeat_state,  init_bigrun,   ROT0,   "Jaleco", "Big Run (11th Rallye version, US?)",     MACHINE_NODEVICE_LAN, layout_cischeat )
+GAMEL( 1989, bigrun,    0,        bigrun_d65006,   bigrun,   cischeat_state,  init_bigrun,   ROT0,   "Jaleco", "Big Run (11th Rallye version, Europe?)", MACHINE_NODEVICE_LAN, layout_cischeat ) // there's a 13th Rallye version (1991) (only on the SNES? Could just be updated title, 1989 -> 11th Paris-Dakar ...)
+GAMEL( 1989, bigrunu,   bigrun,   bigrun_d65006,   bigrun,   cischeat_state,  init_bigrun,   ROT0,   "Jaleco", "Big Run (11th Rallye version, US?)",     MACHINE_NODEVICE_LAN, layout_cischeat )
 
-GAMEL( 1990, cischeat,  0,        cischeat, cischeat, cischeat_state,  init_cischeat, ROT0,   "Jaleco", "Cisco Heat",                             MACHINE_IMPERFECT_GRAPHICS | MACHINE_NODEVICE_LAN, layout_cischeat )
+GAMEL( 1990, cischeat,  0,        cischeat_gs88000, cischeat, cischeat_state,  init_cischeat, ROT0,   "Jaleco", "Cisco Heat",                             MACHINE_IMPERFECT_GRAPHICS | MACHINE_NODEVICE_LAN, layout_cischeat )
 
 GAMEL( 1992, f1gpstar,  0,        f1gpstar, f1gpstar, cischeat_state,  init_f1gpstar, ROT0,   "Jaleco", "Grand Prix Star (ver 4.0)",              MACHINE_IMPERFECT_GRAPHICS | MACHINE_NODEVICE_LAN, layout_f1gpstar )
 GAMEL( 1991, f1gpstar3, f1gpstar, f1gpstar, f1gpstar, cischeat_state,  init_f1gpstar, ROT0,   "Jaleco", "Grand Prix Star (ver 3.0)",              MACHINE_IMPERFECT_GRAPHICS | MACHINE_NODEVICE_LAN, layout_f1gpstar )

@@ -59,7 +59,7 @@ public:
 	INPUT_CHANGED_MEMBER(set_coin_flag);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 	TIMER_CALLBACK_MEMBER(refresh_end);
 
@@ -95,14 +95,14 @@ private:
 	void soundlatch4_w(uint8_t data);
 	void io_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 	uint16_t io_r(offs_t offset);
-	DECLARE_WRITE_LINE_MEMBER(ctc_timer_1_w);
-	DECLARE_WRITE_LINE_MEMBER(ctc_timer_2_w);
+	void ctc_timer_1_w(int state);
+	void ctc_timer_2_w(int state);
 
 	void refresh();
 
-	void memmap(address_map &map);
-	void sound_memmap(address_map &map);
-	void sound_portmap(address_map &map);
+	void memmap(address_map &map) ATTR_COLD;
+	void sound_memmap(address_map &map) ATTR_COLD;
+	void sound_portmap(address_map &map) ATTR_COLD;
 };
 
 
@@ -195,9 +195,9 @@ static INPUT_PORTS_START( cchasm )
 	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_START2 )
 
 	PORT_START("IN3")
-	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_COIN1 ) PORT_CHANGED_MEMBER(DEVICE_SELF, cchasm_state, set_coin_flag, 0)
-	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_COIN2 ) PORT_CHANGED_MEMBER(DEVICE_SELF, cchasm_state, set_coin_flag, 0)
-	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_COIN3 ) PORT_CHANGED_MEMBER(DEVICE_SELF, cchasm_state, set_coin_flag, 0)
+	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_COIN1 ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(cchasm_state::set_coin_flag), 0)
+	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_COIN2 ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(cchasm_state::set_coin_flag), 0)
+	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_COIN3 ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(cchasm_state::set_coin_flag), 0)
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_OTHER ) PORT_NAME("Test 1") PORT_CODE(KEYCODE_F1)
 	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_UNUSED ) /* Test 2, not used in cchasm */
 	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_UNUSED ) /* Test 3, not used in cchasm */
@@ -295,7 +295,7 @@ uint16_t cchasm_state::io_r(offs_t offset)
 }
 
 
-WRITE_LINE_MEMBER(cchasm_state::ctc_timer_1_w)
+void cchasm_state::ctc_timer_1_w(int state)
 {
 	if (state) /* rising edge */
 	{
@@ -304,7 +304,7 @@ WRITE_LINE_MEMBER(cchasm_state::ctc_timer_1_w)
 	}
 }
 
-WRITE_LINE_MEMBER(cchasm_state::ctc_timer_2_w)
+void cchasm_state::ctc_timer_2_w(int state)
 {
 	if (state) /* rising edge */
 	{

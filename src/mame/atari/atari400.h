@@ -1,5 +1,5 @@
 // license:GPL-2.0+
-// copyright-holders:Juergen Buchmueller
+// copyright-holders:Juergen Buchmueller, Angelo Salese
 /******************************************************************************
 
     Atari 400/800
@@ -45,7 +45,7 @@ public:
 	{ }
 
 protected:
-	virtual void video_start() override;
+	virtual void video_start() override ATTR_COLD;
 
 	void atari_palette(palette_device &palette) const;
 

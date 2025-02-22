@@ -275,18 +275,18 @@
 #include "util/ioprocs.h"
 #include "util/ioprocsfilter.h"
 
-#define LOG_WARN          (1U<<1)   // Warnings
-#define LOG_CONFIG        (1U<<2)   // Configuration
-#define LOG_STEPS         (1U<<3)   // Steps
-#define LOG_STEPSDETAIL   (1U<<4)   // Steps, more detail
-#define LOG_SIGNALS       (1U<<5)   // Signals
-#define LOG_READ          (1U<<6)   // Read operations
-#define LOG_WRITE         (1U<<7)   // Write operations
-#define LOG_BITS          (1U<<8)   // Bit transfer
-#define LOG_TIMING        (1U<<9)   // Timing
+#define LOG_WARN          (1U << 1)   // Warnings
+#define LOG_CONFIG        (1U << 2)   // Configuration
+#define LOG_STEPS         (1U << 3)   // Steps
+#define LOG_STEPSDETAIL   (1U << 4)   // Steps, more detail
+#define LOG_SIGNALS       (1U << 5)   // Signals
+#define LOG_READ          (1U << 6)   // Read operations
+#define LOG_WRITE         (1U << 7)   // Write operations
+#define LOG_BITS          (1U << 8)   // Bit transfer
+#define LOG_TIMING        (1U << 9)   // Timing
 
 
-#define VERBOSE ( LOG_GENERAL | LOG_CONFIG | LOG_WARN )
+#define VERBOSE (LOG_GENERAL | LOG_CONFIG | LOG_WARN)
 
 #include "logmacro.h"
 
@@ -655,7 +655,7 @@ TIMER_CALLBACK_MEMBER(mfm_harddisk_device::seek_update)
 			// Start the settle timer
 			m_step_phase = STEP_SETTLE;
 			m_seek_timer->adjust(m_settle_time);
-			LOGMASKED(LOG_STEPSDETAIL, "Arrived at target cylinder %d, settling ...\n", m_current_cylinder);
+			LOGMASKED(LOG_STEPSDETAIL, "Arrived at target cylinder %d, settling ...[%s]\n", m_current_cylinder, machine().time().to_string());
 		}
 		else
 		{
@@ -678,7 +678,7 @@ TIMER_CALLBACK_MEMBER(mfm_harddisk_device::seek_update)
 			}
 			else
 			{
-				LOGMASKED(LOG_SIGNALS, "Settling done at cylinder %d, seek complete\n", m_current_cylinder);
+				LOGMASKED(LOG_STEPSDETAIL, "Settling done at cylinder %d, seek complete [%s]\n", m_current_cylinder, machine().time().to_string());
 			}
 			m_seek_complete = true;
 			if (!m_seek_complete_cb.isnull()) m_seek_complete_cb(this, ASSERT_LINE);
@@ -703,7 +703,8 @@ void mfm_harddisk_device::head_move()
 	m_step_phase = STEP_MOVING;
 	m_seek_timer->adjust(m_step_time * steps);
 
-	LOGMASKED(LOG_TIMING, "Head movement takes %s time\n", (m_step_time * steps).to_string());
+	long moveus = (m_step_time.attoseconds() * steps) / ATTOSECONDS_PER_MICROSECOND;
+	LOGMASKED(LOG_STEPSDETAIL, "Head movement takes %.1f ms time [%s]\n", moveus/1000., machine().time().to_string());
 	// We pretend that we already arrived
 	// TODO: Check auto truncation?
 	m_current_cylinder += m_track_delta;
@@ -714,8 +715,8 @@ void mfm_harddisk_device::head_move()
 
 void mfm_harddisk_device::direction_in_w(line_state line)
 {
+	if (m_seek_inward != (line == ASSERT_LINE)) LOGMASKED(LOG_STEPSDETAIL, "Setting seek direction %s\n", m_seek_inward? "inward" : "outward");
 	m_seek_inward = (line == ASSERT_LINE);
-	LOGMASKED(LOG_STEPSDETAIL, "Setting seek direction %s\n", m_seek_inward? "inward" : "outward");
 }
 
 /*
@@ -831,7 +832,9 @@ bool mfm_harddisk_device::read(attotime &from_when, const attotime &limit, uint1
 	if (track==nullptr)
 	{
 		// What shall we do in this case?
-		throw emu_fatalerror("Cannot read CHD image");
+		// throw emu_fatalerror("Cannot read CHD image");   // a bit too harsh, just return a constant 0
+		cdata = 0;
+		return false;
 	}
 
 	// Get a copy for later debug output
@@ -870,7 +873,8 @@ bool mfm_harddisk_device::write(attotime &from_when, const attotime &limit, uint
 	if (track==nullptr)
 	{
 		// What shall we do in this case?
-		throw emu_fatalerror("Cannot read CHD image");
+		// throw emu_fatalerror("Cannot read CHD image"); // a bit too harsh, just return without doing anything
+		return false;
 	}
 
 	int bytepos = 0;
@@ -1151,6 +1155,11 @@ uint16_t* mfmhd_trackimage_cache::get_trackimage(int cylinder, int head)
 		// Then look it up again, which will move it to the front
 
 		// previous points to the second to last element
+
+		// If still null, the cache was never initialized, which means there is no drive image
+		if (previous == nullptr)
+			return nullptr;
+
 		current = previous->next;
 		if (TRACE_CACHE) m_machine.logerror("[%s:cache] evict line (c=%d,h=%d)\n", m_mfmhd->tag(), current->cylinder, current->head);
 

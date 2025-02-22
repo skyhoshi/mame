@@ -22,12 +22,28 @@
 #include "bus/msx/slot/sony08.h"
 #include "softlist_dev.h"
 
+#include "msx_ar.lh"
+#include "msx_ar_1fdd.lh"
+#include "msx_ar_2fdd.lh"
+#include "msx_jp.lh"
+#include "msx_jp_1fdd.lh"
+#include "msx_jp_2fdd.lh"
+#include "msx_kr.lh"
+#include "msx_kr_1fdd.lh"
+#include "msx_ru.lh"
+#include "msx_ru_1fdd.lh"
+#include "msx_ru_2fdd.lh"
+#include "msx_nocode.lh"
+#include "msx_nocode_1fdd.lh"
+#include "msx_nocode_2fdd.lh"
+#include "msx_nocode_nocaps.lh"
+
 using namespace msx_keyboard;
 
 
 /***************************************************************************
 
-  MSX2 Game drivers
+  MSX2 machine drivers
 
 Undumped and/or not emulated:
 - AVT CPC-300 (prototype)
@@ -84,10 +100,6 @@ public:
 	void cx7128(machine_config &config);
 	void cx7m128(machine_config &config);
 	void expert20(machine_config &config);
-	void expert3i(machine_config &config);
-	void expert3t(machine_config &config);
-	void expertac(machine_config &config);
-	void expertdx(machine_config &config);
 	void fpc900(machine_config &config);
 	void kmc5000(machine_config &config);
 	void mbh70(machine_config &config);
@@ -111,19 +123,11 @@ public:
 	void fsa1a(machine_config &config);
 	void fsa1f(machine_config &config);
 	void fsa1fm(machine_config &config);
-	void fsa1fx(machine_config &config);
-	void fsa1gt(machine_config &config);
-	void fsa1st(machine_config &config);
 	void fsa1mk2(machine_config &config);
-	void fsa1wsx(machine_config &config);
-	void fsa1wx(machine_config &config);
-	void fsa1wxa(machine_config &config);
 	void fstm1(machine_config &config);
 	void hbf1(machine_config &config);
 	void hbf1ii(machine_config &config);
 	void hbf1xd(machine_config &config);
-	void hbf1xdj(machine_config &config);
-	void hbf1xv(machine_config &config);
 	void hbf5(machine_config &config);
 	void hbf500(machine_config &config);
 	void hbf500_2(machine_config &config);
@@ -158,10 +162,7 @@ public:
 	void nms8280g(machine_config &config);
 	void phc23(machine_config &config);
 	void phc23jb(machine_config &config);
-	void phc35j(machine_config &config);
 	void phc55fd2(machine_config &config);
-	void phc70fd(machine_config &config);
-	void phc70fd2(machine_config &config);
 	void phc77(machine_config &config);
 	void tpc310(machine_config &config);
 	void tpp311(machine_config &config);
@@ -213,7 +214,7 @@ void msx2_state::canonv25(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_ROM, "subrom", 3, 0, 0, 1, "subrom");
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x10000); // 64KB Mapper RAM
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp);
 	msx2_64kb_vram(config);
 }
 
@@ -244,7 +245,7 @@ void msx2_state::canonv30f(machine_config &config)
 	add_internal_disk_mirrored(config, MSX_SLOT_DISK7_MB8877, "disk", 3, 1, 1, 2, "diskrom");
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x20000); // 128KB Mapper RAM
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_1fdd);
 }
 
 /* MSX2 - Daewoo CPC-300 */
@@ -276,7 +277,7 @@ void msx2_state::cpc300(machine_config &config)
 	// Expansion slot in slot #3
 
 	MSX_S1985(config, "s1985", 0);
-	msx2(SND_YM2149, config, REGION_KOREA);
+	msx2(SND_YM2149, config, layout_msx_kr);
 }
 
 /* MSX2 - Daewoo CPC-300E */
@@ -310,7 +311,7 @@ void msx2_state::cpc300e(machine_config &config)
 	// Expansion slot in slot #3
 
 	MSX_S1985(config, "s1985", 0);
-	msx2(SND_YM2149, config, REGION_KOREA);
+	msx2(SND_YM2149, config, layout_msx_kr);
 }
 
 /* MSX2 - Daewoo CPC-330K */
@@ -341,7 +342,7 @@ void msx2_state::cpc330k(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_ROM, "subrom", 0, 3, 0, 2, "subrom");
 	add_cartridge_slot<1>(config, 1);
 
-	msx2(SND_AY8910, config, REGION_KOREA);
+	msx2(SND_AY8910, config, layout_msx_kr);
 }
 
 /* MSX2 - Daewoo CPC-400 */
@@ -369,6 +370,7 @@ void msx2_state::cpc400(machine_config &config)
 	// FDC: mb8877a, 1 3.5" DS?DD drive
 	// 1 Cartridge slot
 	// 1 Expansion slot
+	// The check for an external kanji ROM always fails; deliberately? Expects other type of kanji extension? Bad dump?
 
 	add_internal_slot(config, MSX_SLOT_ROM, "mainrom", 0, 0, 0, 2, "mainrom");
 	add_internal_slot(config, MSX_SLOT_ROM, "hangul", 0, 1, 1, 2, "hangul");
@@ -378,7 +380,7 @@ void msx2_state::cpc400(machine_config &config)
 	add_internal_disk_mirrored(config, MSX_SLOT_DISK2_MB8877, "disk", 2, 1, 2, "diskrom");
 	// Expansion slot in slot #3
 
-	msx2(SND_AY8910, config, REGION_KOREA);
+	msx2(SND_AY8910, config, layout_msx_kr_1fdd);
 }
 
 /* MSX2 - Daewoo CPC-400S */
@@ -402,6 +404,7 @@ void msx2_state::cpc400s(machine_config &config)
 	// FDC: mb8877a, 1 3.5" DS?DD drive
 	// 1 Cartridge slot
 	// DW64MX1
+	// The check for an external kanji rom always fails; deliberately? expects other type of kanji extension? bad dump?
 
 	add_internal_slot(config, MSX_SLOT_ROM, "mainrom", 0, 0, 0, 2, "mainrom");
 	add_internal_slot(config, MSX_SLOT_ROM, "hangul1", 0, 1, 1, 1, "hangul", 0x4000);
@@ -413,7 +416,7 @@ void msx2_state::cpc400s(machine_config &config)
 	add_internal_disk_mirrored(config, MSX_SLOT_DISK2_MB8877, "disk", 2, 1, 2, "mainrom", 0x8000);
 	// Expansion slot in slot #3
 
-	msx2(SND_AY8910, config, REGION_KOREA);
+	msx2(SND_AY8910, config, layout_msx_kr_1fdd);
 }
 
 /* MSX2 - Daewoo Zemmix CPC-61 */
@@ -439,8 +442,8 @@ void msx2_state::cpc61(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_ROM, "subrom", 0, 3, 0, 1, "mainrom", 0x8000);
 	add_cartridge_slot<1>(config, 1);
 
-	m_hw_def.has_cassette(false).has_printer_port(false).no_caps_led().no_code_led();
-	msx2(SND_AY8910, config, REGION_KOREA);
+	m_hw_def.has_cassette(false).has_printer_port(false);
+	msx2(SND_AY8910, config, layout_msx_nocode_nocaps);
 }
 
 /* MSX2 - Daewoo Zemmix CPG-120 Normal */
@@ -458,7 +461,7 @@ ROM_END
 
 void msx2_state::cpg120(machine_config &config)
 {
-	// By pressing the turbo button the CPU can switched between 3.579545 and 5.369317 MHz
+	// By pressing the turbo button the CPU can be switched between 3.579545 and 5.369317 MHz
 	// YM2149 (in S1985)
 	// FDC: None, 0 drives
 	// 2 Cartridge slots?
@@ -473,14 +476,15 @@ void msx2_state::cpg120(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 0, 2, 0, 4).set_total_size(0x20000); // 128KB Mapper RAM
 	add_internal_slot(config, MSX_SLOT_ROM, "saubrom", 0, 3, 0, 2, "subrom");
 	add_cartridge_slot<1>(config, 1);
-	add_internal_slot(config, MSX_SLOT_MUSIC, "mus", 2, 1, 1, "music").set_ym2413_tag("ym2413");
+	add_internal_slot(config, MSX_SLOT_MUSIC, "mus", 2, 1, 1, "music").set_ym2413_tag(m_ym2413);
 	add_cartridge_slot<2>(config, 3);
 
 	MSX_S1985(config, "s1985", 0);
 
 	msx_ym2413(config);
-	m_hw_def.has_printer_port(false).no_caps_led().no_code_led();
-	msx2plus(SND_AY8910, config, REGION_KOREA);
+	m_hw_def.has_printer_port(false);
+	msx2_v9958_base(SND_AY8910, config, layout_msx_nocode_nocaps);
+	msx2_add_softlists(config);
 }
 
 /* MSX2 - Daisen Sangyo MX-2021 */
@@ -512,8 +516,7 @@ void msx2_state::fpc900(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x40000); // 256KB? Mapper RAM
 	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793, "disk", 3, 3, 1, 2, "diskrom");
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode_1fdd);
 }
 
 /* MSX2 - GR8Bit (should probably be a separate driver) */
@@ -548,8 +551,7 @@ void msx2_state::expert20(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 2, 0, 0, 4).set_total_size(0x20000).set_unused_bits(0x80);   // 128KB Mapper RAM
 	add_cartridge_slot<2>(config, 3);
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_AY8910, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_AY8910, config, layout_msx_nocode_1fdd);
 }
 
 /* MSX2 - Hitachi MB-H3 */
@@ -581,7 +583,7 @@ void msx2_state::mbh3(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_ROM, "firmware", 3, 0, 1, 2, "firmware");
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x20000); // 128KB Mapper RAM
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp);
 	msx2_64kb_vram(config);
 }
 
@@ -621,7 +623,7 @@ void msx2_state::mbh70(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_2fdd);
 }
 
 /* MSX2 - Kawai KMC-5000 */
@@ -661,7 +663,7 @@ void msx2_state::kmc5000(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_1fdd);
 }
 
 /* MSX2 - Laser MSX2 (unreleased) */
@@ -696,8 +698,7 @@ void msx2_state::mlg1(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x10000); // 64KB Mapper RAM
 	add_internal_slot(config, MSX_SLOT_ROM, "firmware", 3, 3, 0, 2, "firmware");
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode);
 }
 
 /* MSX2 - Mitsubishi ML-G3 */
@@ -722,9 +723,8 @@ void msx2_state::mlg3(machine_config &config)
 {
 	// YM2149 (in S3527)
 	// FDC: wd2793?, 1 3.5" DSDD drive
-	// S-1985 MSX Engine
+	// S3527 MSX Engine
 	// 4 Cartridge slots (3 internal, 1 taken by RS232 board)
-	// S3527
 	// RS232 with switch. What does the switch do?
 
 	add_internal_slot(config, MSX_SLOT_ROM, "mainrom", 0, 0, 2, "mainrom");
@@ -736,8 +736,7 @@ void msx2_state::mlg3(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x10000); // 64KB Mapper RAM
 	add_internal_slot_irq<4>(config, MSX_SLOT_RS232_MITSUBISHI, "rs232", 3, 3, 1, 1, "rs232");
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode_1fdd);
 }
 
 /* MSX2 - Mitsubishi ML-G10 */
@@ -773,7 +772,7 @@ void msx2_state::mlg10(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x10000); // 64KB Mapper RAM
 	add_internal_slot(config, MSX_SLOT_ROM, "firmware", 3, 3, 0, 2, "firmware");
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp);
 }
 
 /* MSX2 - Mitsubishi ML-G30 Model 1 */
@@ -808,7 +807,7 @@ void msx2_state::mlg30(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x20000);   // 128KB Mapper RAM
 	add_cartridge_slot<4>(config, 3, 3);
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_1fdd);
 }
 
 /* MSX2 - Mitsubishi ML-G30 Model 2 */
@@ -848,7 +847,7 @@ void msx2_state::mlg30_2(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x20000);   // 128KB Mapper RAM
 	add_internal_slot_irq<4>(config, MSX_SLOT_RS232_MITSUBISHI, "rs232", 3, 3, 1, 1, "rs232");
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_2fdd);
 }
 
 /* MSX2 - ML-TS100 (should be a separate driver) */
@@ -923,7 +922,7 @@ void msx2_state::fs4500(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM, "ram", 3, 2, 0, 4);  // 64KB RAM
 
 	MSX_MATSUSHITA(config, "matsushita", 0);
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp);
 }
 
 /* MSX2 - National FS-4600F */
@@ -986,7 +985,7 @@ void msx2_state::fs4600f(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_1fdd);
 }
 
 /* MSX2 - National FS-4700 */
@@ -1061,7 +1060,7 @@ void msx2_state::fs4700f(machine_config &config)
 
 	MSX_MATSUSHITA(config, "matsushita", 0);
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_1fdd);
 }
 
 /* MSX2 - National FS-5000F2 */
@@ -1108,7 +1107,7 @@ void msx2_state::fs5000f2(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_2fdd);
 }
 
 /* MSX2 - National FS-5500F1 */
@@ -1191,7 +1190,7 @@ void msx2_state::fs5500f1(machine_config &config)
 
 	MSX_MATSUSHITA(config, "matsushita", 0);
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_1fdd);
 }
 
 /* MSX2 - National FS-5500F2 */
@@ -1242,7 +1241,7 @@ void msx2_state::fs5500f2(machine_config &config)
 
 	MSX_MATSUSHITA(config, "matsushita", 0);
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_2fdd);
 }
 
 /* MSX2 - Panasonic FS-A1 */
@@ -1269,8 +1268,7 @@ void msx2_state::fsa1(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	m_hw_def.no_caps_led().no_code_led();
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_nocode_nocaps);
 }
 
 /* MSX2 - Panasonic FS-A1 (a) */
@@ -1300,8 +1298,7 @@ void msx2_state::fsa1a(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	m_hw_def.no_caps_led().no_code_led();
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_nocode_nocaps);
 }
 
 /* MSX2 - Panasonic FS-A1F */
@@ -1332,7 +1329,7 @@ void msx2_state::fsa1f(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_1fdd);
 }
 
 /* MSX2 - Panasonic FS-A1FM */
@@ -1381,7 +1378,7 @@ void msx2_state::fsa1fm(machine_config &config)
 	msx_kanji12_device &kanji12(MSX_KANJI12(config, "kanji12", 0));
 	kanji12.set_rom_start("kanji12");
 
-	msx2(SND_AY8910, config, REGION_JAPAN);
+	msx2(SND_AY8910, config, layout_msx_jp_1fdd);
 }
 
 /* MSX2 - Panasonic FS-A1MK2 */
@@ -1422,7 +1419,7 @@ void msx2_state::fsa1mk2(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp);
 }
 
 /* MSX2 - Philips HCS 280 */
@@ -1456,8 +1453,7 @@ void msx2_state::nms8220(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_ROM, "designer", 3, 3, 1, 1, "designer");
 	add_internal_slot(config, MSX_SLOT_ROM, "designer_mirror", 3, 3, 2, 1, "designer");
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode);
 }
 
 /* MSX2 - Philips NMS 8245 - 2 possible sets (/00 /16) */
@@ -1490,8 +1486,7 @@ void msx2_state::nms8245(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x20000).set_unused_bits(0xf8);   // 128KB Mapper RAM
 	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793, "disk", 3, 3, 1, 2, "mainrom", 0xc000);
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode_1fdd);
 }
 
 /* MSX2 - Philips NMS 8245/19 */
@@ -1515,8 +1510,7 @@ void msx2_state::nms8245f(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x20000).set_unused_bits(0xf8);   // 128KB Mapper RAM
 	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793, "disk", 3, 3, 1, 2, "maincpu", 0x1c000);
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode_1fdd);
 }
 
 /* MSX2 - Philips NMS 8245 Home Banking (Italy) */
@@ -1556,8 +1550,7 @@ void msx2_state::nms8250(machine_config &config)
 	// ROM is not mirrored but the FDC registers are in all pages
 	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793, "disk", 3, 3, 1, 2, "diskrom");
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode_1fdd);
 }
 
 /* MSX2 - Philips NMS 8250/16 */
@@ -1618,8 +1611,7 @@ void msx2_state::nms8255(machine_config &config)
 	// ROM is not mirrored but the FDC registers are in all pages
 	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793_2_DRIVES, "disk", 3, 3, 1, 2, "diskrom");
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode_2fdd);
 }
 
 /* MSX2 - Philips NMS 8255/19 */
@@ -1649,8 +1641,7 @@ void msx2_state::nms8255f(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x20000).set_unused_bits(0xf8);   // 128KB Mapper RAM
 	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793_2_DRIVES, "disk", 3, 3, 1, 2, "diskrom");
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode_2fdd);
 }
 
 /* MSX2 - Philips NMS 8260 */
@@ -1690,8 +1681,8 @@ void msx2_state::nms8260(machine_config &config)
 	// There is actually only an FDC inside with a floppy controller to attach an external floppy drive
 	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793_0, "disk", 3, 3, 1, 2, "diskrom");
 
-	m_hw_def.no_code_led(); // Not confirmed as there are no pictures of the keyboard
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	// Not confirmed as there are no pictures of the keyboard
+	msx2_pal(SND_YM2149, config, layout_msx_nocode);
 }
 
 /* MSX2 - Philips NMS 8280 - 5 possible sets (/00 /02 /09 /16 /19) */
@@ -1721,8 +1712,7 @@ void msx2_state::nms8280(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x20000).set_unused_bits(0xf8);   // 128KB Mapper RAM
 	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793_2_DRIVES, "disk", 3, 3, 1, 2, "diskrom");
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode_2fdd);
 }
 
 /* MSX2 - Philips NMS 8280F */
@@ -1752,8 +1742,7 @@ void msx2_state::nms8280f(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x20000).set_unused_bits(0xf8);   // 128KB Mapper RAM
 	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793_2_DRIVES, "disk", 3, 3, 1, 2, "diskrom");
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode_2fdd);
 }
 
 /* MSX2 - Philips NMS 8280G */
@@ -1784,8 +1773,7 @@ void msx2_state::nms8280g(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x20000).set_unused_bits(0xf8);   // 128KB Mapper RAM
 	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793_2_DRIVES, "disk", 3, 3, 1, 2, "diskrom");
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode_2fdd);
 }
 
 /* MSX2 - Philips VG-8230 (u11 - exp, u12 - basic, u13 - disk */
@@ -1815,8 +1803,7 @@ void msx2_state::vg8230(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM, "ram", 3, 2, 0, 4);   // 64KB RAM
 	add_internal_disk(config, MSX_SLOT_DISK1_WD2793, "disk", 3, 3, 1, 1, "diskrom");
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode_1fdd);
 }
 
 /* MSX2 - Philips VG-8235 (/00 and /20) */
@@ -1864,8 +1851,7 @@ void msx2_state::vg8235(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x20000).set_unused_bits(0xf8);   // 128KB Mapper RAM
 	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793, "disk", 3, 3, 1, 2, "diskrom");
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode_1fdd);
 }
 
 /* MSX2 - Philips VG-8235F (/19 and /39) */
@@ -1901,8 +1887,7 @@ void msx2_state::vg8235f(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x20000).set_unused_bits(0xf8);   // 128KB Mapper RAM
 	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793_SS, "disk", 3, 3, 1, 2, "diskrom");
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode_1fdd);
 }
 
 /* MSX2 - Philips VG-8240 (unreleased) */
@@ -1932,7 +1917,7 @@ void msx2_state::vg8240(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM, "ram", 3, 2, 0, 4);   // 64KB RAM
 	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793, "disk", 3, 3, 1, 2, "diskrom");
 
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode_1fdd);
 }
 
 /* MSX2 - Phonola NMS 8245 */
@@ -1982,7 +1967,7 @@ void msx2_state::ucv102(machine_config &config)
 	MSX_S1985(config, "s1985", 0);
 
 	m_hw_def.has_cassette(false);
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_1fdd);
 }
 
 /* MSX2 - Sakhr AX-350 */
@@ -2026,7 +2011,7 @@ void msx2_state::ax350(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	msx2_pal(SND_YM2149, config, REGION_ARAB);
+	msx2_pal(SND_YM2149, config, layout_msx_ar_1fdd);
 }
 
 /* MSX2 - Sakhr AX-350 II */
@@ -2071,7 +2056,7 @@ void msx2_state::ax350ii(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	msx2_pal(SND_YM2149, config, REGION_ARAB);
+	msx2_pal(SND_YM2149, config, layout_msx_ar_1fdd);
 }
 
 /* MSX2 - Sakhr AX-350 II F */
@@ -2116,7 +2101,7 @@ void msx2_state::ax350iif(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	msx2_pal(SND_YM2149, config, REGION_ARAB);
+	msx2_pal(SND_YM2149, config, layout_msx_ar_1fdd);
 }
 
 /* MSX2 - Sakhr AX-370 */
@@ -2163,7 +2148,9 @@ void msx2_state::ax370(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_ROM, "painter", 3, 1, 0, 4, "painter");
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 3, 0, 4).set_total_size(0x20000).set_unused_bits(0xf8);   // 128KB Mapper RAM
 
-	msx2plus_pal(SND_AY8910, config, REGION_ARAB);
+	msx2_v9958_base(SND_AY8910, config, layout_msx_ar_1fdd);
+	m_v9958->set_screen_pal(m_screen);
+	msx2_add_softlists(config);
 }
 
 /* MSX2 - Sakhr AX-500 */
@@ -2212,7 +2199,7 @@ void msx2_state::ax500(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	msx2_pal(SND_YM2149, config, REGION_ARAB);
+	msx2_pal(SND_YM2149, config, layout_msx_ar_2fdd);
 }
 
 /* MSX2 - Sanyo MPC-2300 */
@@ -2240,7 +2227,7 @@ void msx2_state::mpc2300(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	msx2(SND_YM2149, config, REGION_RUSSIA);
+	msx2(SND_YM2149, config, layout_msx_ru);
 }
 
 /* MSX2 - Sanyo MPC-2500FD */
@@ -2270,7 +2257,7 @@ void msx2_state::mpc2500f(machine_config &config)
 	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793, "disk", 3, 1, 1, 2, "diskrom");
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x10000);   // 64KB?? Mapper RAM
 
-	msx2(SND_YM2149, config, REGION_RUSSIA);
+	msx2(SND_YM2149, config, layout_msx_ru_1fdd);
 }
 
 /* MSX2 - Sanyo MPC-25F */
@@ -2305,7 +2292,7 @@ void msx2_state::mpc25fd(machine_config &config)
 	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793, "disk", 3, 1, 1, 2, "diskrom");
 	add_internal_slot(config, MSX_SLOT_RAM, "ram", 3, 2, 0, 4);   // 64KB RAM
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_1fdd);
 }
 
 /* MSX2 - Sanyo MPC-25FK */
@@ -2340,7 +2327,7 @@ void msx2_state::mpc25fs(machine_config &config)
 	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793_SS, "disk", 3, 1, 1, 2, "diskrom");
 	add_internal_slot(config, MSX_SLOT_RAM, "ram", 3, 2, 0, 4);   // 64KB RAM
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_1fdd);
 }
 
 /* MSX2 - Sanyo Wavy MPC-27 */
@@ -2376,7 +2363,7 @@ void msx2_state::mpc27(machine_config &config)
 	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793_SS, "disk", 3, 2, 1, 2, "diskrom");
 	add_internal_slot(config, MSX_SLOT_ROM, "lpen", 3, 3, 1, 1, "lpen");
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_1fdd);
 }
 
 /* MSX2 - Sanyo PCT-100 */
@@ -2404,7 +2391,7 @@ void msx2_state::phc23(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_ROM, "subrom", 3, 0, 0, 1, "subrom");
 	add_internal_slot(config, MSX_SLOT_RAM, "ram", 3, 2, 0, 4);  // 64KB RAM
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp);
 }
 
 /* MSX2 - Sanyo PHC-23J(B) / PHC-23J(GR) - "Wavy23" */
@@ -2431,7 +2418,7 @@ void msx2_state::phc23jb(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM, "ram", 3, 2, 0, 4);  // 64KB RAM
 
 	MSX_S1985(config, "s1985", 0);
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp);
 }
 
 /* MSX2 - Sanyo Wavy PHC-55FD2 */
@@ -2465,7 +2452,7 @@ void msx2_state::phc55fd2(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_2fdd);
 }
 
 /* MSX2 - Sanyo Wavy PHC-77 */
@@ -2507,7 +2494,7 @@ void msx2_state::phc77(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_1fdd);
 }
 
 /* MSX2 - Sharp Epcom HotBit 2.0 - is this an officially released machine? */
@@ -2540,8 +2527,7 @@ void msx2_state::hotbit20(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 2, 0, 4).set_total_size(0x20000).set_unused_bits(0x80);   // 128KB Mapper RAM
 	add_cartridge_slot<2>(config, 3);
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_AY8910, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_AY8910, config, layout_msx_nocode_1fdd);
 }
 
 /* MSX2 - Sony HB-F1 */
@@ -2582,8 +2568,7 @@ void msx2_state::hbf1(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	m_hw_def.no_caps_led().no_code_led();
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_nocode_nocaps);
 }
 
 /* MSX2 - Sony HB-F1II */
@@ -2624,7 +2609,7 @@ void msx2_state::hbf1ii(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp);
 }
 
 /* MSX2 - Sony HB-F1XD  / HB-F1XDmk2 */
@@ -2660,7 +2645,7 @@ void msx2_state::hbf1xd(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_1fdd);
 }
 
 /* MSX2 - Sony HB-F5 */
@@ -2689,7 +2674,7 @@ void msx2_state::hbf5(machine_config &config)
 	add_cartridge_slot<1>(config, 1);
 	add_cartridge_slot<2>(config, 2);
 
-	msx2_pal(SND_YM2149, config, REGION_JAPAN);
+	msx2_pal(SND_YM2149, config, layout_msx_jp);
 }
 
 /* MSX2 - Sony HB-F500 */
@@ -2723,7 +2708,7 @@ void msx2_state::hbf500(machine_config &config)
 	add_cartridge_slot<1>(config, 1);
 	add_cartridge_slot<2>(config, 2);
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_1fdd);
 }
 
 /* MSX2 - Sony HB-F500 2nd version (slot layout is different) */
@@ -2756,7 +2741,7 @@ void msx2_state::hbf500_2(machine_config &config)
 	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793, "disk", 3, 1, 1, 2, "diskrom");
 	add_internal_slot(config, MSX_SLOT_RAM, "ram", 3, 2, 0, 4);   // 64KB RAM
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_1fdd);
 }
 
 /* MSX2 - Sony HB-F500F */
@@ -2789,8 +2774,7 @@ void msx2_state::hbf500f(machine_config &config)
 	add_cartridge_slot<2>(config, 2);
 	add_cartridge_slot<3>(config, 3);
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode_1fdd);
 }
 
 /* MSX2 - Sony HB-F500P */
@@ -2818,8 +2802,7 @@ void msx2_state::hbf500p(machine_config &config)
 	add_cartridge_slot<2>(config, 2);
 	add_cartridge_slot<3>(config, 3);
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode_1fdd);
 }
 
 /* MSX2 - Sony HB-F700D */
@@ -2854,8 +2837,7 @@ void msx2_state::hbf700d(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode_1fdd);
 }
 
 /* MSX2 - Sony HB-F700F */
@@ -2890,8 +2872,7 @@ void msx2_state::hbf700f(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode_1fdd);
 }
 
 /* MSX2 - Sony HB-F700P */
@@ -2928,8 +2909,7 @@ void msx2_state::hbf700p(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode_1fdd);
 }
 
 /* MSX2 - Sony HB-F700S */
@@ -2964,8 +2944,7 @@ void msx2_state::hbf700s(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode_1fdd);
 }
 
 /* MSX2 - Sony HB-F750 (prototype) */
@@ -3006,7 +2985,7 @@ void msx2_state::hbf900(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_2fdd);
 }
 
 /* MSX2 - Sony HB-F900 (a) */
@@ -3045,7 +3024,7 @@ void msx2_state::hbf900a(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_2fdd);
 }
 
 /* MSX2 - Sony HB-F9P */
@@ -3081,8 +3060,7 @@ void msx2_state::hbf9p(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x20000).set_unused_bits(0x80);   // 128KB Mapper RAM
 
 	MSX_S1985(config, "s1985", 0);
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode);
 }
 
 /* MSX2 - Sony HB-F9P Russian */
@@ -3110,7 +3088,7 @@ void msx2_state::hbf9pr(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x20000);   // 128KB Mapper RAM
 
 	MSX_S1985(config, "s1985", 0);
-	msx2_pal(SND_YM2149, config, REGION_RUSSIA);
+	msx2_pal(SND_YM2149, config, layout_msx_ru);
 }
 
 /* MSX2 - Sony HB-F9S */
@@ -3142,8 +3120,7 @@ void msx2_state::hbf9s(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x20000).set_unused_bits(0x80);   // 128KB Mapper RAM
 
 	MSX_S1985(config, "s1985", 0);
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode);
 }
 
 /* MSX2 - Sony HB-G900AP */
@@ -3192,8 +3169,7 @@ void msx2_state::hbg900ap(machine_config &config)
 	// slot #3 is expanded
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 0, 0, 4).set_total_size(0x80000).set_unused_bits(0x80);   // 512KB Mapper RAM
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode_1fdd);
 }
 
 /* MSX2 - Sony HB-G900D */
@@ -3234,8 +3210,7 @@ void msx2_state::hbg900p(machine_config &config)
 	add_cartridge_slot<2>(config, 2);
 	add_internal_slot(config, MSX_SLOT_RAM, "ram", 3, 0, 4);   // 64KB RAM
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_AY8910, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_AY8910, config, layout_msx_nocode_1fdd);
 }
 
 /* MSX2 - Sony HB-T600 */
@@ -3277,8 +3252,7 @@ void msx2_state::tpc310(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode);
 }
 
 /* MSX2 - Talent TPP-311 */
@@ -3309,8 +3283,7 @@ void msx2_state::tpp311(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode);
 	msx2_64kb_vram(config);
 }
 
@@ -3349,8 +3322,7 @@ void msx2_state::tps312(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode);
 	msx2_64kb_vram(config);
 }
 
@@ -3387,8 +3359,7 @@ void msx2_state::fstm1(machine_config &config)
 
 	MSX_S1985(config, "s1985", 0);
 	// Hard to see on pictures whether the machine has a CAPS led
-	m_hw_def.no_code_led();
-	msx2_pal(SND_YM2149, config, REGION_INTERNATIONAL);
+	msx2_pal(SND_YM2149, config, layout_msx_nocode);
 }
 
 /* MSX2 - Toshiba HX-23 */
@@ -3423,7 +3394,7 @@ void msx2_state::hx23(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_ROM, "jwp", 3, 1, 2, 1, "subjwp", 0x4000);
 	add_internal_slot(config, MSX_SLOT_ROM, "rs232jwp", 3, 3, 1, 2, "rs232jwp");
 
-	msx2(SND_AY8910, config, REGION_JAPAN);
+	msx2(SND_AY8910, config, layout_msx_jp);
 	msx2_64kb_vram(config);
 }
 
@@ -3457,7 +3428,7 @@ void msx2_state::hx23f(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_ROM, "jwp", 3, 1, 2, 1, "subjwp", 0x4000);
 	add_internal_slot(config, MSX_SLOT_ROM, "rs232jwp", 3, 3, 1, 2, "rs232jwp");
 
-	msx2(SND_AY8910, config, REGION_JAPAN);
+	msx2(SND_AY8910, config, layout_msx_jp);
 }
 
 /* MSX2 - Toshiba HX-33 */
@@ -3487,7 +3458,7 @@ void msx2_state::hx33(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_ROM, "subrom", 3, 1, 0, 1, "mainrom", 0x8000);
 	add_internal_slot(config, MSX_SLOT_RS232_TOSHIBA_HX3X, "firmware", 3, 3, 1, 2, "mainrom", 0xc000);
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp);
 	msx2_64kb_vram(config);
 }
 
@@ -3523,7 +3494,7 @@ void msx2_state::hx34(machine_config &config)
 	add_internal_disk(config, MSX_SLOT_DISK6_WD2793_N, "disk", 3, 2, 1, 1, "diskrom");
 	add_internal_slot(config, MSX_SLOT_RS232_TOSHIBA_HX3X, "firmware", 3, 3, 1, 2, "mainrom", 0xc000);
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_1fdd);
 }
 
 /* MSX2 - Victor HC-80 */
@@ -3554,7 +3525,7 @@ void msx2_state::victhc80(machine_config &config)
 	add_cartridge_slot<2>(config, 2);
 	add_internal_slot(config, MSX_SLOT_ROM, "firmware", 3, 2, 1, "firmware");
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp);
 }
 
 /* MSX2 - Victor HC-90 */
@@ -3592,7 +3563,7 @@ void msx2_state::victhc90(machine_config &config)
 	add_cartridge_slot<1>(config, 1);
 	add_internal_disk(config, MSX_SLOT_DISK10_MB8877, "disk", 3, 1, 1, "diskrom");
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_1fdd);
 }
 
 /* MSX2 - Victor HC-90(A) */
@@ -3632,7 +3603,7 @@ void msx2_state::victhc90a(machine_config &config)
 	add_cartridge_slot<1>(config, 1);
 	add_internal_disk(config, MSX_SLOT_DISK10_MB8877, "disk", 3, 1, 1, "rs232fdd", 0x4000);
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_1fdd);
 }
 
 /* MSX2 - Victor HC-90(B) */
@@ -3678,7 +3649,7 @@ void msx2_state::victhc95(machine_config &config)
 	// 96 pin expansion bus in slot #2
 	add_internal_disk(config, MSX_SLOT_DISK10_MB8877_2_DRIVES, "disk", 3, 1, 1, "diskrom");
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_2fdd);
 }
 
 /* MSX2 - Victor HC-95A */
@@ -3718,7 +3689,7 @@ void msx2_state::victhc95a(machine_config &config)
 	// 96 pin expansion bus in slot #2
 	add_internal_disk(config, MSX_SLOT_DISK10_MB8877_2_DRIVES, "disk", 3, 1, 1, "diskrom");
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_2fdd);
 }
 
 /* MSX2 - Wandy CPC-300 */
@@ -3748,7 +3719,7 @@ void msx2_state::cx7128(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x20000).set_unused_bits(0x80);   // 64KB Mapper RAM
 	add_cartridge_slot<4>(config, MSX_SLOT_YAMAHA_EXPANSION, "module", 3, 3, msx_yamaha_60pin, nullptr);
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp);
 	SOFTWARE_LIST(config, "minicart_list").set_original("msx_yamaha_minicart");
 }
 
@@ -3777,7 +3748,7 @@ void msx2_state::cx7m128(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x20000).set_unused_bits(0x80);   // 64KB Mapper RAM
 	add_cartridge_slot<4>(config, MSX_SLOT_YAMAHA_EXPANSION, "module", 3, 3, msx_yamaha_60pin, "sfg05");
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp);
 	SOFTWARE_LIST(config, "minicart_list").set_original("msx_yamaha_minicart");
 }
 
@@ -3815,7 +3786,7 @@ void msx2_state::y503iiir(machine_config &config)
 	// Yamaha expansion slot in slot #3-3
 	add_internal_slot(config, MSX_SLOT_ROM, "network", 3, 3, 1, 2, "network");
 
-	msx2_pal(SND_YM2149, config, REGION_RUSSIA);
+	msx2_pal(SND_YM2149, config, layout_msx_ru);
 }
 
 /* MSX2 - Yamaha YIS-503 III R Estonian */
@@ -3860,7 +3831,7 @@ void msx2_state::yis604(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 2, 0, 4).set_total_size(0x20000); // 128KB Mapper RAM
 	add_cartridge_slot<4>(config, MSX_SLOT_YAMAHA_EXPANSION, "module", 3, 3, msx_yamaha_60pin, nullptr);
 
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp);
 	SOFTWARE_LIST(config, "minicart_list").set_original("msx_yamaha_minicart");
 }
 
@@ -3899,7 +3870,7 @@ void msx2_state::y805128(machine_config &config)
 	add_cartridge_slot<3>(config, MSX_SLOT_YAMAHA_EXPANSION, "module", 3, 3, msx_yamaha_60pin, nullptr);
 
 	MSX_S1985(config, "s1985", 0);
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_1fdd);
 }
 
 /* MSX2 - Yamaha YIS-805/256 */
@@ -3938,7 +3909,7 @@ void msx2_state::y805256(machine_config &config)
 	add_cartridge_slot<3>(config, MSX_SLOT_YAMAHA_EXPANSION, "module", 3, 3, msx_yamaha_60pin, nullptr);
 
 	MSX_S1985(config, "s1985", 0);
-	msx2(SND_YM2149, config, REGION_JAPAN);
+	msx2(SND_YM2149, config, layout_msx_jp_2fdd);
 }
 
 /* MSX2 - Yamaha YIS-805/128R2 (teacher) */
@@ -3980,7 +3951,7 @@ void msx2_state::y805128r2(machine_config &config)
 	add_internal_slot(config, MSX_SLOT_ROM, "network", 3, 3, 0, 2, "network", 0x00000);
 
 	MSX_S1985(config, "s1985", 0);
-	msx2_pal(SND_YM2149, config, REGION_RUSSIA);
+	msx2_pal(SND_YM2149, config, layout_msx_ru_2fdd);
 }
 
 /* MSX2 - Yamaha YIS-805/128R2 Estonian */
@@ -4001,662 +3972,6 @@ ROM_START(y805128r2e)
 	ROM_REGION(0x10000, "firmware", 0)
 	ROM_LOAD("yis805128r2epaint.rom", 0x00000, 0x10000, CRC(1bda68a3) SHA1(7fd2a28c4fdaeb140f3c8c8fb90271b1472c97b9))
 ROM_END
-
-/********************************  MSX 2+ **********************************/
-
-/* MSX2+ - Ciel Expert 3 IDE */
-
-ROM_START(expert3i)
-	ROM_REGION(0x8000, "mainrom", 0)
-	ROM_LOAD("exp30bios.rom", 0x0000,  0x8000, CRC(a10bb1ce) SHA1(5029cf47031b22bd5d1f68ebfd3be6d6da56dfe9))
-
-	ROM_REGION(0x4000, "subrom", 0)
-	ROM_LOAD("exp30ext.rom", 0x0000, 0x4000, CRC(6bcf4100) SHA1(cc1744c6c513d6409a142b4fb42fbe70a95d9b7f))
-
-	ROM_REGION(0x4000, "diskrom", 0)
-	ROM_LOAD("cieldisk.rom", 0x0000, 0x4000, CRC(bb550b09) SHA1(0274dd9b5096065a7f4ed019101124c9bd1d56b8))
-
-	ROM_REGION(0x4000, "music", 0)
-	ROM_LOAD("exp30mus.rom", 0x0000, 0x4000, CRC(9881b3fd) SHA1(befebc916bfdb5e8057040f0ae82b5517a7750db))
-
-	ROM_REGION(0x10000, "ide", 0)
-	ROM_LOAD("ide240a.rom", 0x00000, 0x10000, CRC(7adf857f) SHA1(8a919dbeed92db8c06a611279efaed8552810239))
-ROM_END
-
-void msx2_state::expert3i(machine_config &config)
-{
-	// AY8910/YM2149?
-	// FDC: wd2793, 1 or 2? drives
-	// 2 Cartridge slots?
-
-	add_internal_slot(config, MSX_SLOT_ROM, "mainrom", 0, 0, 2, "mainrom");
-	add_cartridge_slot<1>(config, 1);
-	add_internal_slot(config, MSX_SLOT_ROM, "subrom", 1, 1, 0, 1, "subrom");
-	add_internal_slot(config, MSX_SLOT_MUSIC, "music", 1, 1, 1, 1, "music").set_ym2413_tag("ym2413");
-	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793, "disk", 1, 2, 1, 2, "diskrom");
-	add_internal_slot(config, MSX_SLOT_ROM, "ide", 1, 3, 0, 4, "ide");         /* IDE hardware needs to be emulated */
-	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 2, 0, 4).set_total_size(0x40000);       // 256KB?? Mapper RAM
-	add_cartridge_slot<2>(config, 3);
-
-	msx_ym2413(config);
-
-	m_hw_def.no_code_led();
-	msx2plus(SND_AY8910, config, REGION_INTERNATIONAL);
-}
-
-/* MSX2+ - Ciel Expert 3 Turbo
-This one is a full motherboard by CIEL (not an upgrade kit), created to replace the motherboard of a Gradiente Expert (which means that only the case, the analog boards and the keyboard remains Gradiente). This new motherboard has the following built-in features:
-
-1) MSX2+
-2) Support either 3.57MHz or 7.14MHz natively, switched either by software (*1) or by a hardware-switch on the front panel. Turbo-led included.
-3) Up to 4MB of Memory Mapper (1MB is the most common configuration)
-4) MSX-Music
-5) 4 expansion slots (two external on the front panel, two internal)
-6) Stereo sound (YM2413 channels 0-6 on right, PSG+YM2413 channels 7-9 on left)
-7) Support the V9938 instead of the V9958 by switching some jumpers
-8) The main-ram can be placed on slot 2 or slot 3, using jumpers (slot 2 is the default)
-
-
-*1: A routine hidden inside the BIOS frame-0 is used to switch the turbo.
- */
-
-/* Uses a Z84C0010 - CMOS processor working at 7 MHz */
-ROM_START(expert3t)
-	ROM_REGION(0x8000, "mainrom", 0)
-	ROM_LOAD("exp30bios.rom", 0x0000, 0x8000, CRC(a10bb1ce) SHA1(5029cf47031b22bd5d1f68ebfd3be6d6da56dfe9))
-
-	ROM_REGION(0x4000, "subrom", 0)
-	ROM_LOAD("exp30ext.rom", 0x0000, 0x4000, CRC(6bcf4100) SHA1(cc1744c6c513d6409a142b4fb42fbe70a95d9b7f))
-
-	ROM_REGION(0x4000, "diskrom", 0)
-	ROM_LOAD("cieldisk.rom", 0x0000, 0x4000, CRC(bb550b09) SHA1(0274dd9b5096065a7f4ed019101124c9bd1d56b8))
-
-	ROM_REGION(0x4000, "music", 0)
-	ROM_LOAD("exp30mus.rom", 0x0000, 0x4000, CRC(9881b3fd) SHA1(befebc916bfdb5e8057040f0ae82b5517a7750db))
-
-	ROM_REGION(0x4000, "turbo", 0)
-	ROM_LOAD("turbo.rom", 0x0000, 0x4000, CRC(ab528416) SHA1(d468604269ae7664ac739ea9f922a05e14ffa3d1))
-ROM_END
-
-void msx2_state::expert3t(machine_config &config)
-{
-	// AY8910
-	// FDC: wd2793?, 1 or 2? drives
-	// 4 Cartridge/Expansion slots?
-	// FM/YM2413 built-in
-
-	add_internal_slot(config, MSX_SLOT_ROM, "mainrom", 0, 0, 2, "mainrom");
-	add_cartridge_slot<1>(config, 1, 0);
-	add_internal_slot(config, MSX_SLOT_ROM, "subrom", 1, 1, 0, 1, "subrom");
-	add_internal_slot(config, MSX_SLOT_MUSIC, "music", 1, 1, 1, 1, "music").set_ym2413_tag("ym2413");
-	add_internal_slot(config, MSX_SLOT_ROM, "turbo", 1, 2, 1, 1, "turbo");          /* Turbo hardware needs to be emulated */
-	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793, "disk", 1, 3, 1, 2, "diskrom");
-	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 2, 0, 4).set_total_size(0x40000);       // 256KB Mapper RAM
-	add_cartridge_slot<2>(config, 3);
-
-	msx_ym2413(config);
-
-	m_hw_def.no_code_led();
-	msx2plus(SND_AY8910, config, REGION_INTERNATIONAL);
-}
-
-/* MSX2+ - Gradiente Expert AC88+ */
-
-ROM_START(expertac)
-	ROM_REGION(0x8000, "mainrom", 0)
-	ROM_LOAD("ac88bios.rom", 0x0000, 0x8000, CRC(9ce0da44) SHA1(1fc2306911ab6e1ebdf7cb8c3c34a7f116414e88))
-
-	ROM_REGION(0x4000, "subrom", 0)
-	ROM_LOAD("ac88ext.rom", 0x0000, 0x4000, CRC(c74c005c) SHA1(d5528825c7eea2cfeadd64db1dbdbe1344478fc6))
-
-	ROM_REGION(0x4000, "diskrom", 0)
-	ROM_LOAD("panadisk.rom", 0x0000, 0x4000, CRC(17fa392b) SHA1(7ed7c55e0359737ac5e68d38cb6903f9e5d7c2b6))
-
-	ROM_REGION(0x4000, "asm", 0)
-	ROM_LOAD("ac88asm.rom", 0x0000, 0x4000, CRC(a8a955ae) SHA1(91e522473a8470511584df3ee5b325ea5e2b81ef))
-
-	ROM_REGION(0x4000, "xbasic", 0)
-	ROM_LOAD("xbasic2.rom", 0x0000, 0x4000, CRC(2825b1a0) SHA1(47370bec7ca1f0615a54eda548b07fbc0c7ef398))
-ROM_END
-
-void msx2_state::expertac(machine_config &config)
-{
-	// AY8910/YM2149?
-	// FDC: wd2793?, 1 or 2? drives
-	// 2 Cartridge slots?
-
-	add_internal_slot(config, MSX_SLOT_ROM, "mainrom", 0, 0, 2, "mainrom");
-	add_cartridge_slot<1>(config, 1);
-	add_cartridge_slot<2>(config, 2);
-	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 0, 0, 4).set_total_size(0x10000);   // 64KB Mapper RAM??
-	add_internal_slot(config, MSX_SLOT_ROM, "subrom", 3, 1, 0, 1, "subrom");
-	add_internal_slot(config, MSX_SLOT_ROM, "asm", 3, 1, 1, 1, "asm");
-	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793, "disk", 3, 2, 1, 2, "diskrom");
-	add_internal_slot(config, MSX_SLOT_ROM, "xbasic", 3, 3, 1, 1, "xbasic");
-
-	m_hw_def.no_code_led();
-	msx2plus(SND_AY8910, config, REGION_INTERNATIONAL);
-}
-
-/* MSX2+ - Gradiente Expert DDX+ */
-
-ROM_START(expertdx)
-	ROM_REGION(0x8000, "mainrom", 0)
-	ROM_LOAD("ddxbios.rom", 0x0000, 0x8000, CRC(e00af3dc) SHA1(5c463dd990582e677c8206f61035a7c54d8c67f0))
-
-	ROM_REGION(0x4000, "subrom", 0)
-	ROM_LOAD("ddxext.rom", 0x0000, 0x4000, CRC(b8ba44d3) SHA1(fe0254cbfc11405b79e7c86c7769bd6322b04995))
-
-	ROM_REGION(0x4000, "diskrom", 0)
-	ROM_LOAD("panadisk.rom", 0x0000, 0x4000, CRC(17fa392b) SHA1(7ed7c55e0359737ac5e68d38cb6903f9e5d7c2b6))
-
-	ROM_REGION(0x4000, "xbasic", 0)
-	ROM_LOAD("xbasic2.rom", 0x0000, 0x4000, CRC(2825b1a0) SHA1(47370bec7ca1f0615a54eda548b07fbc0c7ef398))
-
-	ROM_REGION(0x8000, "kanjirom", 0)
-	ROM_LOAD("kanji.rom", 0x0000, 0x8000, CRC(b4fc574d) SHA1(dcc3a67732aa01c4f2ee8d1ad886444a4dbafe06))
-ROM_END
-
-void msx2_state::expertdx(machine_config &config)
-{
-	// AY8910/YM2149?
-	// FDC: tc8566af, 1 3.5" DSDD drive?
-	// 2 Cartridge slots?
-
-	add_internal_slot(config, MSX_SLOT_ROM, "mainrom", 0, 0, 2, "mainrom");
-	add_cartridge_slot<1>(config, 1, 0);
-	add_internal_slot(config, MSX_SLOT_ROM, "subrom", 1, 1, 0, 1, "subrom");
-	add_internal_slot(config, MSX_SLOT_ROM, "xbasic", 1, 2, 1, 1, "xbasic");
-	add_internal_disk_mirrored(config, MSX_SLOT_DISK3_TC8566, "disk", 1, 3, 1, 2, "diskrom");
-	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 2, 0, 4).set_total_size(0x10000);   // 64KB Mapper RAM??
-	add_cartridge_slot<2>(config, 3);
-	/* Kanji? */
-
-	m_hw_def.no_code_led();
-	msx2plus(SND_AY8910, config, REGION_INTERNATIONAL);
-}
-
-/* MSX2+ - Panasonic FS-A1FX */
-
-ROM_START(fsa1fx)
-	ROM_REGION(0x40000, "maincpu", 0)
-	ROM_LOAD("a1fx.ic16", 0, 0x40000, CRC(c0b2d882) SHA1(623cbca109b6410df08ee7062150a6bda4b5d5d4))
-
-	// Kanji rom contents are the first half of the single rom
-//  ROM_REGION(0x20000, "kanji", 0)
-	ROM_REGION(0x40000, "kanji", 0)
-	ROM_LOAD("a1fx.ic16", 0, 0x40000, CRC(c0b2d882) SHA1(623cbca109b6410df08ee7062150a6bda4b5d5d4))
-ROM_END
-
-void msx2_state::fsa1fx(machine_config &config)
-{
-	// AY8910 (in T9769)
-	// FDC: tc8566af, 1 3.5" DSDD drive
-	// 2 Cartridge slots
-	// T9769(B)
-	// ren-sha turbo slider
-	// pause button
-	// firmware switch
-
-	add_internal_slot(config, MSX_SLOT_ROM, "mainrom", 0, 0, 2, "maincpu", 0x30000);
-	add_cartridge_slot<1>(config, 1);
-	add_cartridge_slot<2>(config, 2);
-	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 0, 0, 4).set_total_size(0x10000).set_unused_bits(0x80);   // 64KB Mapper RAM
-	add_internal_slot(config, MSX_SLOT_ROM, "subrom", 3, 1, 0, 1, "maincpu", 0x38000);
-	add_internal_slot(config, MSX_SLOT_ROM, "kdr", 3, 1, 1, 2, "maincpu", 0x28000);
-	add_internal_disk_mirrored(config, MSX_SLOT_DISK3_TC8566, "disk", 3, 2, 1, 2, "maincpu", 0x3c000);
-	add_internal_slot(config, MSX_SLOT_ROM, "firmware", 3, 3, 1, 2, "maincpu", 0x20000);
-
-	msx_matsushita_device &matsushita(MSX_MATSUSHITA(config, "matsushita", 0));
-	matsushita.turbo_callback().set(FUNC(msx2_state::turbo_w));
-
-	MSX_SYSTEMFLAGS(config, "sysflags", m_maincpu, 0xff);
-
-	m_kanji_fsa1fx = true;
-	msx2plus(SND_AY8910, config, REGION_JAPAN);
-}
-
-/* MSX2+ - Panasonic FS-A1WSX */
-
-ROM_START(fsa1wsx)
-	ROM_REGION(0x8000, "mainrom", 0)
-	ROM_LOAD("a1wsbios.rom", 0x0000, 0x8000, CRC(358ec547) SHA1(f4433752d3bf876bfefb363c749d4d2e08a218b6))
-
-	ROM_REGION(0x4000, "subrom", 0)
-	ROM_LOAD("a1wsext.rom", 0x0000, 0x4000, CRC(b8ba44d3) SHA1(fe0254cbfc11405b79e7c86c7769bd6322b04995))
-
-	ROM_REGION(0x4000, "diskrom", 0)
-	ROM_LOAD("a1wsdisk.rom", 0x0000, 0x4000, CRC(17fa392b) SHA1(7ed7c55e0359737ac5e68d38cb6903f9e5d7c2b6))
-
-	ROM_REGION(0x8000, "kdr", 0)
-	ROM_LOAD("a1wskdr.rom", 0x0000, 0x8000, CRC(b4fc574d) SHA1(dcc3a67732aa01c4f2ee8d1ad886444a4dbafe06))
-
-	ROM_REGION(0x4000, "msxmusic", 0)
-	ROM_LOAD("a1wsmusp.rom", 0x0000, 0x4000, CRC(5c32eb29) SHA1(aad42ba4289b33d8eed225d42cea930b7fc5c228))
-
-	ROM_REGION(0x200000, "firmware", 0)
-	ROM_LOAD("a1wsfirm.rom", 0x000000, 0x200000, CRC(e363595d) SHA1(3330d9b6b76e3c4ccb7cf252496ed15d08b95d3f))
-
-	ROM_REGION(0x40000, "kanji", 0)
-	ROM_LOAD("a1wskfn.rom", 0, 0x40000, CRC(1f6406fb) SHA1(5aff2d9b6efc723bc395b0f96f0adfa83cc54a49))
-ROM_END
-
-void msx2_state::fsa1wsx(machine_config &config)
-{
-	// AY8910 (in T9769)
-	// FDC: tc8566af, 1 3.5" DSDD drive
-	// 2 Cartridge slots
-	// FM built-in
-	// T9769(C)
-	// ren-sha turbo slider
-	// firmware switch
-	// pause button
-
-	add_internal_slot(config, MSX_SLOT_ROM, "mainrom", 0, 0, 0, 2, "mainrom");
-	add_internal_slot(config, MSX_SLOT_MUSIC, "msxmusic", 0, 2, 1, 1, "msxmusic").set_ym2413_tag("ym2413");
-	add_cartridge_slot<1>(config, 1);
-	add_cartridge_slot<2>(config, 2);
-	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 0, 0, 4).set_total_size(0x10000).set_unused_bits(0x80);   // 64KB Mapper RAM
-	add_internal_slot(config, MSX_SLOT_ROM, "subrom", 3, 1, 0, 1, "subrom");
-	add_internal_slot(config, MSX_SLOT_ROM, "kdr", 3, 1, 1, 2, "kdr");
-	add_internal_disk_mirrored(config, MSX_SLOT_DISK3_TC8566, "disk", 3, 2, 1, 2, "diskrom");
-	add_internal_slot(config, MSX_SLOT_PANASONIC08, "firmware", 3, 3, 0, 4, "firmware");
-
-	msx_matsushita_device &matsushita(MSX_MATSUSHITA(config, "matsushita", 0));
-	matsushita.turbo_callback().set(FUNC(msx2_state::turbo_w));
-
-	MSX_SYSTEMFLAGS(config, "sysflags", m_maincpu, 0xff);
-
-	msx_ym2413(config);
-
-	msx2plus(SND_AY8910, config, REGION_JAPAN);
-}
-
-/* MSX2+ - Panasonic FS-A1WX */
-
-ROM_START(fsa1wx)
-	ROM_REGION(0x8000, "mainrom", 0)
-	ROM_LOAD("a1wxbios.rom", 0x0000, 0x8000, CRC(19771608) SHA1(e90f80a61d94c617850c415e12ad70ac41e66bb7))
-
-	ROM_REGION(0x4000, "subrom", 0)
-	ROM_LOAD("a1wxext.rom", 0x0000, 0x4000, CRC(b8ba44d3) SHA1(fe0254cbfc11405b79e7c86c7769bd6322b04995))
-
-	ROM_REGION(0x4000, "diskrom", 0)
-	ROM_LOAD("a1wxdisk.rom", 0x0000, 0x4000, CRC(905daa1b) SHA1(bb59c849898d46a23fdbd0cc04ab35088e74a18d))
-
-	ROM_REGION(0x8000, "kdr", 0)
-	ROM_LOAD("a1wxkdr.rom", 0x0000, 0x8000, CRC(a068cba9) SHA1(1ef3956f7f918873fb9b031339bba45d1e5e5878))
-
-	ROM_REGION(0x4000, "msxmusic", 0)
-	ROM_LOAD("a1wxmusp.rom", 0x0000, 0x4000, CRC(456e494e) SHA1(6354ccc5c100b1c558c9395fa8c00784d2e9b0a3))
-
-	ROM_REGION(0x200000, "firmware", 0)
-	ROM_LOAD("a1wxfirm.rom", 0x000000, 0x200000, CRC(283f3250) SHA1(d37ab4bd2bfddd8c97476cbe7347ae581a6f2972))
-
-	ROM_REGION(0x40000, "kanji", 0)
-	ROM_LOAD("a1wxkfn.rom", 0, 0x40000, CRC(1f6406fb) SHA1(5aff2d9b6efc723bc395b0f96f0adfa83cc54a49))
-ROM_END
-
-void msx2_state::fsa1wx(machine_config &config)
-{
-	// AY8910 (in T9769)
-	// FDC: tc8566af, 1 3.5" DSDD drive
-	// 2 Cartridge slots
-	// FM built-in
-	// MSX Engine T9769A/B
-	// ren-sha turbo slider
-	// firmware switch
-	// pause button
-
-	add_internal_slot(config, MSX_SLOT_ROM, "mainrom", 0, 0, 0, 2, "mainrom");
-	add_internal_slot(config, MSX_SLOT_MUSIC, "msxmusic", 0, 2, 1, 1, "msxmusic").set_ym2413_tag("ym2413");
-	add_cartridge_slot<1>(config, 1);
-	add_cartridge_slot<2>(config, 2);
-	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 0, 0, 4).set_total_size(0x10000).set_unused_bits(0x80);   // 64KB Mapper RAM
-	add_internal_slot(config, MSX_SLOT_ROM, "subrom", 3, 1, 0, 1, "subrom");
-	add_internal_slot(config, MSX_SLOT_ROM, "kdr", 3, 1, 1, 2, "kdr");
-	add_internal_disk_mirrored(config, MSX_SLOT_DISK3_TC8566, "disk", 3, 2, 1, 2, "diskrom");
-	add_internal_slot(config, MSX_SLOT_PANASONIC08, "firmware", 3, 3, 0, 4, "firmware");
-
-	msx_matsushita_device &matsushita(MSX_MATSUSHITA(config, "matsushita", 0));
-	matsushita.turbo_callback().set(FUNC(msx2_state::turbo_w));
-
-	MSX_SYSTEMFLAGS(config, "sysflags", m_maincpu, 0xff);
-
-	msx_ym2413(config);
-
-	msx2plus(SND_AY8910, config, REGION_JAPAN);
-}
-
-/* MSX2+ - Panasonic FS-A1WX (a) */
-
-ROM_START(fsa1wxa)
-	ROM_REGION(0x8000, "mainrom", 0)
-	ROM_LOAD("a1wxbios.rom", 0x0000, 0x8000, CRC(19771608) SHA1(e90f80a61d94c617850c415e12ad70ac41e66bb7))
-
-	ROM_REGION(0x4000, "subrom", 0)
-	ROM_LOAD("a1wxext.rom", 0x0000, 0x4000, CRC(b8ba44d3) SHA1(fe0254cbfc11405b79e7c86c7769bd6322b04995))
-
-	ROM_REGION(0x4000, "diskrom", 0)
-	ROM_LOAD("a1wxdisk.rom", 0x0000, 0x4000, CRC(2bda0184) SHA1(2a0d228afde36ac7c5d3c2aac9c7c664dd071a8c))
-
-	ROM_REGION(0x8000, "kdr", 0)
-	ROM_LOAD("a1wxkdr.rom", 0x0000, 0x8000, CRC(a068cba9) SHA1(1ef3956f7f918873fb9b031339bba45d1e5e5878))
-
-	ROM_REGION(0x4000, "msxmusic", 0)
-	ROM_LOAD("a1wxmusp.rom", 0x0000, 0x4000, CRC(456e494e) SHA1(6354ccc5c100b1c558c9395fa8c00784d2e9b0a3))
-
-	ROM_REGION(0x200000, "firmware", 0)
-	ROM_LOAD("a1wxfira.rom", 0x000000, 0x200000, CRC(58440a8e) SHA1(8e0d4a77e7d5736e8225c2df4701509363eb230f))
-
-	ROM_REGION(0x40000, "kanji", 0)
-	ROM_LOAD("a1wxkfn.rom", 0, 0x40000, CRC(1f6406fb) SHA1(5aff2d9b6efc723bc395b0f96f0adfa83cc54a49))
-ROM_END
-
-/* MSX2+ - Sanyo Wavy PHC-35J */
-
-ROM_START(phc35j)
-	ROM_REGION(0x8000, "mainrom", 0)
-	ROM_LOAD("35jbios.rom", 0x0000, 0x8000, CRC(358ec547) SHA1(f4433752d3bf876bfefb363c749d4d2e08a218b6))
-
-	ROM_REGION(0x4000, "subrom", 0)
-	ROM_LOAD("35jext.rom", 0x0000, 0x4000, CRC(b8ba44d3) SHA1(fe0254cbfc11405b79e7c86c7769bd6322b04995))
-
-	ROM_REGION(0x8000, "kdr", 0)
-	ROM_LOAD("35jkdr.rom", 0x0000, 0x8000, CRC(b4fc574d) SHA1(dcc3a67732aa01c4f2ee8d1ad886444a4dbafe06))
-
-	ROM_REGION(0x20000, "kanji", 0)
-	ROM_LOAD("35jkfn.rom", 0, 0x20000, CRC(c9651b32) SHA1(84a645becec0a25d3ab7a909cde1b242699a8662))
-ROM_END
-
-void msx2_state::phc35j(machine_config &config)
-{
-	// AY8910 (in T9769)
-	// FDC: None, 0 drives
-	// 2 Cartridge slots
-	// T9769A
-	// ren-sha turbo slider
-	// pause button
-
-	add_internal_slot(config, MSX_SLOT_ROM, "mainrom", 0, 0, 2, "mainrom");
-	add_cartridge_slot<1>(config, 1);
-	add_cartridge_slot<2>(config, 2);
-	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 0, 0, 4).set_total_size(0x10000).set_unused_bits(0x80);   // 64KB Mapper RAM
-	add_internal_slot(config, MSX_SLOT_ROM, "subrom", 3, 1, 0, 1, "subrom");
-	add_internal_slot(config, MSX_SLOT_ROM, "kdr", 3, 1, 1, 2, "kdr");
-
-	MSX_SYSTEMFLAGS(config, "sysflags", m_maincpu, 0xff);
-	msx2plus(SND_AY8910, config, REGION_JAPAN);
-}
-
-/* MSX2+ - Sanyo Wavy PHC-70FD */
-
-ROM_START(phc70fd)
-	ROM_REGION(0x20000, "mainrom", 0)
-	ROM_LOAD("phc-70fd.rom", 0x0000, 0x20000, CRC(d2307ddf) SHA1(b6f2ca2e8a18d6c7cd326cb8d1a1d7d747f23059))
-//  ROM_LOAD("70fdbios.rom", 0x0000, 0x8000, CRC(19771608) SHA1(e90f80a61d94c617850c415e12ad70ac41e66bb7))
-//  ROM_LOAD("70fdext.rom",  0x8000, 0x4000, CRC(b8ba44d3) SHA1(fe0254cbfc11405b79e7c86c7769bd6322b04995))
-//  ROM_LOAD("70fddisk.rom", 0xc000, 0x4000, CRC(db7f1125) SHA1(9efa744be8355675e7bfdd3976bbbfaf85d62e1d))
-//  ROM_LOAD("70fdkdr.rom", 0x10000, 0x8000, CRC(a068cba9) SHA1(1ef3956f7f918873fb9b031339bba45d1e5e5878))
-//  ROM_LOAD("70fdmus.rom", 0x18000, 0x4000, CRC(5c32eb29) SHA1(aad42ba4289b33d8eed225d42cea930b7fc5c228))
-//  ROM_LOAD("70fdbas.rom", 0x1c000, 0x4000, CRC(da7be246) SHA1(22b3191d865010264001b9d896186a9818478a6b))
-
-	ROM_REGION(0x20000, "kanji", 0)
-	ROM_LOAD("70fdkfn.rom", 0, 0x20000, CRC(c9651b32) SHA1(84a645becec0a25d3ab7a909cde1b242699a8662))
-ROM_END
-
-void msx2_state::phc70fd(machine_config &config)
-{
-	// AY8910 (in T9769)
-	// FDC: tc8566af, 1 3.5" DSDD drive
-	// 2 Cartridge slots
-	// T9769
-	// FM built-in
-	// ren-sha turbo slider
-	// pause button
-
-	add_internal_slot(config, MSX_SLOT_ROM, "mainrom", 0, 0, 2, "mainrom", 0x10000);
-	add_cartridge_slot<1>(config, 1);
-	add_cartridge_slot<2>(config, 2);
-	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 0, 0, 4).set_total_size(0x10000).set_unused_bits(0x80);   // 64KB Mapper RAM
-	add_internal_slot(config, MSX_SLOT_ROM, "subrom", 3, 1, 0, 1, "mainrom", 0x18000);
-	add_internal_slot(config, MSX_SLOT_ROM, "kdr", 3, 1, 1, 2, "mainrom", 0x8000);
-	add_internal_disk_mirrored(config, MSX_SLOT_DISK3_TC8566, "disk", 3, 2, 1, 2, "mainrom", 0x1c000);
-	add_internal_slot(config, MSX_SLOT_MUSIC, "msxmusic", 3, 3, 1, 1, "mainrom", 0x00000).set_ym2413_tag("ym2413");
-	add_internal_slot(config, MSX_SLOT_ROM, "basickun", 3, 3, 2, 1, "mainrom", 0x04000);
-
-	MSX_SYSTEMFLAGS(config, "sysflags", m_maincpu, 0xff);
-
-	msx_ym2413(config);
-
-	msx2plus(SND_AY8910, config, REGION_JAPAN);
-}
-
-/* MSX2+ - Sanyo Wavy PHC-70FD2 */
-
-ROM_START(phc70fd2)
-	ROM_REGION(0x20000, "mainrom", 0)
-	ROM_LOAD("70f2bios.rom", 0x0000, 0x8000, CRC(19771608) SHA1(e90f80a61d94c617850c415e12ad70ac41e66bb7))
-
-	ROM_REGION(0x4000, "subrom", 0)
-	ROM_LOAD("70f2ext.rom", 0x0000, 0x4000, CRC(b8ba44d3) SHA1(fe0254cbfc11405b79e7c86c7769bd6322b04995))
-
-	ROM_REGION(0x4000, "diskrom", 0)
-	ROM_LOAD("70f2disk.rom", 0x0000, 0x4000, CRC(db7f1125) SHA1(9efa744be8355675e7bfdd3976bbbfaf85d62e1d))
-
-	ROM_REGION(0x8000, "kdr", 0)
-	ROM_LOAD("70f2kdr.rom", 0x0000, 0x8000, CRC(a068cba9) SHA1(1ef3956f7f918873fb9b031339bba45d1e5e5878))
-
-	ROM_REGION(0x4000, "msxmusic", 0)
-	ROM_LOAD("70f2mus.rom", 0x0000, 0x4000, CRC(5c32eb29) SHA1(aad42ba4289b33d8eed225d42cea930b7fc5c228))
-
-	ROM_REGION(0x4000, "basickun", 0)
-	ROM_LOAD("70f2bas.rom", 0x0000, 0x4000, CRC(da7be246) SHA1(22b3191d865010264001b9d896186a9818478a6b))
-
-	ROM_REGION(0x40000, "kanji", 0)
-	ROM_LOAD("70f2kfn.rom", 0, 0x40000, CRC(9a850db9) SHA1(bcdb4dae303dfe5234f372d70a5e0271d3202c36))
-ROM_END
-
-void msx2_state::phc70fd2(machine_config &config)
-{
-	// AY8910
-	// FDC: tc8566af, 2 3.5" DSDD drives
-	// 2 Cartridge slots
-	// FM built-in
-	// T9769
-
-	add_internal_slot(config, MSX_SLOT_ROM, "mainrom", 0, 0, 2, "mainrom");
-	add_cartridge_slot<1>(config, 1);
-	add_cartridge_slot<2>(config, 2);
-	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 0, 0, 4).set_total_size(0x10000).set_unused_bits(0x80);   // 64KB Mapper RAM
-	add_internal_slot(config, MSX_SLOT_ROM, "subrom", 3, 1, 0, 1, "subrom");
-	add_internal_slot(config, MSX_SLOT_ROM, "kdr", 3, 1, 1, 2, "kdr");
-	add_internal_disk_mirrored(config, MSX_SLOT_DISK3_TC8566_2_DRIVES, "disk", 3, 2, 1, 2, "diskrom");
-	add_internal_slot(config, MSX_SLOT_MUSIC, "msxmusic", 3, 3, 1, 1, "msxmusic").set_ym2413_tag("ym2413");
-	add_internal_slot(config, MSX_SLOT_ROM, "basickun", 3, 3, 2, 1, "basickun");
-
-	MSX_SYSTEMFLAGS(config, "sysflags", m_maincpu, 0xff);
-
-	msx_ym2413(config);
-
-	msx2plus(SND_AY8910, config, REGION_JAPAN);
-}
-
-/* MSX2+ - Sony HB-F1XDJ */
-
-ROM_START(hbf1xdj)
-	ROM_REGION(0x20000, "mainrom", 0)
-	ROM_LOAD("hb-f1xdj_main.rom", 0x0000, 0x20000, CRC(d89bab74) SHA1(f2a1d326d72d4c70ea214d7883838de8847a82b7))
-
-	ROM_REGION(0x100000, "firmware", 0)
-	ROM_LOAD("f1xjfirm.rom", 0x000000, 0x100000, CRC(77be583f) SHA1(ade0c5ba5574f8114d7079050317099b4519e88f))
-
-	ROM_REGION(0x40000, "kanji", 0)
-	ROM_LOAD("f1xjkfn.rom", 0, 0x40000, CRC(7016dfd0) SHA1(218d91eb6df2823c924d3774a9f455492a10aecb))
-ROM_END
-
-void msx2_state::hbf1xdj(machine_config &config)
-{
-	// YM2149 (in S-1985 MSX Engine)
-	// FDC: MB89311, 1 3.5" DSDD drive
-	// 2 Cartridge slots
-	// FM built-in
-	// S-1985 MSX Engine
-	// speed controller
-	// pause button
-	// ren-sha turbo
-
-	add_internal_slot(config, MSX_SLOT_ROM, "mainrom", 0, 0, 0, 2, "mainrom");
-	add_internal_slot(config, MSX_SLOT_SONY08, "firmware", 0, 3, 0, 4, "firmware");
-	add_cartridge_slot<1>(config, 1);
-	add_cartridge_slot<2>(config, 2);
-	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 0, 0, 4).set_total_size(0x10000).set_unused_bits(0x80);   // 64KB Mapper RAM
-	add_internal_slot(config, MSX_SLOT_ROM, "subrom", 3, 1, 0, 1, "mainrom", 0x8000);
-	add_internal_slot(config, MSX_SLOT_ROM, "kdr", 3, 1, 1, 2, "mainrom", 0x10000);
-	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793_N, "disk", 3, 2, 1, 2, "mainrom", 0xc000);
-	add_internal_slot(config, MSX_SLOT_MUSIC, "msxmusic", 3, 3, 1, 1, "mainrom", 0x18000).set_ym2413_tag("ym2413");
-
-	MSX_SYSTEMFLAGS(config, "sysflags", m_maincpu, 0x00);
-
-	MSX_S1985(config, "s1985", 0);
-
-	msx_ym2413(config);
-
-	msx2plus(SND_YM2149, config, REGION_JAPAN);
-}
-
-/* MSX2+ - Sony HB-F1XV */
-
-ROM_START(hbf1xv)
-	ROM_REGION(0x20000, "mainrom", 0)
-	ROM_LOAD("hb-f1xdj_main.rom", 0x0000, 0x20000, CRC(d89bab74) SHA1(f2a1d326d72d4c70ea214d7883838de8847a82b7))
-
-	ROM_REGION(0x100000, "firmware", 0)
-	ROM_LOAD("f1xvfirm.rom", 0x0, 0x100000, CRC(77be583f) SHA1(ade0c5ba5574f8114d7079050317099b4519e88f))
-
-	ROM_REGION(0x40000, "kanji", 0)
-	ROM_LOAD("f1xvkfn.rom", 0, 0x40000, CRC(7016dfd0) SHA1(218d91eb6df2823c924d3774a9f455492a10aecb))
-ROM_END
-
-void msx2_state::hbf1xv(machine_config &config)
-{
-	// YM2149 (in S-1985 MSX Engine)
-	// FDC: mb89311, 1 3.5" DSDD drives
-	// 2 Cartridge slots
-	// FM built-in
-	// S-1985 MSX Engine
-	// speed controller
-	// pause button
-	// ren-sha turbo
-
-	add_internal_slot(config, MSX_SLOT_ROM, "mainrom", 0, 0, 0, 2, "mainrom");
-	add_internal_slot(config, MSX_SLOT_SONY08, "firmware", 0, 3, 0, 4, "firmware");
-	add_cartridge_slot<1>(config, 1);
-	add_cartridge_slot<2>(config, 2);
-	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 0, 0, 4).set_total_size(0x10000).set_unused_bits(0x80);   // 64KB Mapper RAM
-	add_internal_slot(config, MSX_SLOT_ROM, "subrom", 3, 1, 0, 1, "mainrom", 0x8000);
-	add_internal_slot(config, MSX_SLOT_ROM, "kdr", 3, 1, 1, 2, "mainrom", 0x10000);
-	add_internal_disk_mirrored(config, MSX_SLOT_DISK1_WD2793_N, "disk", 3, 2, 1, 2, "mainrom", 0xc000);
-	add_internal_slot(config, MSX_SLOT_MUSIC, "msxmusic", 3, 3, 1, 1, "mainrom", 0x18000).set_ym2413_tag("ym2413");
-
-	MSX_SYSTEMFLAGS(config, "sysflags", m_maincpu, 0x00);
-
-	MSX_S1985(config, "s1985", 0);
-
-	msx_ym2413(config);
-
-	msx2plus(SND_YM2149, config, REGION_JAPAN);
-}
-
-/* MSX Turbo-R - Panasonic FS-A1GT */
-
-ROM_START(fsa1gt)
-	ROM_REGION(0x46c000, "maincpu", 0)
-	ROM_LOAD("a1gtbios.rom",  0x0000,   0x8000, CRC(937c8dbb) SHA1(242e73d8284a012b275c0a266844ebbc4269d787))
-	ROM_LOAD("a1gtext.rom",   0x8000,   0x4000, CRC(70aea0fe) SHA1(018d7a5222f28514908fb1b1513286a6558a6d05))
-	ROM_LOAD("a1gtdos.rom",   0xc000,  0x10000, CRC(bb2a0eae) SHA1(4880bf34f1c86fff5456ec2b4cf70d02339e2caa))
-	ROM_LOAD("a1gtkdr.rom",  0x1c000,   0x8000, CRC(eaf0d125) SHA1(5b39c1ccd3a213b78e02927f56a9abc72cd8c28d))
-	ROM_LOAD("a1gtmus.rom",  0x24000,   0x4000, CRC(f5f93437) SHA1(6aea1aef5ec31c1826c22edf580525f93baad425))
-	ROM_LOAD("a1gtopt.rom",  0x28000,   0x4000, CRC(50d11f60) SHA1(b4433a3975c57dd440d6bf12dbd28b2ac1b90ef4))
-	ROM_LOAD("a1gtkfn.rom",  0x2c000,  0x40000, CRC(1f6406fb) SHA1(5aff2d9b6efc723bc395b0f96f0adfa83cc54a49))
-	ROM_LOAD("a1gtfirm.rom", 0x6c000, 0x400000, CRC(feefeadc) SHA1(e779c338eb91a7dea3ff75f3fde76b8af22c4a3a))
-ROM_END
-
-void msx2_state::fsa1gt(machine_config &config)
-{
-	// AY8910 (in T9769)
-	// FDC: tc8566af, 1 3.5" DSDD drive
-	// 2 Cartridge slots
-	// T9769C + S1990
-	// FM built-in
-	// Microphone
-	// MIDI-in
-	// MIDI-out
-	// firmware switch
-	// pause button
-	// ren-sha turbo slider
-
-	add_internal_slot(config, MSX_SLOT_ROM, "bios", 0, 0, 0, 2, "maincpu");
-	add_internal_slot(config, MSX_SLOT_MUSIC, "mus", 0, 2, 1, 1, "maincpu", 0x24000).set_ym2413_tag("ym2413");
-	add_internal_slot(config, MSX_SLOT_ROM, "opt", 0, 3, 1, 1, "maincpu", 0x28000);
-	add_cartridge_slot<1>(config, 1);
-	add_cartridge_slot<2>(config, 2);
-	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 0, 0, 4).set_total_size(0x20000);   // 128KB?? Mapper RAM
-	add_internal_slot(config, MSX_SLOT_ROM, "ext", 3, 1, 0, 1, "maincpu", 0x8000);
-	add_internal_slot(config, MSX_SLOT_ROM, "kdr", 3, 1, 1, 2, "maincpu", 0x1c000);
-	add_internal_disk(config, MSX_SLOT_DISK4_TC8566, "dos", 3, 2, 1, 3, "maincpu", 0xc000);
-	add_internal_slot(config, MSX_SLOT_ROM, "firm", 3, 3, 0, 4, "maincpu", 0x6c000);
-
-	MSX_SYSTEMFLAGS(config, "sysflags", m_maincpu, 0x00);
-
-	msx_ym2413(config);
-
-	turbor(SND_AY8910, config, REGION_JAPAN);
-}
-
-/* MSX Turbo-R - Panasonic FS-A1ST */
-
-ROM_START(fsa1st)
-	ROM_REGION(0x46c000, "maincpu", 0)
-	ROM_LOAD("a1stbios.rom",  0x0000,   0x8000, CRC(77b94ae0) SHA1(f078b5ec56884bfb81481d45c7151418770bff5a))
-	ROM_LOAD("a1stext.rom",   0x8000,   0x4000, CRC(2c2c77a4) SHA1(373412f9c32762de1c3a7e27fc3d80614e0a0c8e))
-	ROM_LOAD("a1stdos.rom",   0xc000,  0x10000, CRC(1fc71407) SHA1(5d2186658adcf4ce0c2d3232384b5712341108e5))
-	ROM_LOAD("a1stkdr.rom",  0x1c000,   0x8000, CRC(eaf0d125) SHA1(5b39c1ccd3a213b78e02927f56a9abc72cd8c28d))
-	ROM_LOAD("a1stmus.rom",  0x24000,   0x4000, CRC(fd7dec41) SHA1(e002a9b426732e6c2d31e548c40cf7c122348ce3))
-	ROM_LOAD("a1stopt.rom",  0x28000,   0x4000, CRC(c6a4a2a1) SHA1(cb06dea7b025745f9d2b87dcf03ded615287ead3))
-	ROM_LOAD("a1stkfn.rom",  0x2c000,  0x40000, CRC(1f6406fb) SHA1(5aff2d9b6efc723bc395b0f96f0adfa83cc54a49))
-	ROM_LOAD("a1stfirm.rom", 0x6c000, 0x400000, CRC(139ac99c) SHA1(c212b11fda13f83dafed688c54d098e7e47ab225))
-ROM_END
-
-void msx2_state::fsa1st(machine_config &config)
-{
-	// AY8910 (in T9769)
-	// FDC: tc8566af, 1 3.5" DSDD drive
-	// T9769C + S1990
-	// 2 Cartridge slots
-	// FM built-in
-	// microphone
-	// firmware switch
-	// pause button
-	// ren-sha turbo slider
-
-	add_internal_slot(config, MSX_SLOT_ROM, "bios", 0, 0, 0, 2, "maincpu");
-	add_internal_slot(config, MSX_SLOT_MUSIC, "mus", 0, 2, 1, 1, "maincpu", 0x24000).set_ym2413_tag("ym2413");
-	add_internal_slot(config, MSX_SLOT_ROM, "opt", 0, 3, 1, 1, "maincpu", 0x28000);
-	add_cartridge_slot<1>(config, 1);
-	add_cartridge_slot<2>(config, 2);
-	add_internal_slot(config, MSX_SLOT_RAM_MM, "ram_mm", 3, 0, 0, 4).set_total_size(0x20000);   // 128KB?? Mapper RAM
-	add_internal_slot(config, MSX_SLOT_ROM, "ext", 3, 1, 0, 1, "maincpu", 0x8000);
-	add_internal_slot(config, MSX_SLOT_ROM, "kdr", 3, 1, 1, 2, "maincpu", 0x1c000);
-	add_internal_disk(config, MSX_SLOT_DISK4_TC8566, "dos", 3, 2, 1, 3, "maincpu", 0xc000);
-	add_internal_slot(config, MSX_SLOT_ROM, "firm", 3, 3, 0, 4, "maincpu", 0x6c000);
-
-	MSX_SYSTEMFLAGS(config, "sysflags", m_maincpu, 0x00);
-
-	msx_ym2413(config);
-
-	turbor(SND_AY8910, config, REGION_JAPAN);
-}
 
 } // anonymous namespace
 
@@ -4765,23 +4080,3 @@ COMP(1986, y805128,    y805256,  0,     y805128,    msx2jp,   msx2_state, empty_
 COMP(1986, y805128r2,  y805256,  0,     y805128r2,  msx2,     msx2_state, empty_init, "Yamaha", "YIS805/128R2 (MSX2, USSR)", MACHINE_NOT_WORKING) // Network not implemented
 COMP(198?, y805128r2e, y805256,  0,     y805128r2,  y503iir2, msx2_state, empty_init, "Yamaha", "YIS805/128R2 (MSX2, Estonian)", MACHINE_NOT_WORKING) // Network not implemented
 COMP(198?, y805256,    0,        0,     y805256,    msx2jp,   msx2_state, empty_init, "Yamaha", "YIS805/256 (MSX2, Japan)", MACHINE_NOT_WORKING) // Floppy support broken?
-
-/* MSX2+ */
-COMP(19??, expert3i,   0,        0,     expert3i,   msx2,     msx2_state, empty_init, "Ciel", "Expert 3 IDE (MSX2+, Brazil)", MACHINE_NOT_WORKING) // Some hardware not emulated
-COMP(1996, expert3t,   0,        0,     expert3t,   msx2,     msx2_state, empty_init, "Ciel", "Expert 3 Turbo (MSX2+, Brazil)", MACHINE_NOT_WORKING) // Some hardware not emulated
-COMP(19??, expertac,   0,        0,     expertac,   msx2,     msx2_state, empty_init, "Gradiente", "Expert AC88+ (MSX2+, Brazil)", MACHINE_NOT_WORKING) // Some hardware not emulated
-COMP(19??, expertdx,   0,        0,     expertdx,   msx2,     msx2_state, empty_init, "Gradiente", "Expert DDX+ (MSX2+, Brazil)", MACHINE_NOT_WORKING) // Some hardware not emulated
-COMP(1988, fsa1fx,     0,        0,     fsa1fx,     msx2jp,   msx2_state, empty_init, "Panasonic", "FS-A1FX (MSX2+, Japan)", 0)
-COMP(1989, fsa1wsx,    0,        0,     fsa1wsx,    msx2jp,   msx2_state, empty_init, "Panasonic", "FS-A1WSX (MSX2+, Japan)", 0)
-COMP(1988, fsa1wx,     fsa1wxa,  0,     fsa1wx,     msx2jp,   msx2_state, empty_init, "Panasonic", "FS-A1WX / 1st released version (MSX2+, Japan)", 0)
-COMP(1988, fsa1wxa,    0,        0,     fsa1wx,     msx2jp,   msx2_state, empty_init, "Panasonic", "FS-A1WX / 2nd released version (MSX2+, Japan)", 0)
-COMP(1988, phc70fd,    phc70fd2, 0,     phc70fd,    msx2jp,   msx2_state, empty_init, "Sanyo", "PHC-70FD / Wavy70FD (MSX2+, Japan)", 0)
-COMP(1989, phc70fd2,   0,        0,     phc70fd2,   msx2jp,   msx2_state, empty_init, "Sanyo", "PHC-70FD2 / Wavy70FD2 (MSX2+, Japan)", 0)
-COMP(1989, phc35j,     0,        0,     phc35j,     msx2jp,   msx2_state, empty_init, "Sanyo", "PHC-35J / Wavy35 (MSX2+, Japan)", 0)
-COMP(1988, hbf1xdj,    0,        0,     hbf1xdj,    msx2jp,   msx2_state, empty_init, "Sony", "HB-F1XDJ (MSX2+, Japan)", 0)
-COMP(1989, hbf1xv,     0,        0,     hbf1xv,     msx2jp,   msx2_state, empty_init, "Sony", "HB-F1XV (MSX2+, Japan)", 0)
-
-/* MSX Turbo-R */
-/* Temporary placeholders, Turbo-R hardware is not supported yet */
-COMP(1991, fsa1gt,     0,        0,     fsa1gt,     msx2jp,   msx2_state, empty_init, "Panasonic", "FS-A1GT (MSX Turbo-R, Japan)", MACHINE_NOT_WORKING)
-COMP(1991, fsa1st,     0,        0,     fsa1st,     msx2jp,   msx2_state, empty_init, "Panasonic", "FS-A1ST (MSX Turbo-R, Japan)", MACHINE_NOT_WORKING)

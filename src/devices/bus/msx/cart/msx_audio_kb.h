@@ -39,8 +39,8 @@ public:
 	u8 read();
 
 protected:
-	// device-level overrides
-	virtual void device_start() override;
+	// device_t implementation
+	virtual void device_start() override ATTR_COLD;
 
 	msx_audio_kb_port_interface *m_keyboard;
 };

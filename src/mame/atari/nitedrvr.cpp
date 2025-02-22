@@ -77,8 +77,8 @@ public:
 	void nitedrvr(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	// devices
@@ -121,11 +121,9 @@ private:
 	void draw_roadway(bitmap_ind16 &bitmap, const rectangle &cliprect);
 	void draw_tiles(bitmap_ind16 &bitmap, const rectangle &cliprect);
 	int steering();
-	void main_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
 };
 
-
-// video
 
 void nitedrvr_state::draw_box(bitmap_ind16 &bitmap, const rectangle &cliprect, int bx, int by, int ex, int ey)
 {
@@ -172,8 +170,6 @@ uint32_t nitedrvr_state::screen_update(screen_device &screen, bitmap_ind16 &bitm
 	return 0;
 }
 
-
-// machine
 
 /***************************************************************************
 Steering
@@ -513,7 +509,7 @@ static INPUT_PORTS_START( nitedrvr )
 	PORT_DIPNAME( 0x20, 0x20, "Bonus Time" )
 	PORT_DIPSETTING(    0x00, DEF_STR ( No ) )
 	PORT_DIPSETTING(    0x20, "Score = 350" )
-	PORT_BIT( 0x40, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_VBLANK("screen")
+	PORT_BIT( 0x40, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("screen", FUNC(screen_device::vblank))
 	PORT_SERVICE( 0x80, IP_ACTIVE_LOW )
 
 	PORT_START("GEARS") // fake

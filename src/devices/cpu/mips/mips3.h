@@ -20,8 +20,6 @@ MIPS III/IV emulator.
 #include "cpu/drcuml.h"
 #include "ps2vu.h"
 
-#define ENABLE_O2_DPRINTF       (0)
-
 DECLARE_DEVICE_TYPE(R4000BE, r4000be_device)
 DECLARE_DEVICE_TYPE(R4000LE, r4000le_device)
 DECLARE_DEVICE_TYPE(R4400BE, r4400be_device)
@@ -315,14 +313,13 @@ public:
 
 protected:
 	// device-level overrides
-	virtual void device_start() override;
-	virtual void device_reset() override;
-	virtual void device_stop() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
+	virtual void device_stop() override ATTR_COLD;
 
 	// device_execute_interface overrides
 	virtual uint32_t execute_min_cycles() const noexcept override { return 1; }
 	virtual uint32_t execute_max_cycles() const noexcept override { return 40; }
-	virtual uint32_t execute_input_lines() const noexcept override { return 6; }
 	virtual void execute_run() override;
 	virtual void execute_set_input(int inputnum, int state) override;
 
@@ -451,7 +448,6 @@ protected:
 	uint32_t        m_byte_xor;
 	uint32_t        m_word_xor;
 	uint32_t        m_dword_xor;
-	data_accessors  m_memory;
 
 	/* cache memory */
 	size_t          c_icache_size;
@@ -657,9 +653,7 @@ private:
 	void log_opcode_desc(const opcode_desc *desclist, int indent);
 
 	void load_elf();
-#if ENABLE_O2_DPRINTF
-	void do_o2_dprintf(uint32_t fmt_addr, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t stack);
-#endif
+	[[maybe_unused]] void do_o2_dprintf(uint32_t fmt_addr, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t stack);
 };
 
 
@@ -884,7 +878,7 @@ protected:
 	{
 	}
 
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	// device_disasm_interface overrides
 	virtual std::unique_ptr<util::disasm_interface> create_disassembler() override;

@@ -48,8 +48,7 @@ QTY     Type
 Notes
 
 This is the PCB for one of the first ever CD based Juke Box, made in 1988 by Midcoin, some info here:
-http://www.tilt.it/deb/i-midcoin.html
-
+https://www.tilt.it/deb/midcoin-en.html
 
 */
 
@@ -78,8 +77,8 @@ public:
 	void midcoin24cdjuke(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -96,8 +95,8 @@ private:
 
 	uint8_t unknown_r() { return machine().rand(); }
 
-	void midcoin24cdjuke_io(address_map &map);
-	void midcoin24cdjuke_map(address_map &map);
+	void midcoin24cdjuke_io(address_map &map) ATTR_COLD;
+	void midcoin24cdjuke_map(address_map &map) ATTR_COLD;
 
 	uint8_t m_kb_col;
 };
@@ -309,7 +308,7 @@ void midcoin24cdjuke_state::midcoin24cdjuke(machine_config &config)
 	ic25.out_pc_callback().set(FUNC(midcoin24cdjuke_state::kb_col_w));
 
 	i8255_device &ic31(I8255A(config, "ic31", 0));
-	ic31.out_pb_callback().set_log("PPI8255 - unmapped write port B");
+	ic31.out_pb_callback().set([this](uint8_t data) { logerror("%s ic31 write port B: %02X\n", machine().describe_context(), data); });
 	ic31.in_pc_callback().set_ioport("MD4");
 }
 

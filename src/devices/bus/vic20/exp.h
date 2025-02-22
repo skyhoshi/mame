@@ -75,14 +75,14 @@ public:
 	void cd_w(offs_t offset, uint8_t data, int ram1, int ram2, int ram3, int blk1, int blk2, int blk3, int blk5, int io2, int io3);
 
 	// cartridge interface
-	DECLARE_WRITE_LINE_MEMBER( irq_w ) { m_write_irq(state); }
-	DECLARE_WRITE_LINE_MEMBER( nmi_w ) { m_write_nmi(state); }
-	DECLARE_WRITE_LINE_MEMBER( res_w ) { m_write_res(state); }
+	void irq_w(int state) { m_write_irq(state); }
+	void nmi_w(int state) { m_write_nmi(state); }
+	void res_w(int state) { m_write_res(state); }
 
 protected:
 	// device_t implementation
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 	// device_image_interface implementation
 	virtual std::pair<std::error_condition, std::string> call_load() override;
@@ -124,7 +124,7 @@ protected:
 	std::unique_ptr<uint8_t[]> m_blk3;
 	std::unique_ptr<uint8_t[]> m_blk5;
 
-	vic20_expansion_slot_device *m_slot;
+	vic20_expansion_slot_device *const m_slot;
 };
 
 

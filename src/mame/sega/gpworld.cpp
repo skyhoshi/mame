@@ -68,11 +68,11 @@ public:
 	void gpworld(machine_config &config);
 
 private:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 	virtual void driver_start() override;
 
-	void mainmem(address_map &map);
-	void mainport(address_map &map);
+	void mainmem(address_map &map) ATTR_COLD;
+	void mainport(address_map &map) ATTR_COLD;
 
 	TIMER_CALLBACK_MEMBER(irq_stop);
 
@@ -459,7 +459,7 @@ INTERRUPT_GEN_MEMBER(gpworld_state::vblank_callback)
 	if (m_nmi_enable)
 	{
 		m_laserdisc->data_w(m_ldp_write_latch);
-		m_ldp_read_latch = m_laserdisc->status_r();
+		m_ldp_read_latch = m_laserdisc->data_r();
 		device.execute().pulse_input_line(INPUT_LINE_NMI, attotime::zero);
 	}
 

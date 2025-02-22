@@ -92,8 +92,8 @@ public:
 
 private:
 	void system_w(offs_t offset, uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(fdc_irq_w);
-	DECLARE_WRITE_LINE_MEMBER(fdc_drq_w);
+	void fdc_irq_w(int state);
+	void fdc_drq_w(int state);
 	uint8_t dma_r(offs_t offset);
 	void dma_w(offs_t offset, uint8_t data);
 	uint8_t fdc_r(offs_t offset);
@@ -105,8 +105,8 @@ private:
 
 	static void floppy_formats(format_registration &fr);
 
-	void gimix_banked_mem(address_map &map);
-	void gimix_mem(address_map &map);
+	void gimix_banked_mem(address_map &map) ATTR_COLD;
+	void gimix_mem(address_map &map) ATTR_COLD;
 
 	// disassembly override
 	offs_t os9_dasm_override(std::ostream &stream, offs_t pc, const util::disasm_interface::data_buffer &opcodes, const util::disasm_interface::data_buffer &params);
@@ -127,8 +127,8 @@ private:
 	uint8_t m_pia1_pa;
 	uint8_t m_pia1_pb;
 
-	virtual void machine_reset() override;
-	virtual void machine_start() override;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void machine_start() override ATTR_COLD;
 	virtual void driver_start() override;
 
 	void refresh_memory();
@@ -384,7 +384,7 @@ void gimix_state::pia_pb_w(uint8_t data)
 }
 
 
-WRITE_LINE_MEMBER(gimix_state::fdc_irq_w)
+void gimix_state::fdc_irq_w(int state)
 {
 	if(state)
 		m_dma_status |= 0x40;
@@ -397,7 +397,7 @@ WRITE_LINE_MEMBER(gimix_state::fdc_irq_w)
 		m_irqs->in_w<6>(0);
 }
 
-WRITE_LINE_MEMBER(gimix_state::fdc_drq_w)
+void gimix_state::fdc_drq_w(int state)
 {
 	if(state && DMA_ENABLED)
 	{

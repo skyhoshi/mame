@@ -58,15 +58,24 @@ image_manager::image_manager(running_machine &machine)
 
 			// try as a softlist
 			if (software_name_parse(startup_image))
+			{
+				osd_printf_verbose("%s: attempting to load software item %s\n", image.device().tag(), startup_image);
 				result = image.load_software(startup_image);
+			}
 
 			// failing that, try as an image
 			if (result.first)
+			{
+				osd_printf_verbose("%s: attempting to load media image %s\n", image.device().tag(), startup_image);
 				result = image.load(startup_image);
+			}
 
 			// failing that, try creating it (if appropriate)
 			if (result.first && image.support_command_line_image_creation())
+			{
+				osd_printf_verbose("%s: attempting to create media image %s\n", image.device().tag(), startup_image);
 				result = image.create(startup_image);
+			}
 
 			// did the image load fail?
 			if (result.first)
@@ -172,24 +181,22 @@ void image_manager::config_save(config_type cfg_type, util::xml::data_node *pare
 
 int image_manager::write_config(emu_options &options, const char *filename, const game_driver *gamedrv)
 {
-	char buffer[128];
-	int retval = 1;
-
-	if (gamedrv != nullptr)
+	std::string buffer;
+	if (gamedrv)
 	{
-		sprintf(buffer, "%s.ini", gamedrv->name);
-		filename = buffer;
+		buffer.reserve(strlen(gamedrv->name) + 4);
+		buffer = gamedrv->name;
+		buffer += ".ini";
+		filename = buffer.c_str();
 	}
 
 	emu_file file(options.ini_path(), OPEN_FLAG_WRITE | OPEN_FLAG_CREATE);
 	std::error_condition const filerr = file.open(filename);
-	if (!filerr)
-	{
-		std::string inistring = options.output_ini();
-		file.puts(inistring);
-		retval = 0;
-	}
-	return retval;
+	if (filerr)
+		return 1;
+
+	file.puts(options.output_ini());
+	return 0;
 }
 
 /*-------------------------------------------------

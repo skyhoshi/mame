@@ -46,12 +46,12 @@ public:
 private:
 	required_device<cpu_device> m_maincpu;
 
-	DECLARE_WRITE_LINE_MEMBER(pit_out0);
-	DECLARE_WRITE_LINE_MEMBER(pit_out1);
-	DECLARE_WRITE_LINE_MEMBER(pit_out2);
+	void pit_out0(int state);
+	void pit_out1(int state);
+	void pit_out2(int state);
 
-	void prg_map(address_map &map);
-	void io_map(address_map &map);
+	void prg_map(address_map &map) ATTR_COLD;
+	void io_map(address_map &map) ATTR_COLD;
 };
 
 
@@ -61,19 +61,19 @@ private:
 
 ***************************************************************************/
 
-WRITE_LINE_MEMBER(eshockey_state::pit_out0)
+void eshockey_state::pit_out0(int state)
 {
 	// ?
 }
 
-WRITE_LINE_MEMBER(eshockey_state::pit_out1)
+void eshockey_state::pit_out1(int state)
 {
 	// NMI?
 	if (state)
 		m_maincpu->pulse_input_line(INPUT_LINE_NMI, attotime::zero);
 }
 
-WRITE_LINE_MEMBER(eshockey_state::pit_out2)
+void eshockey_state::pit_out2(int state)
 {
 	// ?
 }
@@ -230,4 +230,4 @@ ROM_END
 } // anonymous namespace
 
 
-GAME( 1993, eshockey, 0, eshockey, eshockey, eshockey_state, empty_init, ROT0, "Sega", "Exciting Speed Hockey (V19930325)", MACHINE_IS_SKELETON_MECHANICAL )
+GAME( 1993, eshockey, 0, eshockey, eshockey, eshockey_state, empty_init, ROT0, "Sega", "Exciting Speed Hockey (V19930325)", MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK )

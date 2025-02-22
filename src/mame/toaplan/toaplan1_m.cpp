@@ -50,19 +50,23 @@ u16 toaplan1_demonwld_state::dsp_r()
 		case 0xc00000: {address_space &mainspace = m_maincpu->space(AS_PROGRAM);
 						input_data = mainspace.read_word(m_main_ram_seg + m_dsp_addr_w);
 						break;}
-		default:        logerror("DSP PC:%04x Warning !!! IO reading from %08x (port 1)\n", m_dsp->pcbase(), m_main_ram_seg + m_dsp_addr_w);
+		default:
+			if (!machine().side_effects_disabled())
+				logerror("DSP PC:%04x Warning !!! IO reading from %08x (port 1)\n", m_dsp->pcbase(), m_main_ram_seg + m_dsp_addr_w);
+			break;
 	}
-	logerror("DSP PC:%04x IO read %04x at %08x (port 1)\n", m_dsp->pcbase(), input_data, m_main_ram_seg + m_dsp_addr_w);
+	if (!machine().side_effects_disabled())
+		logerror("DSP PC:%04x IO read %04x at %08x (port 1)\n", m_dsp->pcbase(), input_data, m_main_ram_seg + m_dsp_addr_w);
 	return input_data;
 }
 
 void toaplan1_demonwld_state::dsp_w(u16 data)
 {
 	/* Data written to main CPU RAM via DSP IO port 1 */
-	m_dsp_execute = 0;
+	m_dsp_execute = false;
 	switch (m_main_ram_seg)
 	{
-		case 0xc00000: {if ((m_dsp_addr_w < 3) && (data == 0)) m_dsp_execute = 1;
+		case 0xc00000: {if ((m_dsp_addr_w < 3) && (data == 0)) m_dsp_execute = true;
 						address_space &mainspace = m_maincpu->space(AS_PROGRAM);
 						mainspace.write_word(m_main_ram_seg + m_dsp_addr_w, data);
 						break;}
@@ -80,7 +84,7 @@ void toaplan1_demonwld_state::dsp_bio_w(u16 data)
 	/*              communication to main processor*/
 
 	logerror("DSP PC:%04x IO write %04x at port 3\n", m_dsp->pcbase(), data);
-	if (data & 0x8000)
+	if (BIT(data, 15))
 		m_dsp_bio = CLEAR_LINE;
 
 	if (data == 0)
@@ -89,13 +93,13 @@ void toaplan1_demonwld_state::dsp_bio_w(u16 data)
 		{
 			logerror("Turning 68000 on\n");
 			m_maincpu->set_input_line(INPUT_LINE_HALT, CLEAR_LINE);
-			m_dsp_execute = 0;
+			m_dsp_execute = false;
 		}
 		m_dsp_bio = ASSERT_LINE;
 	}
 }
 
-READ_LINE_MEMBER(toaplan1_demonwld_state::bio_r)
+int toaplan1_demonwld_state::bio_r()
 {
 	return m_dsp_bio;
 }
@@ -127,14 +131,14 @@ void toaplan1_demonwld_state::device_post_load()
 void toaplan1_demonwld_state::dsp_ctrl_w(u8 data)
 {
 #if 0
-	logerror("68000:%08x  Writing %02x to $e0000b.\n",m_maincpu->pc() ,data);
+	logerror("68000:%08x  Writing %02x to $e0000b.\n", m_maincpu->pc(), data);
 #endif
 
 	switch (data)
 	{
 		case 0x00:  dsp_int_w(1); break;  /* Enable the INT line to the DSP */
 		case 0x01:  dsp_int_w(0); break;  /* Inhibit the INT line to the DSP */
-		default:    logerror("68000:%08x  Writing unknown command %02x to $e0000b\n",m_maincpu->pcbase() ,data); break;
+		default:    logerror("68000:%08x  Writing unknown command %02x to $e0000b\n", m_maincpu->pcbase(), data); break;
 	}
 }
 
@@ -177,22 +181,22 @@ void toaplan1_state::reset_sound_w(u8 data)
 }
 
 
-WRITE_LINE_MEMBER(toaplan1_rallybik_state::coin_counter_1_w)
+void toaplan1_rallybik_state::coin_counter_1_w(int state)
 {
 	machine().bookkeeping().coin_counter_w(0, state);
 }
 
-WRITE_LINE_MEMBER(toaplan1_rallybik_state::coin_counter_2_w)
+void toaplan1_rallybik_state::coin_counter_2_w(int state)
 {
 	machine().bookkeeping().coin_counter_w(1, state);
 }
 
-WRITE_LINE_MEMBER(toaplan1_rallybik_state::coin_lockout_1_w)
+void toaplan1_rallybik_state::coin_lockout_1_w(int state)
 {
 	machine().bookkeeping().coin_lockout_w(0, !state);
 }
 
-WRITE_LINE_MEMBER(toaplan1_rallybik_state::coin_lockout_2_w)
+void toaplan1_rallybik_state::coin_lockout_2_w(int state)
 {
 	machine().bookkeeping().coin_lockout_w(1, !state);
 }
@@ -207,7 +211,7 @@ void toaplan1_state::coin_w(u8 data)
 	machine().bookkeeping().coin_lockout_w(1, !BIT(data, 3));
 }
 
-WRITE_LINE_MEMBER(toaplan1_state::reset_callback)
+void toaplan1_state::reset_callback(int state)
 {
 	reset_sound();
 }
@@ -223,7 +227,7 @@ void toaplan1_demonwld_state::machine_reset()
 	toaplan1_state::machine_reset();
 	m_dsp_addr_w = 0;
 	m_main_ram_seg = 0;
-	m_dsp_execute = 0;
+	m_dsp_execute = false;
 }
 
 

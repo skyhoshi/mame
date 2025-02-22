@@ -1,5 +1,5 @@
 // license:BSD-3-Clause
-// copyright-holders:David Haywood, Angelo Salese
+// copyright-holders:David Haywood
 /***************************************************************************
 
 Janshi / Pinkiri 8 / Ron Jan
@@ -45,18 +45,25 @@ Dumped by Chackn
 #include "screen.h"
 #include "speaker.h"
 
+#define LOG_VRAM (1U << 1)
+
+#define VERBOSE (0)
+//#define LOG_OUTPUT_FUNC printf
+#include "logmacro.h"
+
+
 /* VDP device to give us our own memory map */
 class janshi_vdp_device : public device_t, public device_memory_interface
 {
 public:
 	janshi_vdp_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
-	void map(address_map &map);
+	void map(address_map &map) ATTR_COLD;
 
 protected:
 	virtual void device_validity_check(validity_checker &valid) const override;
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 	virtual space_config_vector memory_space_config() const override;
 
 private:
@@ -96,15 +103,15 @@ protected:
 	void ronjan_prot_w(uint8_t data);
 	uint8_t ronjan_prot_status_r();
 	uint8_t ronjan_patched_prot_r();
-	virtual void video_start() override;
+	virtual void video_start() override ATTR_COLD;
 	uint32_t screen_update_pinkiri8(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
 	void draw_background(bitmap_ind16 &bitmap, const rectangle &cliprect);
 	void draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	void pinkiri8_io(address_map &map);
-	void pinkiri8_map(address_map &map);
-	void ronjan_io(address_map &map);
+	void pinkiri8_io(address_map &map) ATTR_COLD;
+	void pinkiri8_map(address_map &map) ATTR_COLD;
+	void ronjan_io(address_map &map) ATTR_COLD;
 
 private:
 	required_shared_ptr<uint8_t> m_janshi_back_vram;
@@ -407,33 +414,31 @@ void pinkiri8_state::output_regs_w(uint8_t data)
 }
 
 
-#define LOG_VRAM 0
-
 void pinkiri8_state::pinkiri8_vram_w(offs_t offset, uint8_t data)
 {
 	switch(offset)
 	{
 		case 0:
 			m_vram_addr = (data << 0)  | (m_vram_addr&0xffff00);
-			if (LOG_VRAM) printf("\n prev writes was %04x\n\naddress set to %04x -\n", m_prev_writes, m_vram_addr );
+			LOGMASKED(LOG_VRAM, "\n prev writes was %04x\n\naddress set to %04x -\n", m_prev_writes, m_vram_addr);
 			m_prev_writes = 0;
 			break;
 
 		case 1:
 			m_vram_addr = (data << 8)  | (m_vram_addr & 0xff00ff);
-			if (LOG_VRAM)printf("\naddress set to %04x\n", m_vram_addr);
+			LOGMASKED(LOG_VRAM, "\naddress set to %04x\n", m_vram_addr);
 			break;
 
 		case 2:
 			m_vram_addr = (data << 16) | (m_vram_addr & 0x00ffff);
-			if (LOG_VRAM)printf("\naddress set to %04x\n", m_vram_addr);
+			LOGMASKED(LOG_VRAM, "\naddress set to %04x\n", m_vram_addr);
 			break;
 
 		case 3:
 		{
 			address_space &vdp_space = m_vdp->space();
 
-			if (LOG_VRAM) printf("%02x ", data);
+			LOGMASKED(LOG_VRAM, "%02x ", data);
 			m_prev_writes++;
 			m_vram_addr++;
 
@@ -1202,7 +1207,39 @@ ROM_START( ronjans )
 	ROM_LOAD( "eagle.6", 0x00000, 0x40000, CRC(8197034d) SHA1(b501dc7a27b1faad1361c309afd726da14b8b5f5) )
 ROM_END
 
-ROM_START( ronjan ) // the Z180 internal ROM wasn't extracted from this PCB. Using the one from the above set for the time being, which might be the same but should be checked.
+ROM_START( ronjansa ) // the Z180 internal ROM wasn't extracted from this PCB. It's not compatible with already dumped ones.
+	ROM_REGION( 0x24000, "maincpu", 0 )
+	ROM_LOAD( "eagle_18.i1",              0x00000, 0x20000, CRC(b5cc6d84) SHA1(e76ec529a7cd788a9ca0119d2f2dc00b29181289) )
+	ROM_LOAD( "9009 1992.04 ron jan.bin", 0x00000, 0x04000, NO_DUMP ) //overlapped internal ROM
+
+	ROM_REGION( 0x140000, "gfx1", 0 )
+	ROM_LOAD( "eagle_1.a1", 0x000000, 0x40000, CRC(11cef2c4) SHA1(fcd46bfa123cd91053f8d49892778e02a275ffdd) )
+	ROM_LOAD( "eagle_2.b1", 0x040000, 0x40000, CRC(177c444c) SHA1(5af0f6040ba121c90b3480ce636885cce535d3ea) )
+	ROM_LOAD( "eagle_3.d1", 0x080000, 0x40000, CRC(5b15b99f) SHA1(b99e2fa4cde7c8661d1a81ce5045f5df4f1de9f2) )
+	ROM_LOAD( "eagle_4.e1", 0x0c0000, 0x40000, CRC(d6797340) SHA1(0394ba570f2008f5a16e7c0a4dc67b1182be8899) )
+	ROM_LOAD( "eagle_5.h1", 0x100000, 0x40000, CRC(1aa42eaf) SHA1(edae2d1b58429e09ecfcaa5bcf4a9bfd5fb7cbea) )
+
+	ROM_REGION( 0x40000, "oki", 0 )
+	ROM_LOAD( "eagle_6.j1", 0x00000, 0x40000, CRC(8197034d) SHA1(b501dc7a27b1faad1361c309afd726da14b8b5f5) )
+ROM_END
+
+ROM_START( ronjansb ) // the Z180 internal ROM wasn't extracted from this PCB. It's not compatible with already dumped ones. Should be same as ronjansa
+	ROM_REGION( 0x24000, "maincpu", 0 )
+	ROM_LOAD( "eagle_19.i1",              0x00000, 0x20000, CRC(348fa965) SHA1(082395c51478c1cc053425d30fc94871fdc244ea) )
+	ROM_LOAD( "9009 1992.09 ron jan.bin", 0x00000, 0x04000, NO_DUMP ) //overlapped internal ROM
+
+	ROM_REGION( 0x140000, "gfx1", 0 )
+	ROM_LOAD( "eagle_1.a1", 0x000000, 0x40000, CRC(11cef2c4) SHA1(fcd46bfa123cd91053f8d49892778e02a275ffdd) )
+	ROM_LOAD( "eagle_2.b1", 0x040000, 0x40000, CRC(177c444c) SHA1(5af0f6040ba121c90b3480ce636885cce535d3ea) )
+	ROM_LOAD( "eagle_3.d1", 0x080000, 0x40000, CRC(5b15b99f) SHA1(b99e2fa4cde7c8661d1a81ce5045f5df4f1de9f2) )
+	ROM_LOAD( "eagle_4.e1", 0x0c0000, 0x40000, CRC(d6797340) SHA1(0394ba570f2008f5a16e7c0a4dc67b1182be8899) )
+	ROM_LOAD( "eagle_5.h1", 0x100000, 0x40000, CRC(1aa42eaf) SHA1(edae2d1b58429e09ecfcaa5bcf4a9bfd5fb7cbea) )
+
+	ROM_REGION( 0x40000, "oki", 0 )
+	ROM_LOAD( "eagle_6.j1", 0x00000, 0x40000, CRC(8197034d) SHA1(b501dc7a27b1faad1361c309afd726da14b8b5f5) )
+ROM_END
+
+ROM_START( ronjan ) // the Z180 internal ROM wasn't extracted from this PCB. Using the one from ronjans for the time being, which might be the same but should be checked.
 	ROM_REGION( 0x24000, "maincpu", 0 )
 	ROM_LOAD( "9.l1",    0x00000, 0x20000, CRC(1bc4468e) SHA1(5b317c922d9a6f533958526e676f95af0ee6a19f) )
 	ROM_LOAD( "9009 1991.11 ron jan.bin", 0x00000, 0x4000, BAD_DUMP CRC(4eb74322) SHA1(84f864c0da3fb69948f6eb7ffecf0e722a882efc) ) //overlapped internal ROM
@@ -1216,6 +1253,22 @@ ROM_START( ronjan ) // the Z180 internal ROM wasn't extracted from this PCB. Usi
 
 	ROM_REGION( 0x40000, "oki", 0 )
 	ROM_LOAD( "6.j1", 0x00000, 0x20000, CRC(d0b53513) SHA1(e94402f494adae741989c98a8c9587f464f144d2) )
+ROM_END
+
+ROM_START( ronjana ) // the Z180 internal ROM wasn't extracted from this PCB. Using the one from ronjans for the time being, which might be the same but should be checked.
+	ROM_REGION( 0x24000, "maincpu", 0 )
+	ROM_LOAD( "eagle_16.i1",              0x00000, 0x20000, CRC(9b7bf916) SHA1(d8a732bb53926e8127bc3638c8719f3c43c7881d) )
+	ROM_LOAD( "9009 1991.11 ron jan.bin", 0x00000, 0x04000, BAD_DUMP CRC(4eb74322) SHA1(84f864c0da3fb69948f6eb7ffecf0e722a882efc) ) //overlapped internal ROM
+
+	ROM_REGION( 0x140000, "gfx1", 0 )
+	ROM_LOAD( "eagle_1.a1", 0x000000, 0x40000, CRC(11cef2c4) SHA1(fcd46bfa123cd91053f8d49892778e02a275ffdd) )
+	ROM_LOAD( "eagle_2.b1", 0x040000, 0x40000, CRC(177c444c) SHA1(5af0f6040ba121c90b3480ce636885cce535d3ea) )
+	ROM_LOAD( "eagle_3.d1", 0x080000, 0x40000, CRC(5b15b99f) SHA1(b99e2fa4cde7c8661d1a81ce5045f5df4f1de9f2) )
+	ROM_LOAD( "eagle_4.e1", 0x0c0000, 0x40000, CRC(d6797340) SHA1(0394ba570f2008f5a16e7c0a4dc67b1182be8899) )
+	ROM_LOAD( "eagle_5.h1", 0x100000, 0x40000, CRC(1aa42eaf) SHA1(edae2d1b58429e09ecfcaa5bcf4a9bfd5fb7cbea) )
+
+	ROM_REGION( 0x40000, "oki", 0 )
+	ROM_LOAD( "eagle_6.j1", 0x00000, 0x40000, CRC(8197034d) SHA1(b501dc7a27b1faad1361c309afd726da14b8b5f5) )
 ROM_END
 
 uint8_t pinkiri8_state::ronjan_prot_r()
@@ -1258,7 +1311,10 @@ uint8_t pinkiri8_state::ronjan_patched_prot_r()
 	return 0; //value is read then discarded
 }
 
-GAME( 1992,  janshi,   0,       pinkiri8, janshi,   pinkiri8_state, empty_init, ROT0, "Eagle",         "Janshi",        MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING )
-GAME( 1991,  ronjan,   ronjans, ronjan,   ronjan,   pinkiri8_state, empty_init, ROT0, "Wing Co., Ltd", "Ron Jan",       MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING )
-GAME( 1994,  ronjans,  0,       ronjan,   ronjan,   pinkiri8_state, empty_init, ROT0, "Wing Co., Ltd", "Ron Jan Super", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING ) // 'SUPER' flashes in the middle of the screen
-GAME( 1994,  pinkiri8, 0,       pinkiri8, pinkiri8, pinkiri8_state, empty_init, ROT0, "Alta",          "Pinkiri 8",     MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING )
+GAME( 1992,  janshi,   0,       pinkiri8, janshi,   pinkiri8_state, empty_init, ROT0, "Eagle",         "Janshi",                MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING )
+GAME( 1991,  ronjan,   ronjans, ronjan,   ronjan,   pinkiri8_state, empty_init, ROT0, "Wing Co., Ltd", "Ron Jan (set 1)",       MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING )
+GAME( 1994,  ronjana,  ronjans, ronjan,   ronjan,   pinkiri8_state, empty_init, ROT0, "Wing Co., Ltd", "Ron Jan (set 2)",       MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING )
+GAME( 1994,  ronjans,  0,       ronjan,   ronjan,   pinkiri8_state, empty_init, ROT0, "Wing Co., Ltd", "Ron Jan Super (set 1)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING ) // 'SUPER' flashes in the middle of the screen
+GAME( 1994,  ronjansa, ronjans, ronjan,   ronjan,   pinkiri8_state, empty_init, ROT0, "Wing Co., Ltd", "Ron Jan Super (set 2)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING ) // possibly Super or not, needs internal ROM dump
+GAME( 1994,  ronjansb, ronjans, ronjan,   ronjan,   pinkiri8_state, empty_init, ROT0, "Wing Co., Ltd", "Ron Jan Super (set 3)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING ) // "
+GAME( 1994,  pinkiri8, 0,       pinkiri8, pinkiri8, pinkiri8_state, empty_init, ROT0, "Alta",          "Pinkiri 8",             MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NOT_WORKING )

@@ -206,11 +206,19 @@ Board contains only 29 ROMs and not much else.
 #include "cbombers.lh"
 
 
+void undrfire_state::machine_start()
+{
+	m_lamp_start.resolve();
+	m_gun_recoil.resolve();
+	m_lamp.resolve();
+	m_wheel_vibration.resolve();
+}
+
 /**********************************************************
             GAME INPUTS
 **********************************************************/
 
-READ_LINE_MEMBER(undrfire_state::frame_counter_r)
+int undrfire_state::frame_counter_r()
 {
 	return m_frame_counter;
 }
@@ -236,8 +244,6 @@ void undrfire_state::shared_ram_w(offs_t offset, u16 data, u16 mem_mask)
 
 u32 undrfire_state::undrfire_lightgun_r(offs_t offset)
 {
-	int x,y;
-
 	switch (offset)
 	{
 		/* NB we are raising the raw inputs by an arbitrary amount,
@@ -248,8 +254,8 @@ u32 undrfire_state::undrfire_lightgun_r(offs_t offset)
 		case 0x00:  /* P1 */
 		case 0x01:  /* P2 */
 		{
-			x = m_in_gunx[offset & 1]->read() << 6;
-			y = m_in_guny[offset & 1]->read() << 6;
+			int x = m_in_gunx[offset & 1]->read() << 6;
+			int y = m_in_guny[offset & 1]->read() << 6;
 
 			return ((x << 24) &0xff000000) | ((x << 8) &0xff0000)
 					| ((y << 8) &0xff00) | ((y >> 8) &0xff) ;
@@ -290,10 +296,10 @@ void undrfire_state::motor_control_w(u8 data)
     ........ x.......   P2 gun vibration
 */
 
-	output().set_value("P1_lamp_start", BIT(data, 4)); //p1 start
-	output().set_value("P2_lamp_start", BIT(data, 5)); //p2 start
-	output().set_value("P1_gun_recoil", BIT(data, 6)); //p1 recoil
-	output().set_value("P2_gun_recoil", BIT(data, 7)); //p2 recoil
+	m_lamp_start[0] = BIT(data, 4); //p1 start
+	m_lamp_start[1] = BIT(data, 5); //p2 start
+	m_gun_recoil[0] = BIT(data, 6); //p1 recoil
+	m_gun_recoil[1] = BIT(data, 7); //p2 recoil
 }
 
 void undrfire_state::cbombers_cpua_ctrl_w(u32 data)
@@ -302,13 +308,10 @@ void undrfire_state::cbombers_cpua_ctrl_w(u32 data)
     ........ ..xxxxxx   Lamp 1-6 enables
     ........ .x......   Vibration
 */
-	output().set_value("Lamp_1", BIT(data, 0));
-	output().set_value("Lamp_2", BIT(data, 1));
-	output().set_value("Lamp_3", BIT(data, 2));
-	output().set_value("Lamp_4", BIT(data, 3));
-	output().set_value("Lamp_5", BIT(data, 4));
-	output().set_value("Lamp_6", BIT(data, 5));
-	output().set_value("Wheel_vibration", BIT(data, 6));
+	for (int i = 0; i < 6; i++)
+		m_lamp[i] = BIT(data, i);
+
+	m_wheel_vibration = BIT(data, 6);
 
 	m_subcpu->set_input_line(INPUT_LINE_RESET, BIT(data, 12) ? CLEAR_LINE : ASSERT_LINE);
 }
@@ -416,7 +419,6 @@ static INPUT_PORTS_START( undrfire )
 	PORT_BIT( 0x80, IP_ACTIVE_LOW,  IPT_UNKNOWN )
 
 	/* Gun inputs (real range is 0-0xffff: we use standard 0-255 and shift later) */
-
 	PORT_START("GUNX1")
 	PORT_BIT( 0xff, 0x80, IPT_LIGHTGUN_X ) PORT_CROSSHAIR(X, -1.0, 0.0, 0) PORT_SENSITIVITY(20) PORT_KEYDELTA(25) PORT_REVERSE PORT_PLAYER(1)
 
@@ -428,11 +430,6 @@ static INPUT_PORTS_START( undrfire )
 
 	PORT_START("GUNY2")
 	PORT_BIT( 0xff, 0x80, IPT_LIGHTGUN_Y ) PORT_CROSSHAIR(Y, 1.0, 0.0, 0) PORT_SENSITIVITY(20) PORT_KEYDELTA(25) PORT_PLAYER(2)
-
-	PORT_START("FAKE")
-	PORT_DIPNAME( 0x01, 0x00, "Show gun target" ) PORT_CODE(KEYCODE_F1) PORT_TOGGLE
-	PORT_DIPSETTING(    0x00, DEF_STR( No ) )
-	PORT_DIPSETTING(    0x01, DEF_STR( Yes ) )
 INPUT_PORTS_END
 
 
@@ -501,6 +498,7 @@ static const gfx_layout tile16x16_layout =
 static GFXDECODE_START( gfx_undrfire )
 	GFXDECODE_ENTRY( "sprites", 0x0, tile16x16_layout, 0, 512 )
 GFXDECODE_END
+
 
 /***********************************************************
                  MACHINE DRIVERS

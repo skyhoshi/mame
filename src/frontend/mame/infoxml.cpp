@@ -36,6 +36,7 @@
 #include <future>
 #include <locale>
 #include <queue>
+#include <sstream>
 #include <type_traits>
 #include <unordered_set>
 #include <utility>
@@ -340,7 +341,7 @@ constexpr std::pair<device_t::feature_type, char const *> f_feature_names[] = {
 
 
 //-------------------------------------------------
-//  get_feature_name - get XML name for feature
+//  feature_name - get XML name for feature
 //-------------------------------------------------
 
 char const *info_xml_creator::feature_name(device_t::feature_type feature)
@@ -354,6 +355,33 @@ char const *info_xml_creator::feature_name(device_t::feature_type feature)
 				return std::underlying_type_t<device_t::feature_type>(a.first) < b;
 			});
 	return ((std::end(f_feature_names) != found) && (found->first == feature)) ? found->second : nullptr;
+}
+
+
+//-------------------------------------------------
+//  format_sourcefile - sanitise source file path
+//-------------------------------------------------
+
+std::string info_xml_creator::format_sourcefile(std::string_view path)
+{
+	using namespace std::literals;
+
+	if (auto prefix(path.rfind("src/mame/"sv)); std::string_view::npos != prefix)
+		path.remove_prefix(prefix + 9);
+	else if (auto prefix(path.rfind("src\\mame\\"sv)); std::string_view::npos != prefix)
+		path.remove_prefix(prefix + 9);
+	else if (auto prefix(path.rfind("/src/"sv)); std::string_view::npos != prefix)
+		path.remove_prefix(prefix + 5);
+	else if (auto prefix(path.rfind("\\src\\"sv)); std::string_view::npos != prefix)
+		path.remove_prefix(prefix + 5);
+	else if (path.substr(0, 4) == "src/"sv)
+		path.remove_prefix(4);
+	else if (path.substr(0, 4) == "src\\"sv)
+		path.remove_prefix(4);
+
+	std::string result(path);
+	std::replace(result.begin(), result.end(), '\\', '/');
+	return result;
 }
 
 
@@ -669,17 +697,19 @@ void output_one(std::ostream &out, driver_enumerator &drivlist, const game_drive
 
 	// allocate input ports and build overall emulation status
 	ioport_list portlist;
-	std::string errors;
 	device_t::feature_type overall_unemulated(driver.type.unemulated_features());
 	device_t::feature_type overall_imperfect(driver.type.imperfect_features());
-	for (device_t &device : iter)
 	{
-		portlist.append(device, errors);
-		overall_unemulated |= device.type().unemulated_features();
-		overall_imperfect |= device.type().imperfect_features();
+		std::ostringstream errors;
+		for (device_t &device : iter)
+		{
+			portlist.append(device, errors);
+			overall_unemulated |= device.type().unemulated_features();
+			overall_imperfect |= device.type().imperfect_features();
 
-		if (devtypes && device.owner())
-			devtypes->insert(&device.type());
+			if (devtypes && device.owner())
+				devtypes->insert(&device.type());
+		}
 	}
 
 	// renumber player numbers for controller ports
@@ -714,14 +744,8 @@ void output_one(std::ostream &out, driver_enumerator &drivlist, const game_drive
 	// print the header and the machine name
 	util::stream_format(out, "\t<%s name=\"%s\"", XML_TOP, normalize_string(driver.name));
 
-	// strip away any path information from the source_file and output it
-	std::string_view src(driver.type.source());
-	auto prefix(src.find("src/mame/"));
-	if (std::string_view::npos == prefix)
-		prefix = src.find("src\\mame\\");
-	if (std::string_view::npos != prefix)
-		src.remove_prefix(prefix + 9);
-	util::stream_format(out, " sourcefile=\"%s\"", normalize_string(src));
+	// strip away extra path information from the source file and output it
+	util::stream_format(out, " sourcefile=\"%s\"", normalize_string(info_xml_creator::format_sourcefile(driver.type.source())));
 
 	// append bios and runnable flags
 	if (driver.flags & machine_flags::IS_BIOS_ROOT)
@@ -794,34 +818,34 @@ void output_one_device(std::ostream &out, machine_config &config, device_t &devi
 
 	// generate input list and build overall emulation status
 	ioport_list portlist;
-	std::string errors;
 	device_t::feature_type overall_unemulated(device.type().unemulated_features());
 	device_t::feature_type overall_imperfect(device.type().imperfect_features());
-	for (device_t &dev : device_enumerator(device))
 	{
-		portlist.append(dev, errors);
-		overall_unemulated |= dev.type().unemulated_features();
-		overall_imperfect |= dev.type().imperfect_features();
+		std::ostringstream errors;
+		for (device_t &dev : device_enumerator(device))
+		{
+			portlist.append(dev, errors);
+			overall_unemulated |= dev.type().unemulated_features();
+			overall_imperfect |= dev.type().imperfect_features();
+		}
 	}
 
 	// check if the device adds player inputs (other than dsw and configs) to the system
 	for (auto &port : portlist)
+	{
 		for (ioport_field const &field : port.second->fields())
+		{
 			if (field.type() >= IPT_START1 && field.type() < IPT_UI_FIRST)
 			{
 				has_input = true;
 				break;
 			}
+		}
+	}
 
 	// start to output info
 	util::stream_format(out, "\t<%s name=\"%s\"", XML_TOP, normalize_string(device.shortname()));
-	std::string_view src(device.source());
-	auto prefix(src.find("src/"));
-	if (std::string_view::npos == prefix)
-		prefix = src.find("src\\");
-	if (std::string_view::npos != prefix)
-		src.remove_prefix(prefix + 4);
-	util::stream_format(out, " sourcefile=\"%s\" isdevice=\"yes\" runnable=\"no\"", normalize_string(src));
+	util::stream_format(out, " sourcefile=\"%s\" isdevice=\"yes\" runnable=\"no\"", normalize_string(info_xml_creator::format_sourcefile(device.source())));
 	auto const parent(device.type().parent_rom_device_type());
 	if (parent)
 		util::stream_format(out, " romof=\"%s\"", normalize_string(parent->shortname()));

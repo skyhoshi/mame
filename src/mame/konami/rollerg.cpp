@@ -30,7 +30,7 @@
 
 
 // configurable logging
-#define LOG_UNKWRITE     (1U <<  1)
+#define LOG_UNKWRITE     (1U << 1)
 
 //#define VERBOSE (LOG_GENERAL | LOG_UNKWRITE)
 
@@ -57,8 +57,8 @@ public:
 	void rollerg(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	// devices
@@ -79,17 +79,15 @@ private:
 	void sound_arm_nmi_w(uint8_t data);
 	void z80_nmi_w(int state);
 	uint8_t pip_r();
-	DECLARE_WRITE_LINE_MEMBER(irq_ack_w);
+	void irq_ack_w(int state);
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	K05324X_CB_MEMBER(sprite_callback);
 	K051316_CB_MEMBER(zoom_callback);
 
-	void main_map(address_map &map);
-	void sound_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
 };
 
-
-// video
 
 /***************************************************************************
 
@@ -141,8 +139,6 @@ uint32_t rollerg_state::screen_update(screen_device &screen, bitmap_ind16 &bitma
 	return 0;
 }
 
-
-// machine
 
 void rollerg_state::ext_enable_w(uint8_t data)
 {
@@ -324,7 +320,7 @@ INPUT_PORTS_END
 
 ***************************************************************************/
 
-WRITE_LINE_MEMBER(rollerg_state::irq_ack_w)
+void rollerg_state::irq_ack_w(int state)
 {
 	m_maincpu->set_input_line(0, CLEAR_LINE);
 }

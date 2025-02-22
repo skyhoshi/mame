@@ -42,10 +42,10 @@ private:
 	void out9_w(uint8_t data);
 	void ym_porta_w(uint8_t data);
 
-	void main_map(address_map &map);
-	void sound_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
 
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 	required_device<cpu_device> m_maincpu;
 };
@@ -151,8 +151,8 @@ void cucaracha_state::cucaracha(machine_config &config)
 	soundcpu.set_addrmap(AS_PROGRAM, &cucaracha_state::sound_map);
 
 	pc060ha_device &ciu(PC060HA(config, "ciu", 0));
-	ciu.set_master_tag(m_maincpu);
-	ciu.set_slave_tag("soundcpu");
+	ciu.nmi_callback().set_inputline("soundcpu", INPUT_LINE_NMI);
+	ciu.reset_callback().set_inputline("soundcpu", INPUT_LINE_RESET);
 
 	SPEAKER(config, "mono").front_center();
 
@@ -298,5 +298,5 @@ ROM_END
 
 } // Anonymous namespace
 
-GAME( 1992, cucaracha,  0,         cucaracha, cucaracha, cucaracha_state, empty_init, ROT0, "Taito", "La Cucaracha (set 1)", MACHINE_IS_SKELETON_MECHANICAL )
-GAME( 1992, cucaracha2, cucaracha, cucaracha, cucaracha, cucaracha_state, empty_init, ROT0, "Taito", "La Cucaracha (set 2)", MACHINE_IS_SKELETON_MECHANICAL )
+GAME( 1992, cucaracha,  0,         cucaracha, cucaracha, cucaracha_state, empty_init, ROT0, "Taito", "La Cucaracha (set 1)", MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK )
+GAME( 1992, cucaracha2, cucaracha, cucaracha, cucaracha, cucaracha_state, empty_init, ROT0, "Taito", "La Cucaracha (set 2)", MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK )

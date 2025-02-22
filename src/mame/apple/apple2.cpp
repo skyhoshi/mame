@@ -116,8 +116,8 @@ public:
 	TIMER_DEVICE_CALLBACK_MEMBER(apple2_interrupt);
 	TIMER_DEVICE_CALLBACK_MEMBER(ay3600_repeat);
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	u8 ram_r(offs_t offset);
 	void ram_w(offs_t offset, u8 data);
@@ -142,13 +142,13 @@ public:
 	void c800_w(offs_t offset, u8 data);
 	u8 inh_r(offs_t offset);
 	void inh_w(offs_t offset, u8 data);
-	DECLARE_WRITE_LINE_MEMBER(a2bus_irq_w);
-	DECLARE_WRITE_LINE_MEMBER(a2bus_nmi_w);
-	DECLARE_WRITE_LINE_MEMBER(a2bus_inh_w);
-	DECLARE_READ_LINE_MEMBER(ay3600_shift_r);
-	DECLARE_READ_LINE_MEMBER(ay3600_control_r);
-	DECLARE_WRITE_LINE_MEMBER(ay3600_data_ready_w);
-	DECLARE_WRITE_LINE_MEMBER(ay3600_ako_w);
+	void a2bus_irq_w(int state);
+	void a2bus_nmi_w(int state);
+	void a2bus_inh_w(int state);
+	int ay3600_shift_r();
+	int ay3600_control_r();
+	void ay3600_data_ready_w(int state);
+	void ay3600_ako_w(int state);
 
 	void apple2_common(machine_config &config);
 	void apple2jp(machine_config &config);
@@ -158,7 +158,7 @@ public:
 	void albert(machine_config &config);
 	void ivelultr(machine_config &config);
 	void apple2p(machine_config &config);
-	void apple2_map(address_map &map);
+	void apple2_map(address_map &map) ATTR_COLD;
 
 private:
 	int m_speaker_state, m_cassette_state;
@@ -176,6 +176,8 @@ private:
 	int m_ram_size;
 
 	int m_inh_bank;
+
+	bool m_reset_latch;
 
 	double m_x_calibration, m_y_calibration;
 
@@ -199,18 +201,18 @@ offs_t apple2_state::dasm_trampoline(std::ostream &stream, offs_t pc, const util
 	return m_a2common->dasm_override(stream, pc, opcodes, params);
 }
 
-WRITE_LINE_MEMBER(apple2_state::a2bus_irq_w)
+void apple2_state::a2bus_irq_w(int state)
 {
 	m_maincpu->set_input_line(M6502_IRQ_LINE, state);
 }
 
-WRITE_LINE_MEMBER(apple2_state::a2bus_nmi_w)
+void apple2_state::a2bus_nmi_w(int state)
 {
 	m_maincpu->set_input_line(INPUT_LINE_NMI, state);
 }
 
 // This code makes a ton of assumptions because we can guarantee a pre-IIe machine!
-WRITE_LINE_MEMBER(apple2_state::a2bus_inh_w)
+void apple2_state::a2bus_inh_w(int state)
 {
 	if (state == ASSERT_LINE)
 	{
@@ -292,6 +294,7 @@ void apple2_state::machine_start()
 	}
 
 	m_joystick_x1_time = m_joystick_x2_time = m_joystick_y1_time = m_joystick_y2_time = 0;
+	m_reset_latch = false;
 
 	// setup save states
 	save_item(NAME(m_speaker_state));
@@ -307,6 +310,7 @@ void apple2_state::machine_start()
 	save_item(NAME(m_inh_bank));
 	save_item(NAME(m_cnxx_slot));
 	save_item(NAME(m_anykeydown));
+	save_item(NAME(m_reset_latch));
 
 	// setup video pointers
 	m_video->set_ram_pointers(m_ram_ptr, m_ram_ptr);
@@ -318,6 +322,13 @@ void apple2_state::machine_reset()
 	m_inh_slot = 0;
 	m_cnxx_slot = -1;
 	m_anykeydown = false;
+
+	// reset the cards
+	m_a2bus->reset_bus();
+	// reset the 6502 now as a card may have pulled /INH on the reset vector
+	logerror("machine_reset\n");
+	m_maincpu->set_input_line(INPUT_LINE_RESET, ASSERT_LINE);
+	m_maincpu->set_input_line(INPUT_LINE_RESET, CLEAR_LINE);
 }
 
 /***************************************************************************
@@ -331,28 +342,47 @@ TIMER_DEVICE_CALLBACK_MEMBER(apple2_state::apple2_interrupt)
 	if (scanline == 192)
 	{
 		// check reset
-		if (m_resetdip.found()) // if reset DIP is present, use it
+		if ((m_resetdip.found()) && (m_resetdip->read() & 1)) // if reset DIP is present, use it
 		{
-			if (m_resetdip->read() & 1)
-			{       // CTRL-RESET
-				if ((m_kbspecial->read() & 0x88) == 0x88)
+			// CTRL-RESET
+			if ((m_kbspecial->read() & 0x88) == 0x88)
+			{
+				if (!m_reset_latch)
 				{
-					m_maincpu->reset();
+					m_reset_latch = true;
+					m_maincpu->set_input_line(INPUT_LINE_RESET, ASSERT_LINE);
 				}
 			}
-			else    // plain RESET
+			else
 			{
-				if (m_kbspecial->read() & 0x80)
+				if (m_reset_latch)
 				{
-					m_maincpu->reset();
+					m_reset_latch = false;
+					// allow cards to see reset
+					m_a2bus->reset_bus();
+					m_maincpu->set_input_line(INPUT_LINE_RESET, CLEAR_LINE);
 				}
 			}
 		}
-		else    // no DIP, so always plain RESET
+		else    // plain RESET
 		{
 			if (m_kbspecial->read() & 0x80)
 			{
-				m_maincpu->reset();
+				if (!m_reset_latch)
+				{
+					m_reset_latch = true;
+					m_maincpu->set_input_line(INPUT_LINE_RESET, ASSERT_LINE);
+				}
+			}
+			else
+			{
+				if (m_reset_latch)
+				{
+					m_reset_latch = false;
+					// allow cards to see reset
+					m_a2bus->reset_bus();
+					m_maincpu->set_input_line(INPUT_LINE_RESET, CLEAR_LINE);
+				}
 			}
 		}
 	}
@@ -806,7 +836,7 @@ void apple2_state::apple2_map(address_map &map)
     KEYBOARD
 ***************************************************************************/
 
-READ_LINE_MEMBER(apple2_state::ay3600_shift_r)
+int apple2_state::ay3600_shift_r()
 {
 	// either shift key
 	if (m_kbspecial->read() & 0x06)
@@ -817,7 +847,7 @@ READ_LINE_MEMBER(apple2_state::ay3600_shift_r)
 	return CLEAR_LINE;
 }
 
-READ_LINE_MEMBER(apple2_state::ay3600_control_r)
+int apple2_state::ay3600_control_r()
 {
 	if (m_kbspecial->read() & 0x08)
 	{
@@ -882,7 +912,7 @@ static const u8 a2_key_remap[0x32][4] =
 	{ 0x0d,0x0d,0x0d,0x0d },    /* Enter   31     */
 };
 
-WRITE_LINE_MEMBER(apple2_state::ay3600_data_ready_w)
+void apple2_state::ay3600_data_ready_w(int state)
 {
 	if (state == ASSERT_LINE)
 	{
@@ -907,7 +937,7 @@ WRITE_LINE_MEMBER(apple2_state::ay3600_data_ready_w)
 	}
 }
 
-WRITE_LINE_MEMBER(apple2_state::ay3600_ako_w)
+void apple2_state::ay3600_ako_w(int state)
 {
 	m_anykeydown = (state == ASSERT_LINE) ? true : false;
 }
@@ -1125,7 +1155,7 @@ void apple2_state::apple2_common(machine_config &config)
 	m_softlatch->q_out_cb<6>().append(m_video, FUNC(a2_video_device::an2_w));
 	m_softlatch->q_out_cb<7>().set(m_gameio, FUNC(apple2_gameio_device::an3_w));
 
-	APPLE2_GAMEIO(config, m_gameio, apple2_gameio_device::iiandplus_options, nullptr);
+	APPLE2_GAMEIO(config, m_gameio, m_screen, apple2_gameio_device::iiandplus_options, nullptr);
 
 	/* keyboard controller */
 	AY3600(config, m_ay3600, 0);
@@ -1153,14 +1183,14 @@ void apple2_state::apple2_common(machine_config &config)
 	m_a2bus->nmi_w().set(FUNC(apple2_state::a2bus_nmi_w));
 	m_a2bus->inh_w().set(FUNC(apple2_state::a2bus_inh_w));
 	m_a2bus->dma_w().set_inputline(m_maincpu, INPUT_LINE_HALT);
-	A2BUS_SLOT(config, "sl0", m_a2bus, apple2_slot0_cards, "lang");
-	A2BUS_SLOT(config, "sl1", m_a2bus, apple2_cards, nullptr);
-	A2BUS_SLOT(config, "sl2", m_a2bus, apple2_cards, nullptr);
-	A2BUS_SLOT(config, "sl3", m_a2bus, apple2_cards, nullptr);
-	A2BUS_SLOT(config, "sl4", m_a2bus, apple2_cards, "mockingboard");
-	A2BUS_SLOT(config, "sl5", m_a2bus, apple2_cards, nullptr);
-	A2BUS_SLOT(config, "sl6", m_a2bus, apple2_cards, "diskiing");
-	A2BUS_SLOT(config, "sl7", m_a2bus, apple2_cards, nullptr);
+	A2BUS_SLOT(config, "sl0", XTAL(14'318'181) / 2, m_a2bus, apple2_slot0_cards, "lang");
+	A2BUS_SLOT(config, "sl1", XTAL(14'318'181) / 2, m_a2bus, apple2_cards, nullptr);
+	A2BUS_SLOT(config, "sl2", XTAL(14'318'181) / 2, m_a2bus, apple2_cards, nullptr);
+	A2BUS_SLOT(config, "sl3", XTAL(14'318'181) / 2, m_a2bus, apple2_cards, nullptr);
+	A2BUS_SLOT(config, "sl4", XTAL(14'318'181) / 2, m_a2bus, apple2_cards, "mockingboard");
+	A2BUS_SLOT(config, "sl5", XTAL(14'318'181) / 2, m_a2bus, apple2_cards, nullptr);
+	A2BUS_SLOT(config, "sl6", XTAL(14'318'181) / 2, m_a2bus, apple2_cards, "diskiing");
+	A2BUS_SLOT(config, "sl7", XTAL(14'318'181) / 2, m_a2bus, apple2_cards, nullptr);
 
 	/* Set up the softlists: clean cracks priority, originals second, others last */
 	SOFTWARE_LIST(config, "flop_a2_clean").set_original("apple2_flop_clcracked");

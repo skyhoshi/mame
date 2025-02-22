@@ -20,14 +20,14 @@ class luna_keyboard_device
 public:
 	luna_keyboard_device(machine_config const &mconfig, char const *tag, device_t *owner, u32 clock);
 
-	virtual DECLARE_WRITE_LINE_MEMBER(input_txd) override { device_buffered_serial_interface::rx_w(state); }
+	virtual void input_txd(int state) override { device_buffered_serial_interface::rx_w(state); }
 
 protected:
 	// device overrides
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual ioport_constructor device_input_ports() const override;
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual ioport_constructor device_input_ports() const override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 	// device_buffered_serial_interface overrides
 	virtual void tra_callback() override;

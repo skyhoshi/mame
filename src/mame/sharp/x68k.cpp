@@ -119,6 +119,7 @@
 #include "x68k.h"
 #include "x68k_hdc.h"
 #include "x68k_kbd.h"
+#include "x68k_mouse.h"
 
 #include "machine/nvram.h"
 
@@ -136,9 +137,9 @@
 
 #include "x68000.lh"
 
-#define LOG_FDC (1 << 1)
-#define LOG_SYS (1 << 2)
-#define LOG_IRQ (1 << 3)
+#define LOG_FDC (1U << 1)
+#define LOG_SYS (1U << 2)
+#define LOG_IRQ (1U << 3)
 //#define VERBOSE (LOG_FDC | LOG_SYS | LOG_IRQ)
 #include "logmacro.h"
 
@@ -174,132 +175,15 @@ TIMER_CALLBACK_MEMBER(x68k_state::led_callback)
 
 }
 
-
-// mouse input
-// port B of the Z8530 SCC
-// typically read from the SCC data port on receive buffer full interrupt per byte
-int x68k_state::read_mouse()
-{
-	char val = 0;
-	char ipt = 0;
-
-	if(!(m_scc->get_reg_b(5) & 0x02))
-		return 0xff;
-
-	switch(m_mouse.inputtype)
-	{
-	case 0:
-		ipt = m_mouse1->read();
-		break;
-	case 1:
-		val = m_mouse2->read();
-		ipt = val - m_mouse.last_mouse_x;
-		m_mouse.last_mouse_x = val;
-		break;
-	case 2:
-		val = m_mouse3->read();
-		ipt = val - m_mouse.last_mouse_y;
-		m_mouse.last_mouse_y = val;
-		break;
-	}
-	m_mouse.inputtype++;
-	if(m_mouse.inputtype > 2)
-	{
-		int i_val = m_scc->get_reg_b(0);
-		m_mouse.inputtype = 0;
-		m_mouse.bufferempty = 1;
-		i_val &= ~0x01;
-		m_scc->set_reg_b(0, i_val);
-		LOGMASKED(LOG_SYS, "SCC: mouse buffer empty\n");
-	}
-
-	return ipt;
-}
-
-/*
-    0xe98001 - Z8530 command port B
-    0xe98003 - Z8530 data port B  (mouse input)
-    0xe98005 - Z8530 command port A
-    0xe98007 - Z8530 data port A  (RS232)
-*/
-uint16_t x68k_state::scc_r(offs_t offset)
-{
-	offset %= 4;
-	switch(offset)
-	{
-	case 0:
-		return m_scc->reg_r(0);
-	case 1:
-		return read_mouse();
-	case 2:
-		return m_scc->reg_r(1);
-	case 3:
-		return m_scc->reg_r(3);
-	default:
-		return 0xff;
-	}
-}
-
-void x68k_state::scc_w(offs_t offset, uint16_t data)
-{
-	offset %= 4;
-
-	switch(offset)
-	{
-	case 0:
-		m_scc->reg_w(0,(uint8_t)data);
-		if((m_scc->get_reg_b(5) & 0x02) != m_scc_prev)
-		{
-			if(m_scc->get_reg_b(5) & 0x02)  // Request to Send
-			{
-				int val = m_scc->get_reg_b(0);
-				m_mouse.bufferempty = 0;
-				val |= 0x01;
-				m_scc->set_reg_b(0,val);
-			}
-		}
-		break;
-	case 1:
-		m_scc->reg_w(2,(uint8_t)data);
-		break;
-	case 2:
-		m_scc->reg_w(1,(uint8_t)data);
-		break;
-	case 3:
-		m_scc->reg_w(3,(uint8_t)data);
-		break;
-	}
-	m_scc_prev = m_scc->get_reg_b(5) & 0x02;
-}
-
-TIMER_CALLBACK_MEMBER(x68k_state::scc_ack)
-{
-	if(m_mouse.bufferempty != 0)  // nothing to do if the mouse data buffer is empty
-		return;
-
-//  if((m_ioc.irqstatus & 0xc0) != 0)
-//      return;
-
-	// hard-code the IRQ vector for now, until the SCC code is more complete
-	if((m_scc->get_reg_a(9) & 0x08) || (m_scc->get_reg_b(9) & 0x08))  // SCC reg WR9 is the same for both channels
-	{
-		if((m_scc->get_reg_b(1) & 0x18) != 0)  // if bits 3 and 4 of WR1 are 0, then Rx IRQs are disabled on this channel
-		{
-			if(m_scc->get_reg_b(5) & 0x02)  // RTS signal
-			{
-				m_mouse.irqactive = true;
-				m_mouse.irqvector = 0x54;
-				update_ipl();
-			}
-		}
-	}
-}
-
 void x68k_state::set_adpcm()
 {
 	uint32_t rate = adpcm_div[m_adpcm.rate];
 	uint32_t res_clock = adpcm_clock[m_adpcm.clock]/2;
-	m_adpcm_timer->adjust(attotime::from_ticks(rate, res_clock), 0, attotime::from_ticks(rate, res_clock));
+	attotime newperiod = attotime::from_ticks(rate, res_clock);
+	attotime newremain = newperiod;
+	if((m_adpcm_timer->period() != attotime::never) && (m_adpcm_timer->period() != attotime::zero))
+		newremain = newperiod * (m_adpcm_timer->remaining().as_double() / m_adpcm_timer->period().as_double());
+	m_adpcm_timer->adjust(newremain, 0, newperiod);
 }
 
 // PPI ports A and B are joystick inputs
@@ -337,17 +221,20 @@ uint8_t x68k_state::ppi_port_c_r()
 void x68k_state::ppi_port_c_w(uint8_t data)
 {
 	// ADPCM / Joystick control
-	if((data & 0x0f) != (m_ppi_portc & 0x0f))
+	if((data & 0x03) != (m_ppi_portc & 0x03))
 	{
 		m_adpcm.pan = data & 0x03;
+		m_adpcm_out[0]->set_gain((m_adpcm.pan & 1) ? 0.0f : 1.0f);
+		m_adpcm_out[1]->set_gain((m_adpcm.pan & 2) ? 0.0f : 1.0f);
+	}
+	if((data & 0x0c) != (m_ppi_portc & 0x0c))
+	{
 		m_adpcm.rate = (data & 0x0c) >> 2;
 		if (m_adpcm.rate == 3)
 			LOGMASKED(LOG_SYS, "PPI: Invalid ADPCM sample rate set.\n");
 
 		set_adpcm();
 		m_okim6258->set_divider(m_adpcm.rate);
-		m_adpcm_out[0]->flt_volume_set_volume((m_adpcm.pan & 1) ? 0.0f : 1.0f);
-		m_adpcm_out[1]->flt_volume_set_volume((m_adpcm.pan & 2) ? 0.0f : 1.0f);
 	}
 
 	// Set joystick outputs
@@ -375,9 +262,9 @@ void x68k_state::fdc_w(offs_t offset, uint16_t data)
 		x = data & 0x0f;
 		for(drive=0;drive<4;drive++)
 		{
-			if(m_fdc.control_drives & (1 << drive))
+			if(BIT(m_fdc.control_drives, drive) && m_fdc.floppy[drive])
 			{
-				if(!(x & (1 << drive)))  // functions take place on 1->0 transitions of drive bits only
+				if(!BIT(x, drive))  // functions take place on 1->0 transitions of drive bits only
 				{
 					m_fdc.led_ctrl[drive] = data & 0x80;  // blinking drive LED if no disk inserted
 					m_fdc.led_eject[drive] = data & 0x40;  // eject button LED (on when set to 0)
@@ -397,7 +284,7 @@ void x68k_state::fdc_w(offs_t offset, uint16_t data)
 		m_fdc.motor = data & 0x80;
 
 		for(int i = 0; i < 4; i++)
-			if(m_fdc.floppy[i]->exists())
+			if(m_fdc.floppy[i] && m_fdc.floppy[i]->exists())
 				m_fdc.floppy[i]->mon_w(!BIT(data, 7));
 
 		m_access_drv_out[x] = 0;
@@ -421,10 +308,10 @@ uint16_t x68k_state::fdc_r(offs_t offset)
 		ret = 0x00;
 		for(x=0;x<4;x++)
 		{
-			if(m_fdc.control_drives & (1 << x))
+			if(BIT(m_fdc.control_drives, x))
 			{
 				ret = 0x00;
-				if(m_fdc.floppy[x]->exists())
+				if(m_fdc.floppy[x] && m_fdc.floppy[x]->exists())
 				{
 					ret |= 0x80;
 				}
@@ -441,7 +328,7 @@ uint16_t x68k_state::fdc_r(offs_t offset)
 	return 0xff;
 }
 
-WRITE_LINE_MEMBER( x68k_state::fdc_irq )
+void x68k_state::fdc_irq(int state)
 {
 	if((m_ioc.irqstatus & 0x04) && state)
 	{
@@ -628,12 +515,10 @@ uint16_t x68k_state::sram_r(offs_t offset)
 
 void x68k_state::vid_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 {
-	switch(offset)
-	{
-	case 0x000:
+	if(offset < 0x80)
 		COMBINE_DATA(m_video.reg);
-		break;
-	case 0x080:  // priority levels
+	else if(offset < 0x100)
+	{
 		COMBINE_DATA(m_video.reg+1);
 		if(ACCESSING_BITS_0_7)
 		{
@@ -654,13 +539,11 @@ void x68k_state::vid_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 			if(m_video.sprite_pri == 3)
 				m_video.sprite_pri--;
 		}
-		break;
-	case 0x100:
-		COMBINE_DATA(m_video.reg+2);
-		break;
-	default:
-		LOGMASKED(LOG_SYS, "VC: Invalid video controller write (offset = 0x%04x, data = %04x)\n",offset,data);
 	}
+	else if(offset < 0x180)
+		COMBINE_DATA(m_video.reg+2);
+	else
+		LOGMASKED(LOG_SYS, "VC: Invalid video controller write (offset = 0x%04x, data = %04x)\n",offset,data);
 }
 
 uint16_t x68k_state::vid_r(offs_t offset)
@@ -778,7 +661,7 @@ void x68k_state::exp_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 		set_bus_error((offset << 1) + 0xeafa00, 1, mem_mask);
 }
 
-WRITE_LINE_MEMBER(x68k_state::dma_irq)
+void x68k_state::dma_irq(int state)
 {
 	m_dmac_int = state != CLEAR_LINE;
 	update_ipl();
@@ -792,7 +675,7 @@ void x68k_state::dma_end(offs_t offset, uint8_t data)
 	}
 }
 
-WRITE_LINE_MEMBER(x68k_state::fm_irq)
+void x68k_state::fm_irq(int state)
 {
 	if(state == CLEAR_LINE)
 	{
@@ -817,7 +700,7 @@ void x68k_state::adpcm_w(offs_t offset, uint8_t data)
 	}
 }
 
-WRITE_LINE_MEMBER(x68k_state::mfp_irq_callback)
+void x68k_state::mfp_irq_callback(int state)
 {
 	m_mfp_int = state;
 	update_ipl();
@@ -830,7 +713,7 @@ void x68k_state::update_ipl()
 		new_ipl = 7;
 	else if (m_mfp_int)
 		new_ipl = 6;
-	else if (m_mouse.irqactive)
+	else if (m_scc_int)
 		new_ipl = 5;
 	else if (m_exp_irq4[0] || m_exp_irq4[1])
 		new_ipl = 4;
@@ -898,7 +781,7 @@ uint8_t x68k_state::iack1()
 }
 
 template <int N>
-WRITE_LINE_MEMBER(x68k_state::irq2_line)
+void x68k_state::irq2_line(int state)
 {
 	m_exp_irq2[N] = (state != CLEAR_LINE);
 	LOGMASKED(LOG_IRQ, "IRQ2-%d %s\n", N + 1, m_exp_irq2[N] ? "asserted" : "cleared");
@@ -906,7 +789,7 @@ WRITE_LINE_MEMBER(x68k_state::irq2_line)
 }
 
 template <int N>
-WRITE_LINE_MEMBER(x68k_state::irq4_line)
+void x68k_state::irq4_line(int state)
 {
 	m_exp_irq4[N] = (state != CLEAR_LINE);
 	LOGMASKED(LOG_IRQ, "IRQ4-%d %s\n", N + 1, m_exp_irq4[N] ? "asserted" : "cleared");
@@ -914,7 +797,7 @@ WRITE_LINE_MEMBER(x68k_state::irq4_line)
 }
 
 template <int N>
-WRITE_LINE_MEMBER(x68k_state::nmi_line)
+void x68k_state::nmi_line(int state)
 {
 	m_exp_nmi[N] = (state != CLEAR_LINE);
 	LOGMASKED(LOG_IRQ, "EXNMI %s on expansion %d\n", m_exp_nmi[N] ? "asserted" : "cleared", N + 1);
@@ -943,18 +826,6 @@ uint8_t x68k_state::iack4()
 		return 0x18; // spurious interrupt
 }
 
-uint8_t x68k_state::iack5()
-{
-	if (!machine().side_effects_disabled())
-	{
-		m_mouse.irqactive = false;
-		update_ipl();
-	}
-
-	// TODO: use vector from SCC
-	return m_mouse.irqvector;
-}
-
 void x68k_state::cpu_space_map(address_map &map)
 {
 	map.global_mask(0xffffff);
@@ -962,12 +833,12 @@ void x68k_state::cpu_space_map(address_map &map)
 	map(0xfffff5, 0xfffff5).r(FUNC(x68k_state::iack2));
 	map(0xfffff7, 0xfffff7).r(m_hd63450, FUNC(hd63450_device::iack));
 	map(0xfffff9, 0xfffff9).r(FUNC(x68k_state::iack4));
-	map(0xfffffb, 0xfffffb).r(FUNC(x68k_state::iack5));
+	map(0xfffffb, 0xfffffb).lr8(NAME([this]() { return m_scc->m1_r(); }));
 	map(0xfffffd, 0xfffffd).r(m_mfpdev, FUNC(mc68901_device::get_vector));
 	map(0xffffff, 0xffffff).lr8(NAME([] () { return m68000_base_device::autovector(7); }));
 }
 
-WRITE_LINE_MEMBER(x68ksupr_state::scsi_irq)
+void x68ksupr_state::scsi_irq(int state)
 {
 	LOGMASKED(LOG_IRQ, "SCSI IRQ %s\n", state ? "asserted" : "cleared");
 
@@ -979,9 +850,10 @@ WRITE_LINE_MEMBER(x68ksupr_state::scsi_irq)
 	}
 }
 
-WRITE_LINE_MEMBER(x68ksupr_state::scsi_drq)
+void x68ksupr_state::scsi_unknown_w(uint8_t data)
 {
-	// TODO
+	// Documentation claims SSTS register is read-only, but x68030 boot code writes #$05 to this address anyway.
+	// Is this an undocumented MB89352 feature, an ASIC register, an original code bug or a bad dump?
 }
 
 void x68k_state::x68k_base_map(address_map &map)
@@ -1001,7 +873,7 @@ void x68k_state::x68k_base_map(address_map &map)
 	map(0xe90000, 0xe91fff).rw(m_ym2151, FUNC(ym2151_device::read), FUNC(ym2151_device::write)).umask16(0x00ff);
 	map(0xe94000, 0xe94003).m(m_upd72065, FUNC(upd72065_device::map)).umask16(0x00ff);
 	map(0xe94004, 0xe94007).rw(FUNC(x68k_state::fdc_r), FUNC(x68k_state::fdc_w));
-	map(0xe98000, 0xe99fff).rw(FUNC(x68k_state::scc_r), FUNC(x68k_state::scc_w));
+	map(0xe98000, 0xe99fff).rw(m_scc, FUNC(scc8530_device::ab_dc_r), FUNC(scc8530_device::ab_dc_w)).umask16(0x00ff);
 	map(0xe9a000, 0xe9bfff).rw(FUNC(x68k_state::ppi_r), FUNC(x68k_state::ppi_w));
 	map(0xe9c000, 0xe9dfff).rw(FUNC(x68k_state::ioc_r), FUNC(x68k_state::ioc_w));
 	map(0xe9e000, 0xe9e3ff).rw(FUNC(x68k_state::exp_r), FUNC(x68k_state::exp_w));  // FPU (Optional)
@@ -1051,6 +923,7 @@ void x68030_state::x68030_map(address_map &map)
 	map(0xe92000, 0xe92003).r(m_okim6258, FUNC(okim6258_device::status_r)).umask32(0x00ff00ff).w(FUNC(x68030_state::adpcm_w)).umask32(0x00ff00ff);
 
 	map(0xe96020, 0xe9603f).m(m_scsictrl, FUNC(mb89352_device::map)).umask32(0x00ff00ff);
+	map(0xe9602d, 0xe9602d).w(FUNC(x68030_state::scsi_unknown_w));
 	map(0xea0000, 0xea1fff).noprw();//.rw(FUNC(x68030_state::exp_r), FUNC(x68030_state::exp_w));  // external SCSI ROM and controller
 	map(0xeafa80, 0xeafa8b).rw(FUNC(x68030_state::areaset_r), FUNC(x68030_state::enh_areaset_w));
 	map(0xfc0000, 0xfdffff).rom();  // internal SCSI ROM
@@ -1063,16 +936,6 @@ static INPUT_PORTS_START( x68000 )
 	PORT_CONFNAME( 0x02, 0x02, "Enable fake bus errors")
 	PORT_CONFSETTING(   0x00, DEF_STR( Off ))
 	PORT_CONFSETTING(   0x02, DEF_STR( On ))
-
-	PORT_START("mouse1")  // mouse buttons
-	PORT_BIT( 0x00000001, IP_ACTIVE_HIGH, IPT_BUTTON9) PORT_NAME("Left mouse button") PORT_CODE(MOUSECODE_BUTTON1)
-	PORT_BIT( 0x00000002, IP_ACTIVE_HIGH, IPT_BUTTON10) PORT_NAME("Right mouse button") PORT_CODE(MOUSECODE_BUTTON2)
-
-	PORT_START("mouse2")  // X-axis
-	PORT_BIT( 0xff, 0x00, IPT_MOUSE_X) PORT_SENSITIVITY(100) PORT_KEYDELTA(0) PORT_PLAYER(1)
-
-	PORT_START("mouse3")  // Y-axis
-	PORT_BIT( 0xff, 0x00, IPT_MOUSE_Y) PORT_SENSITIVITY(100) PORT_KEYDELTA(0) PORT_PLAYER(1)
 INPUT_PORTS_END
 
 void x68k_state::floppy_load_unload(bool load, floppy_image_device *dev)
@@ -1146,10 +1009,6 @@ void x68k_state::machine_start()
 	m_spriteram = (uint16_t*)(memregion("user1")->base());
 	space.install_ram(0x000000,m_ram->size()-1,m_ram->pointer());
 
-	// start mouse timer
-	m_mouse_timer->adjust(attotime::zero, 0, attotime::from_msec(1));  // a guess for now
-	m_mouse.inputtype = 0;
-
 	// start LED timer
 	m_led_timer->adjust(attotime::zero, 0, attotime::from_msec(400));
 
@@ -1168,11 +1027,11 @@ void x68k_state::machine_start()
 
 	m_dmac_int = false;
 	m_mfp_int = false;
+	m_scc_int = false;
 	m_exp_irq2[0] = m_exp_irq2[1] = false;
 	m_exp_irq4[0] = m_exp_irq4[1] = false;
 	m_exp_nmi[0] = m_exp_nmi[1] = false;
 	m_ioc.irqstatus = 0;
-	m_mouse.irqactive = false;
 	m_current_ipl = 0;
 	m_adpcm.rate = 0;
 	m_adpcm.clock = 0;
@@ -1199,7 +1058,6 @@ void x68k_state::driver_start()
 	// copy last half of BIOS to a user region, to use for initial startup
 	memcpy(user2,(rom+0xff0000),0x10000);
 
-	m_mouse_timer = timer_alloc(FUNC(x68ksupr_state::scc_ack), this);
 	m_led_timer = timer_alloc(FUNC(x68ksupr_state::led_callback), this);
 	m_fdc_tc = timer_alloc(FUNC(x68ksupr_state::floppy_tc_tick), this);
 	m_adpcm_timer = timer_alloc(FUNC(x68ksupr_state::adpcm_drq_tick), this);
@@ -1244,6 +1102,11 @@ static void keyboard_devices(device_slot_interface &device)
 	device.option_add("x68k", X68K_KEYBOARD);
 }
 
+static void mouse_devices(device_slot_interface &device)
+{
+	device.option_add("x68k", X68K_MOUSE);
+}
+
 void x68k_state::x68000_base(machine_config &config)
 {
 	config.set_maximum_quantum(attotime::from_hz(60));
@@ -1277,9 +1140,15 @@ void x68k_state::x68000_base(machine_config &config)
 	m_hd63450->dma_write<0>().set("upd72065", FUNC(upd72065_device::dma_w));
 
 	SCC8530(config, m_scc, 40_MHz_XTAL / 8);
+	m_scc->out_int_callback().set([this](int state) { m_scc_int = state; update_ipl(); });
+
+	rs232_port_device &mouse(RS232_PORT(config, "mouse_port", mouse_devices, "x68k"));
+	mouse.rxd_handler().set(m_scc, FUNC(scc8530_device::rxb_w));
+	m_scc->out_rtsb_callback().set(mouse, FUNC(rs232_port_device::write_rts));
 
 	RP5C15(config, m_rtc, 32.768_kHz_XTAL);
 	m_rtc->alarm().set(m_mfpdev, FUNC(mc68901_device::i0_w));
+	m_rtc->set_year_offset(20);
 
 	/* video hardware */
 	SCREEN(config, m_screen, SCREEN_TYPE_RASTER);
@@ -1385,8 +1254,11 @@ void x68ksupr_state::x68ksupr_base(machine_config &config)
 
 			spc.set_clock(40_MHz_XTAL / 8);
 			spc.out_irq_callback().set(*this, FUNC(x68ksupr_state::scsi_irq));
-			spc.out_dreq_callback().set(*this, FUNC(x68ksupr_state::scsi_drq));
+			spc.out_dreq_callback().set(m_hd63450, FUNC(hd63450_device::drq1_w));
 		});
+
+	m_hd63450->dma_read<1>().set("scsi:7:spc", FUNC(mb89352_device::dma_r));
+	m_hd63450->dma_write<1>().set("scsi:7:spc", FUNC(mb89352_device::dma_w));
 
 	VICON(config, m_crtc, 38.86363_MHz_XTAL);
 	m_crtc->set_clock_69m(69.55199_MHz_XTAL);

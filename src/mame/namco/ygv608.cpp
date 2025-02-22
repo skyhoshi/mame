@@ -480,8 +480,6 @@ void ygv608_device::device_start()
 	m_iospace = &space(AS_IO);
 
 	// TODO: tagging configuration
-	m_vblank_handler.resolve();
-	m_raster_handler.resolve();
 	m_vblank_timer = timer_alloc(FUNC(ygv608_device::update_vblank_flag), this);
 	m_raster_timer = timer_alloc(FUNC(ygv608_device::update_raster_flag), this);
 
@@ -1201,7 +1199,7 @@ inline void ygv608_device::draw_layer_roz(screen_device &screen, bitmap_ind16 &b
 		source_tilemap->draw(screen, bitmap, cliprect, 0, 0 );
 }
 
-void ygv608_device::ygv608_draw_mosaic(bitmap_ind16 &bitmap, const rectangle &cliprect, int n)
+void ygv608_device::draw_mosaic(bitmap_ind16 &bitmap, const rectangle &cliprect, int n)
 {
 	if (n <= 0)
 	{
@@ -1220,7 +1218,7 @@ void ygv608_device::ygv608_draw_mosaic(bitmap_ind16 &bitmap, const rectangle &cl
 	}
 }
 
-uint32_t ygv608_device::update_screen(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect)
+uint32_t ygv608_device::screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect)
 {
 #ifdef _SHOW_VIDEO_DEBUG
 	char buffer[64];
@@ -1365,7 +1363,7 @@ uint32_t ygv608_device::update_screen(screen_device &screen, bitmap_ind16 &bitma
 	{
 		draw_layer_roz(screen, m_work_bitmap, finalclip, m_tilemap_B);
 		if(m_mosaic_bplane > 0)
-			ygv608_draw_mosaic(m_work_bitmap, finalclip, m_mosaic_bplane);
+			draw_mosaic(m_work_bitmap, finalclip, m_mosaic_bplane);
 
 		if(m_planeB_trans_enable == true)
 			copybitmap_trans( bitmap, m_work_bitmap, 0, 0, 0, 0, finalclip, 0);
@@ -1384,7 +1382,7 @@ uint32_t ygv608_device::update_screen(screen_device &screen, bitmap_ind16 &bitma
 
 	draw_layer_roz(screen, m_work_bitmap, finalclip, m_tilemap_A);
 	if(m_mosaic_aplane > 0)
-		ygv608_draw_mosaic(m_work_bitmap, finalclip, m_mosaic_aplane);
+		draw_mosaic(m_work_bitmap, finalclip, m_mosaic_aplane);
 
 	if(m_planeA_trans_enable == true)
 		copybitmap_trans( bitmap, m_work_bitmap, 0, 0, 0, 0, finalclip, 0);
@@ -2297,8 +2295,7 @@ inline uint32_t ygv608_device::roz_convert_raw24(uint32_t *raw_reg, uint8_t offs
 
 	// convert raw to the given register
 	res = *raw_reg & roz_data_mask24;
-	res <<= 7;
-	if( res & 0x08000000 ) res |= 0xf8000000;   // 2s complement
+	res = util::sext(res << 7, 28);
 
 	return res;
 }
@@ -2315,8 +2312,7 @@ inline uint32_t ygv608_device::roz_convert_raw16(uint16_t *raw_reg, uint8_t offs
 
 	// convert raw to the given register
 	res = *raw_reg & roz_data_mask16;
-	res <<= 7;
-	if( res & 0x00080000 ) res |= 0xfff80000;   // 2s complement
+	res = util::sext(res << 7, 20);
 
 	return res;
 }

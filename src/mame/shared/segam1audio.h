@@ -32,16 +32,16 @@ public:
 	void m1_snd_mpcm_bnk1_w(uint16_t data);
 	void m1_snd_mpcm_bnk2_w(uint16_t data);
 
-	DECLARE_WRITE_LINE_MEMBER(write_txd);
+	void write_txd(int state);
 
-	void mpcm1_map(address_map &map);
-	void mpcm2_map(address_map &map);
-	void segam1audio_map(address_map &map);
+	void mpcm1_map(address_map &map) ATTR_COLD;
+	void mpcm2_map(address_map &map) ATTR_COLD;
+	void segam1audio_map(address_map &map) ATTR_COLD;
 protected:
 	// device-level overrides
-	virtual void device_start() override;
-	virtual void device_reset() override;
-	virtual void device_add_mconfig(machine_config &config) override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_audiocpu;
@@ -58,7 +58,7 @@ private:
 
 	devcb_write_line   m_rxd_handler;
 
-	DECLARE_WRITE_LINE_MEMBER(output_txd);
+	void output_txd(int state);
 };
 
 

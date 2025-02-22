@@ -44,8 +44,8 @@ public:
 	void tek4107a(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	u32 screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
@@ -57,9 +57,9 @@ private:
 	u16 system_reset_r();
 
 	void ppi_pc_w(u8 data);
-	DECLARE_WRITE_LINE_MEMBER(kb_rdata_w);
-	DECLARE_WRITE_LINE_MEMBER(kb_tdata_w);
-	DECLARE_WRITE_LINE_MEMBER(kb_rclamp_w);
+	void kb_rdata_w(int state);
+	void kb_tdata_w(int state);
+	void kb_rclamp_w(int state);
 
 	void xpos_w(u16 data);
 	void ypos_w(u16 data);
@@ -73,8 +73,8 @@ private:
 	u16 test_r();
 	u8 font_r();
 
-	void tek4107a_io(address_map &map);
-	void tek4107a_mem(address_map &map);
+	void tek4107a_io(address_map &map) ATTR_COLD;
+	void tek4107a_mem(address_map &map) ATTR_COLD;
 
 	required_device_array<scn2681_device, 2> m_duart;
 	required_device<tek410x_keyboard_device> m_keyboard;
@@ -124,14 +124,14 @@ void tek4107a_state::ppi_pc_w(u8 data)
 	m_ppi_pc = data;
 }
 
-WRITE_LINE_MEMBER(tek4107a_state::kb_rdata_w)
+void tek4107a_state::kb_rdata_w(int state)
 {
 	m_kb_rdata = state;
 	if (!m_kb_rclamp)
 		m_duart[0]->rx_a_w(state);
 }
 
-WRITE_LINE_MEMBER(tek4107a_state::kb_rclamp_w)
+void tek4107a_state::kb_rclamp_w(int state)
 {
 	if (m_kb_rclamp != !state)
 	{
@@ -144,7 +144,7 @@ WRITE_LINE_MEMBER(tek4107a_state::kb_rclamp_w)
 	}
 }
 
-WRITE_LINE_MEMBER(tek4107a_state::kb_tdata_w)
+void tek4107a_state::kb_tdata_w(int state)
 {
 	if (m_kb_tdata != state)
 	{

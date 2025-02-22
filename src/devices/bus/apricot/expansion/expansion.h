@@ -79,7 +79,7 @@ protected:
 	apricot_expansion_slot_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock);
 
 	// device_t implementation
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 };
 
 // device type definition
@@ -110,12 +110,12 @@ public:
 	void add_card(device_apricot_expansion_card_interface *card);
 
 	// from cards
-	DECLARE_WRITE_LINE_MEMBER( dma1_w );
-	DECLARE_WRITE_LINE_MEMBER( dma2_w );
-	DECLARE_WRITE_LINE_MEMBER( ext1_w );
-	DECLARE_WRITE_LINE_MEMBER( ext2_w );
-	DECLARE_WRITE_LINE_MEMBER( int2_w );
-	DECLARE_WRITE_LINE_MEMBER( int3_w );
+	void dma1_w(int state);
+	void dma2_w(int state);
+	void ext1_w(int state);
+	void ext2_w(int state);
+	void int2_w(int state);
+	void int3_w(int state);
 
 	void install_ram(offs_t addrstart, offs_t addrend, void *baseptr);
 
@@ -130,7 +130,7 @@ public:
 
 protected:
 	// device_t implementation
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 private:
 	using card_vector = std::vector<std::reference_wrapper<device_apricot_expansion_card_interface> >;

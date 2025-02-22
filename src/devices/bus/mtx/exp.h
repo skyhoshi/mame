@@ -49,15 +49,15 @@ public:
 	auto nmi_handler() { return m_nmi_handler.bind(); }
 
 	// for the card to use
-	DECLARE_WRITE_LINE_MEMBER( busreq_w ) { m_busreq_handler(state); }
-	DECLARE_WRITE_LINE_MEMBER( int_w ) { m_int_handler(state); }
-	DECLARE_WRITE_LINE_MEMBER( nmi_w ) { m_nmi_handler(state); }
+	void busreq_w(int state) { m_busreq_handler(state); }
+	void int_w(int state) { m_int_handler(state); }
+	void nmi_w(int state) { m_nmi_handler(state); }
 
 	virtual void bankswitch(uint8_t data);
 
 protected:
 	// device_t implementation
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	// device_image_interface implementation
 	virtual std::pair<std::error_condition, std::string> call_load() override;

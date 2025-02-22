@@ -210,13 +210,13 @@ private:
 	void tourvision_i8155_a_w(uint8_t data);
 	void tourvision_i8155_b_w(uint8_t data);
 	void tourvision_i8155_c_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(tourvision_timer_out);
+	void tourvision_timer_out(int state);
 
 	DECLARE_DEVICE_IMAGE_LOAD_MEMBER(cart_load);
 
-	void pce_io(address_map &map);
-	void pce_mem(address_map &map);
-	void tourvision_8085_map(address_map &map);
+	void pce_io(address_map &map) ATTR_COLD;
+	void pce_mem(address_map &map) ATTR_COLD;
+	void tourvision_8085_map(address_map &map) ATTR_COLD;
 
 	required_device<cpu_device> m_subcpu;
 	required_device<generic_slot_device> m_cart;
@@ -385,7 +385,7 @@ void tourvision_state::tourvision_i8155_c_w(uint8_t data)
 	//logerror("i8155 Port C: %02X\n", data);
 }
 
-WRITE_LINE_MEMBER(tourvision_state::tourvision_timer_out)
+void tourvision_state::tourvision_timer_out(int state)
 {
 	m_subcpu->set_input_line(I8085_RST55_LINE, state ? CLEAR_LINE : ASSERT_LINE );
 	//logerror("Timer out %d\n", state);

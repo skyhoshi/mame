@@ -97,7 +97,7 @@ public:
 	void hp9k382(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 	virtual void driver_start() override;
 
 private:
@@ -115,26 +115,26 @@ private:
 
 	void led_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 
-	void hp9k310_map(address_map &map);
-	void hp9k320_map(address_map &map);
-	void hp9k330_map(address_map &map);
-	void hp9k332_map(address_map &map);
-	void hp9k360_map(address_map &map);
-	void hp9k370_map(address_map &map);
-	void hp9k380_map(address_map &map);
-	void hp9k382_map(address_map &map);
-	void hp9k3xx_common(address_map &map);
+	void hp9k310_map(address_map &map) ATTR_COLD;
+	void hp9k320_map(address_map &map) ATTR_COLD;
+	void hp9k330_map(address_map &map) ATTR_COLD;
+	void hp9k332_map(address_map &map) ATTR_COLD;
+	void hp9k360_map(address_map &map) ATTR_COLD;
+	void hp9k370_map(address_map &map) ATTR_COLD;
+	void hp9k380_map(address_map &map) ATTR_COLD;
+	void hp9k382_map(address_map &map) ATTR_COLD;
+	void hp9k3xx_common(address_map &map) ATTR_COLD;
 
 	void add_dio16_bus(machine_config &mconfig);
 	void add_dio32_bus(machine_config &mconfig);
 
-	DECLARE_WRITE_LINE_MEMBER(dio_irq1_w) { m_maincpu->set_input_line(M68K_IRQ_1, state); };
-	DECLARE_WRITE_LINE_MEMBER(dio_irq2_w) { m_maincpu->set_input_line(M68K_IRQ_2, state); };
-	DECLARE_WRITE_LINE_MEMBER(dio_irq3_w) { m_maincpu->set_input_line(M68K_IRQ_3, state); };
-	DECLARE_WRITE_LINE_MEMBER(dio_irq4_w) { m_maincpu->set_input_line(M68K_IRQ_4, state); };
-	DECLARE_WRITE_LINE_MEMBER(dio_irq5_w) { m_maincpu->set_input_line(M68K_IRQ_5, state); };
-	DECLARE_WRITE_LINE_MEMBER(dio_irq6_w) { m_maincpu->set_input_line(M68K_IRQ_6, state); };
-	DECLARE_WRITE_LINE_MEMBER(dio_irq7_w) { m_maincpu->set_input_line(M68K_IRQ_7, state); };
+	void dio_irq1_w(int state) { m_maincpu->set_input_line(M68K_IRQ_1, state); }
+	void dio_irq2_w(int state) { m_maincpu->set_input_line(M68K_IRQ_2, state); }
+	void dio_irq3_w(int state) { m_maincpu->set_input_line(M68K_IRQ_3, state); }
+	void dio_irq4_w(int state) { m_maincpu->set_input_line(M68K_IRQ_4, state); }
+	void dio_irq5_w(int state) { m_maincpu->set_input_line(M68K_IRQ_5, state); }
+	void dio_irq6_w(int state) { m_maincpu->set_input_line(M68K_IRQ_6, state); }
+	void dio_irq7_w(int state) { m_maincpu->set_input_line(M68K_IRQ_7, state); }
 
 	bool m_bus_error = false;
 	emu_timer *m_bus_error_timer = nullptr;

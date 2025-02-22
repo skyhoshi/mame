@@ -18,9 +18,10 @@
 
 #include "emu.h"
 #include "comx35.h"
-#include "formats/imageutl.h"
 #include "screen.h"
 #include "softlist_dev.h"
+
+#include "multibyte.h"
 #include "utf8.h"
 
 /***************************************************************************
@@ -93,9 +94,9 @@ QUICKLOAD_LOAD_MEMBER(comx35_state::quickload_cb)
 
 			image.fread(header, 6);
 
-			start_address = pick_integer_be(header, 0, 2);
-			end_address = pick_integer_be(header, 2, 2);
-			run_address = pick_integer_be(header, 4, 2);
+			start_address = get_u16be(&header[0]);
+			end_address = get_u16be(&header[2]);
+			run_address = get_u16be(&header[4]);
 
 			image_fread_memory(image, start_address, end_address - start_address);
 
@@ -179,7 +180,7 @@ QUICKLOAD_LOAD_MEMBER(comx35_state::quickload_cb)
 
 			image.fread(header, 2);
 
-			array_length = pick_integer_be(header, 0, 2);
+			array_length = get_u16be(&header[0]);
 			start_array = (program.read_byte(0x4295) << 8) | program.read_byte(0x4296);
 			end_array = start_array + (size - 7);
 
@@ -418,12 +419,12 @@ static INPUT_PORTS_START( comx35 )
 	PORT_BIT( 0xff, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("MODIFIERS")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_NAME("SHIFT") PORT_CODE(KEYCODE_LSHIFT) PORT_CODE(KEYCODE_RSHIFT) PORT_CHAR(UCHAR_SHIFT_1) PORT_WRITE_LINE_DEVICE_MEMBER(CDP1871_TAG, cdp1871_device, shift_w)
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_NAME("CNTL") PORT_CODE(KEYCODE_LCONTROL) PORT_CODE(KEYCODE_RCONTROL) PORT_CHAR(UCHAR_MAMEKEY(LCONTROL)) PORT_CHAR(UCHAR_MAMEKEY(RCONTROL)) PORT_WRITE_LINE_DEVICE_MEMBER(CDP1871_TAG, cdp1871_device, control_w)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_NAME("SHIFT") PORT_CODE(KEYCODE_LSHIFT) PORT_CODE(KEYCODE_RSHIFT) PORT_CHAR(UCHAR_SHIFT_1) PORT_WRITE_LINE_DEVICE_MEMBER(CDP1871_TAG, FUNC(cdp1871_device::shift_w))
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_NAME("CNTL") PORT_CODE(KEYCODE_LCONTROL) PORT_CODE(KEYCODE_RCONTROL) PORT_CHAR(UCHAR_MAMEKEY(LCONTROL)) PORT_CHAR(UCHAR_MAMEKEY(RCONTROL)) PORT_WRITE_LINE_DEVICE_MEMBER(CDP1871_TAG, FUNC(cdp1871_device::control_w))
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("RESET")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_NAME("RT") PORT_CODE(KEYCODE_F10) PORT_CHAR(UCHAR_MAMEKEY(F10)) PORT_CHANGED_MEMBER(DEVICE_SELF, comx35_state, trigger_reset, 0)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_NAME("RT") PORT_CODE(KEYCODE_F10) PORT_CHAR(UCHAR_MAMEKEY(F10)) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(comx35_state::trigger_reset), 0)
 INPUT_PORTS_END
 
 
@@ -441,12 +442,12 @@ void comx35_state::check_interrupt()
 	m_maincpu->set_input_line(COSMAC_INPUT_LINE_INT, m_cr1 || m_int);
 }
 
-READ_LINE_MEMBER( comx35_state::clear_r )
+int comx35_state::clear_r()
 {
 	return m_clear;
 }
 
-READ_LINE_MEMBER( comx35_state::ef2_r )
+int comx35_state::ef2_r()
 {
 	if (m_iden)
 	{
@@ -460,12 +461,12 @@ READ_LINE_MEMBER( comx35_state::ef2_r )
 	}
 }
 
-READ_LINE_MEMBER( comx35_state::ef4_r )
+int comx35_state::ef4_r()
 {
 	return m_exp->ef4_r() | ((m_cassette->input() > 0.0f) ? 1 : 0);
 }
 
-WRITE_LINE_MEMBER( comx35_state::q_w )
+void comx35_state::q_w(int state)
 {
 	m_q = state;
 
@@ -524,7 +525,7 @@ void comx35_state::sc_w(uint8_t data)
 //  COMX_EXPANSION_INTERFACE( expansion_intf )
 //-------------------------------------------------
 
-WRITE_LINE_MEMBER( comx35_state::irq_w )
+void comx35_state::irq_w(int state)
 {
 	m_int = state;
 	check_interrupt();

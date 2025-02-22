@@ -7,8 +7,6 @@
         08/12/2009 Skeleton driver.
         01/20/2014 Added ISA bus and peripherals
 
-        TODO: Text appears in VGA f/b (0x6B8000), but doesn't display?
-
 ****************************************************************************/
 
 #include "emu.h"
@@ -44,10 +42,10 @@ public:
 	void init_indiana();
 
 protected:
-	virtual void machine_reset() override;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
-	void indiana_mem(address_map &map);
+	void indiana_mem(address_map &map) ATTR_COLD;
 
 	required_device<cpu_device> m_maincpu;
 };

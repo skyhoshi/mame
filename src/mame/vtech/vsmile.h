@@ -46,9 +46,9 @@ public:
 	void vsmile_base(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
-	void mem_map(address_map &map);
+	void mem_map(address_map &map) ATTR_COLD;
 
 	void chip_sel_w(uint8_t data);
 
@@ -79,13 +79,13 @@ public:
 	void vsmilep(machine_config &config);
 
 private:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
-	void banked_map(address_map &map);
+	void banked_map(address_map &map) ATTR_COLD;
 
 	void ctrl_tx_w(uint8_t data);
-	template <int Which> DECLARE_WRITE_LINE_MEMBER(ctrl_rts_w);
+	template <int Which> void ctrl_rts_w(int state);
 
 	uint16_t portb_r();
 	void portb_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
@@ -168,10 +168,10 @@ public:
 	template <uint16_t V> DECLARE_INPUT_CHANGED_MEMBER(sw_mode);
 
 private:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
-	void banked_map(address_map &map);
+	void banked_map(address_map &map) ATTR_COLD;
 
 	uint16_t porta_r();
 	uint16_t portb_r();

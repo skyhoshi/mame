@@ -138,7 +138,7 @@ sparcv8_device::sparcv8_device(const machine_config &mconfig, device_type type, 
 
 mb86930_device::mb86930_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
 	: sparcv8_device(mconfig, MB86930, tag, owner, clock)
-	, m_cs_r(*this)
+	, m_cs_r(*this, 0)
 	, m_cs_w(*this)
 {
 	m_asi_config[0x00] = address_space_config("debugger",       ENDIANNESS_BIG, 32, 32);
@@ -647,9 +647,6 @@ void mb86930_device::device_start()
 
 	std::fill_n(&m_arsr[0], 6, 0);
 	std::fill_n(&m_amr[0], 6, 0);
-
-	m_cs_r.resolve_all_safe(0);
-	m_cs_w.resolve_all_safe();
 }
 
 void mb86930_device::device_reset()
@@ -1210,17 +1207,6 @@ uint32_t sparc_base_device::execute_min_cycles() const noexcept
 uint32_t sparc_base_device::execute_max_cycles() const noexcept
 {
 	return 4;
-}
-
-
-//-------------------------------------------------
-//  execute_input_lines - return the number of
-//  input/interrupt lines
-//-------------------------------------------------
-
-uint32_t sparc_base_device::execute_input_lines() const noexcept
-{
-	return 16;
 }
 
 
@@ -4294,13 +4280,13 @@ void sparcv8_device::execute_mul(uint32_t op)
 	uint32_t result = 0;
 	if (UMUL || UMULCC)
 	{
-		uint64_t dresult = (uint64_t)RS1REG * (uint64_t)operand2;
+		uint64_t dresult = mulu_32x32(RS1REG, operand2);
 		Y = (uint32_t)(dresult >> 32);
 		result = (uint32_t)dresult;
 	}
 	else if (SMUL || SMULCC)
 	{
-		int64_t dresult = (int64_t)(int32_t)RS1REG * (int64_t)(int32_t)operand2;
+		int64_t dresult = mul_32x32(RS1REG, operand2);
 		Y = (uint32_t)(dresult >> 32);
 		result = (uint32_t)dresult;
 	}
@@ -4485,19 +4471,22 @@ void sparc_base_device::run_loop()
 		    continue;
 		}*/
 
-		if (CHECK_DEBUG)
-			debugger_instruction_hook(PC);
-
 		if (MODE == MODE_RESET)
 		{
+			if (CHECK_DEBUG)
+				debugger_wait_hook();
 			reset_step();
 		}
 		else if (MODE == MODE_ERROR)
 		{
+			if (CHECK_DEBUG)
+				debugger_wait_hook();
 			error_step();
 		}
 		else if (MODE == MODE_EXECUTE)
 		{
+			if (CHECK_DEBUG)
+				debugger_instruction_hook(PC);
 			execute_step();
 		}
 

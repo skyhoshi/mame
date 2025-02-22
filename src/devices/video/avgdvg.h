@@ -22,7 +22,7 @@ public:
 		m_membase = base;
 	}
 
-	DECLARE_READ_LINE_MEMBER(done_r);
+	int done_r();
 	void go_w(u8 data = 0);
 	void reset_w(u8 data = 0);
 
@@ -47,7 +47,7 @@ protected:
 
 	avgdvg_device_base(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, u32 clock);
 
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	virtual int handler_0() = 0;
 	virtual int handler_1() = 0;
@@ -121,7 +121,7 @@ public:
 	dvg_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock);
 
 protected:
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	virtual int handler_0() override;
 	virtual int handler_1() override;
@@ -149,7 +149,7 @@ public:
 protected:
 	avg_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, u32 clock);
 
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	virtual int handler_0() override;
 	virtual int handler_1() override;
@@ -203,7 +203,7 @@ public:
 	avg_mhavoc_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock);
 
 protected:
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	virtual int handler_1() override;
 	virtual int handler_6() override;
@@ -263,7 +263,7 @@ public:
 	avg_bzone_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock);
 
 protected:
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	virtual int handler_1() override;
 	virtual int handler_6() override;

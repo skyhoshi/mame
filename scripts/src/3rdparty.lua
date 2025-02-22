@@ -29,7 +29,7 @@ project "expat"
 		"PACKAGE=\"expat\"",
 		"PACKAGE_BUGREPORT=\"expat-bugs@libexpat.org\"",
 		"PACKAGE_NAME=\"expat\"",
-		"PACKAGE_STRING=\"expat 2.2.10\"",
+		"PACKAGE_STRING=\"expat-2.2.10\"",
 		"PACKAGE_TARNAME=\"expat\"",
 		"PACKAGE_URL=\"\"",
 		"PACKAGE_VERSION=\"2.2.10\"",
@@ -128,7 +128,6 @@ project "zlib"
 
 	configuration { "vs*" }
 		buildoptions {
-			"/wd4131", -- warning C4131: 'xxx' : uses old-style declarator
 			"/wd4127", -- warning C4127: conditional expression is constant
 			"/wd4244", -- warning C4244: 'argument' : conversion from 'xxx' to 'xxx', possible loss of data
 		}
@@ -141,11 +140,6 @@ end
 	configuration "Debug"
 		defines {
 			"verbose=-1",
-		}
-
-	configuration { "gmake or ninja" }
-		buildoptions_c {
-			"-Wno-strict-prototypes",
 		}
 
 	configuration { }
@@ -169,6 +163,63 @@ end
 else
 links {
 	ext_lib("zlib"),
+}
+end
+
+
+--------------------------------------------------
+-- zstd library objects
+--------------------------------------------------
+
+if not _OPTIONS["with-system-zstd"] then
+project "zstd"
+	uuid "5edd8713-bc60-456d-9c95-b928a913c84b"
+	kind "StaticLib"
+
+	configuration { "Release" }
+		defines {
+			"NDEBUG",
+		}
+
+	configuration { }
+
+	defines {
+		"XXH_NAMESPACE=ZSTD_",
+		"DEBUGLEVEL=0",
+		"ZSTD_DISABLE_ASM",
+	}
+
+	files {
+		MAME_DIR .. "3rdparty/zstd/lib/common/debug.c",
+		MAME_DIR .. "3rdparty/zstd/lib/common/entropy_common.c",
+		MAME_DIR .. "3rdparty/zstd/lib/common/error_private.c",
+		MAME_DIR .. "3rdparty/zstd/lib/common/fse_decompress.c",
+		MAME_DIR .. "3rdparty/zstd/lib/common/pool.c",
+		MAME_DIR .. "3rdparty/zstd/lib/common/threading.c",
+		MAME_DIR .. "3rdparty/zstd/lib/common/xxhash.c",
+		MAME_DIR .. "3rdparty/zstd/lib/common/zstd_common.c",
+		MAME_DIR .. "3rdparty/zstd/lib/compress/fse_compress.c",
+		MAME_DIR .. "3rdparty/zstd/lib/compress/hist.c",
+		MAME_DIR .. "3rdparty/zstd/lib/compress/huf_compress.c",
+		MAME_DIR .. "3rdparty/zstd/lib/compress/zstd_compress.c",
+		MAME_DIR .. "3rdparty/zstd/lib/compress/zstd_compress_literals.c",
+		MAME_DIR .. "3rdparty/zstd/lib/compress/zstd_compress_sequences.c",
+		MAME_DIR .. "3rdparty/zstd/lib/compress/zstd_compress_superblock.c",
+		MAME_DIR .. "3rdparty/zstd/lib/compress/zstd_double_fast.c",
+		MAME_DIR .. "3rdparty/zstd/lib/compress/zstd_fast.c",
+		MAME_DIR .. "3rdparty/zstd/lib/compress/zstd_lazy.c",
+		MAME_DIR .. "3rdparty/zstd/lib/compress/zstd_ldm.c",
+		MAME_DIR .. "3rdparty/zstd/lib/compress/zstdmt_compress.c",
+		MAME_DIR .. "3rdparty/zstd/lib/compress/zstd_opt.c",
+		--MAME_DIR .. "3rdparty/zstd/lib/decompress/huf_decompress_amd64.S", only supports GCC-like assemblers and SysV calling convention
+		MAME_DIR .. "3rdparty/zstd/lib/decompress/huf_decompress.c",
+		MAME_DIR .. "3rdparty/zstd/lib/decompress/zstd_ddict.c",
+		MAME_DIR .. "3rdparty/zstd/lib/decompress/zstd_decompress_block.c",
+		MAME_DIR .. "3rdparty/zstd/lib/decompress/zstd_decompress.c",
+	}
+else
+links {
+	ext_lib("zstd"),
 }
 end
 
@@ -234,6 +285,7 @@ project "softfloat3"
 		MAME_DIR .. "3rdparty/softfloat3/source",
 		MAME_DIR .. "3rdparty/softfloat3/source/include",
 		MAME_DIR .. "3rdparty/softfloat3/source/8086",
+		MAME_DIR .. "3rdparty/softfloat3/bochs_ext"
 	}
 
 	configuration { "gmake or ninja" }
@@ -262,6 +314,11 @@ end
 		"SOFTFLOAT_FAST_INT64"
 	}
 
+if _OPTIONS["BIGENDIAN"]~="1" then
+	defines {
+		"LITTLEENDIAN=1"
+	}
+end
 	files {
 		MAME_DIR .. "3rdparty/softfloat3/source/s_eq128.c",
 		MAME_DIR .. "3rdparty/softfloat3/source/s_le128.c",
@@ -564,6 +621,13 @@ end
 		MAME_DIR .. "3rdparty/softfloat3/source/f128M_eq_signaling.c",
 		MAME_DIR .. "3rdparty/softfloat3/source/f128M_le_quiet.c",
 		MAME_DIR .. "3rdparty/softfloat3/source/f128M_lt_quiet.c",
+		MAME_DIR .. "3rdparty/softfloat3/bochs_ext/f2xm1.c",
+		MAME_DIR .. "3rdparty/softfloat3/bochs_ext/fpatan.c",
+		MAME_DIR .. "3rdparty/softfloat3/bochs_ext/fprem.c",
+		MAME_DIR .. "3rdparty/softfloat3/bochs_ext/fsincos.c",
+		MAME_DIR .. "3rdparty/softfloat3/bochs_ext/fyl2x.c",
+		MAME_DIR .. "3rdparty/softfloat3/bochs_ext/poly.c",
+		MAME_DIR .. "3rdparty/softfloat3/bochs_ext/extF80_scale.c",
 	}
 
 
@@ -656,6 +720,7 @@ project "flac"
 
 	configuration { "vs*" }
 		buildoptions {
+			"/wd4057", -- warning C4057: 'operator': 'identifier1' differs in indirection to slightly different base types from 'identifier2'
 			"/wd4127", -- warning C4127: conditional expression is constant
 			"/wd4244", -- warning C4244: 'argument' : conversion from 'xxx' to 'xxx', possible loss of data
 			"/wd4100", -- warning C4100: 'xxx' : unreferenced formal parameter
@@ -672,25 +737,65 @@ if _OPTIONS["vs"]=="intel-15" then
 		}
 end
 
-	configuration { "mingw-clang" }
-		buildoptions {
-			"-include stdint.h"
+	configuration { "mingw*" }
+		defines {
+			"HAVE_FSEEKO",
 		}
 
 	configuration { }
 		defines {
-			"WORDS_BIGENDIAN=0",
-			"FLAC__NO_ASM",
-			"_LARGEFILE_SOURCE",
-			"_FILE_OFFSET_BITS=64",
+			"NDEBUG", -- always enable this to avoid debug log spam on compression
+			"HAVE_CONFIG_H", -- mostly because PACKAGE_VERSION is a pain to do otherwise
+			"ENABLE_64_BIT_WORDS=1",
+			"OGG_FOUND=0",
 			"FLAC__HAS_OGG=0",
-			"HAVE_CONFIG_H=1",
+			"HAVE_LROUND=1",
+			"HAVE_INTTYPES_H",
+			"HAVE_STDBOOL_H",
+			"HAVE_STDINT_H",
+			"HAVE_STDIO_H",
+			"HAVE_STDLIB_H",
+			"HAVE_STRING_H",
+			"_FILE_OFFSET_BITS=64",
+			"_LARGEFILE_SOURCE",
 		}
+
+		if _OPTIONS["gcc"]~=nil then
+			defines {
+				"HAVE_BSWAP16",
+				"HAVE_BSWAP32",
+			}
+		end
+
+		if _OPTIONS["BIGENDIAN"]=="1" then
+			defines {
+				"CPU_IS_BIG_ENDIAN=1",
+				"CPU_IS_LITTLE_ENDIAN=0",
+				"WORDS_BIGENDIAN=1",
+			}
+		else
+			defines {
+				"CPU_IS_BIG_ENDIAN=0",
+				"CPU_IS_LITTLE_ENDIAN=1",
+				"WORDS_BIGENDIAN=0",
+			}
+		end
+
+		if _OPTIONS["targetos"]=="macosx" then
+			defines {
+				"FLAC__SYS_DARWIN",
+			}
+		elseif _OPTIONS["targetos"]=="linux" then
+			defines {
+				"FLAC__SYS_LINUX",
+			}
+		end
+
 
 	configuration { "gmake or ninja" }
 		buildoptions_c {
-			"-Wno-unused-function",
-			"-O0",
+			"-Wno-error=bad-function-cast",
+			"-Wno-error=unused-function",
 		}
 	if _OPTIONS["gcc"]~=nil and (string.find(_OPTIONS["gcc"], "clang") or string.find(_OPTIONS["gcc"], "android")) then
 		buildoptions {
@@ -705,27 +810,45 @@ end
 	configuration { }
 
 	includedirs {
-		MAME_DIR .. "3rdparty/libflac/src/libFLAC/include",
-		MAME_DIR .. "3rdparty/libflac/include",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/include",
+		MAME_DIR .. "3rdparty/flac/include",
 	}
 
 	files {
-		MAME_DIR .. "3rdparty/libflac/src/libFLAC/bitmath.c",
-		MAME_DIR .. "3rdparty/libflac/src/libFLAC/bitreader.c",
-		MAME_DIR .. "3rdparty/libflac/src/libFLAC/bitwriter.c",
-		MAME_DIR .. "3rdparty/libflac/src/libFLAC/cpu.c",
-		MAME_DIR .. "3rdparty/libflac/src/libFLAC/crc.c",
-		MAME_DIR .. "3rdparty/libflac/src/libFLAC/fixed.c",
-		MAME_DIR .. "3rdparty/libflac/src/libFLAC/float.c",
-		MAME_DIR .. "3rdparty/libflac/src/libFLAC/format.c",
-		MAME_DIR .. "3rdparty/libflac/src/libFLAC/lpc.c",
-		MAME_DIR .. "3rdparty/libflac/src/libFLAC/md5.c",
-		MAME_DIR .. "3rdparty/libflac/src/libFLAC/memory.c",
-		MAME_DIR .. "3rdparty/libflac/src/libFLAC/stream_decoder.c",
-		MAME_DIR .. "3rdparty/libflac/src/libFLAC/stream_encoder.c",
-		MAME_DIR .. "3rdparty/libflac/src/libFLAC/stream_encoder_framing.c",
-		MAME_DIR .. "3rdparty/libflac/src/libFLAC/window.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/bitmath.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/bitreader.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/bitwriter.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/cpu.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/crc.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/fixed.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/fixed_intrin_avx2.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/fixed_intrin_sse2.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/fixed_intrin_sse42.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/fixed_intrin_ssse3.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/float.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/format.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/lpc.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/lpc_intrin_avx2.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/lpc_intrin_fma.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/lpc_intrin_neon.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/lpc_intrin_sse2.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/lpc_intrin_sse41.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/md5.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/memory.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/stream_decoder.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/stream_encoder.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/stream_encoder_framing.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/stream_encoder_intrin_avx2.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/stream_encoder_intrin_sse2.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/stream_encoder_intrin_ssse3.c",
+		MAME_DIR .. "3rdparty/flac/src/libFLAC/window.c",
 	}
+
+	if _OPTIONS["targetos"]=="windows" then
+		files {
+			MAME_DIR .. "3rdparty/flac/src/share/win_utf8_io/win_utf8_io.c",
+		}
+	end
 else
 links {
 	ext_lib("flac"),
@@ -743,16 +866,12 @@ project "7z"
 
 	configuration { "gmake or ninja" }
 		buildoptions_c {
-			"-Wno-strict-prototypes",
-			"-Wno-undef",
+			"-Wno-error=undef",
+			"-Wno-error=strict-prototypes",
 		}
 if _OPTIONS["gcc"]~=nil then
 	if string.find(_OPTIONS["gcc"], "clang") then
-		if str_to_version(_OPTIONS["gcc_version"]) >= 100000 then
-			buildoptions_c {
-				"-Wno-misleading-indentation",
-			}
-		end
+
 	else
 		if str_to_version(_OPTIONS["gcc_version"]) >= 130000 then
 			buildoptions_c {
@@ -762,32 +881,12 @@ if _OPTIONS["gcc"]~=nil then
 	end
 end
 
-	configuration { "android-*" }
-		buildoptions {
-			"-Wno-misleading-indentation",
-		}
-
-	configuration { "asmjs" }
-		buildoptions {
-			"-Wno-misleading-indentation",
-		}
-
-	configuration { "mingw*" }
-		buildoptions_c {
-			"-Wno-strict-prototypes",
-		}
-
 	configuration { "vs*" }
 		buildoptions {
 			"/wd4100", -- warning C4100: 'xxx' : unreferenced formal parameter
 			"/wd4456", -- warning C4456: declaration of 'xxx' hides previous local declaration
 			"/wd4457", -- warning C4457: declaration of 'xxx' hides function parameter
 		}
-if _OPTIONS["vs"]=="clangcl" then
-		buildoptions {
-			"-Wno-misleading-indentation",
-		}
-end
 if _OPTIONS["vs"]=="intel-15" then
 		buildoptions {
 			"/Qwd869",              -- remark #869: parameter "xxx" was never referenced
@@ -795,8 +894,8 @@ if _OPTIONS["vs"]=="intel-15" then
 end
 	configuration { }
 		defines {
-			"_7ZIP_PPMD_SUPPPORT",
-			"_7ZIP_ST",
+			"Z7_PPMD_SUPPPORT",
+			"Z7_ST",
 		}
 
 	files {
@@ -839,6 +938,7 @@ end
 			MAME_DIR .. "3rdparty/lzma/C/Sha256.c",
 			MAME_DIR .. "3rdparty/lzma/C/Sha256Opt.c",
 			MAME_DIR .. "3rdparty/lzma/C/Sort.c",
+			-- MAME_DIR .. "3rdparty/lzma/C/SwapBytes.c",
 			-- MAME_DIR .. "3rdparty/lzma/C/Threads.c",
 			-- MAME_DIR .. "3rdparty/lzma/C/Xz.c",
 			-- MAME_DIR .. "3rdparty/lzma/C/XzCrc64.c",
@@ -870,6 +970,7 @@ project "lua"
 
 	configuration { "vs*" }
 		buildoptions {
+			"/wd4101", -- warning C4101: 'identifier': unreferenced local variable
 			"/wd4244", -- warning C4244: 'argument' : conversion from 'xxx' to 'xxx', possible loss of data
 			"/wd4702", -- warning C4702: unreachable code
 			"/wd4310", -- warning C4310: cast truncates constant value
@@ -961,6 +1062,7 @@ project "lualibs"
 
 	configuration { "vs*" }
 		buildoptions {
+			"/wd4101", -- warning C4101: 'identifier': unreferenced local variable
 			"/wd4244", -- warning C4244: 'argument' : conversion from 'xxx' to 'xxx', possible loss of data
 			"/wd4055", -- warning C4055: 'type cast': from data pointer 'void *' to function pointer 'xxx'
 			"/wd4152", -- warning C4152: nonstandard extension, function/data pointer conversion in expression
@@ -1180,6 +1282,14 @@ project "bx"
 
 	configuration { }
 
+	if _OPTIONS["targetos"]=="macosx" or _OPTIONS["targetos"]=="linux" or _OPTIONS["targetos"]=="windows" or _OPTIONS["targetos"]=="asmjs" then
+		if _OPTIONS["gcc"]~=nil and (string.find(_OPTIONS["gcc"], "clang") or string.find(_OPTIONS["gcc"], "asmjs")) then
+			buildoptions_cpp {
+				"-Wno-unused-private-field",
+			}
+		end
+	end
+
 	includedirs {
 		MAME_DIR .. "3rdparty/bx/include",
 		MAME_DIR .. "3rdparty/bx/3rdparty",
@@ -1277,7 +1387,7 @@ project "bimg"
 		"BX_CONFIG_DEBUG=0",
 	}
 
-	configuration { "x64", "mingw*" }
+	configuration { "x64", "mingw*", "not arm64" }
 		defines {
 			"ASTCENC_AVX=0",
 			"ASTCENC_SSE=20",
@@ -1393,7 +1503,7 @@ end
 			MAME_DIR .. "3rdparty/bx/include/compat/freebsd",
 		}
 
-	configuration { "linux*" }
+	configuration { "linux*", "not mingw*" }
 		includedirs {
 			MAME_DIR .. "3rdparty/bgfx/3rdparty/directx-headers/include/wsl/stubs",
 			MAME_DIR .. "3rdparty/bx/include/compat/linux",
@@ -1405,6 +1515,7 @@ end
 			"-Wno-unused-but-set-variable",
 			"-Wno-unused-function",
 			"-Wno-unused-variable",
+			"-Wno-tautological-compare",
 		}
 
 	configuration { }
@@ -1461,6 +1572,14 @@ end
 				"BGFX_CONFIG_RENDERER_OPENGL=0",
 			}
 		end
+		if _OPTIONS["USE_WAYLAND"]=="1" then
+			defines {
+				"WL_EGL_PLATFORM=1",
+			}
+			buildoptions {
+				backtick(pkgconfigcmd() .. " --cflags wayland-egl-backend"),
+			}
+		end
 	end
 
 	if _OPTIONS["targetos"]=="macosx" and _OPTIONS["gcc"]~=nil then
@@ -1476,7 +1595,6 @@ end
 		MAME_DIR .. "3rdparty/bgfx/src/debug_renderdoc.cpp",
 		MAME_DIR .. "3rdparty/bgfx/src/dxgi.cpp",
 		MAME_DIR .. "3rdparty/bgfx/src/glcontext_egl.cpp",
-		MAME_DIR .. "3rdparty/bgfx/src/glcontext_glx.cpp",
 		MAME_DIR .. "3rdparty/bgfx/src/glcontext_html5.cpp",
 		MAME_DIR .. "3rdparty/bgfx/src/glcontext_wgl.cpp",
 		MAME_DIR .. "3rdparty/bgfx/src/nvapi.cpp",
@@ -1538,6 +1656,13 @@ project "portaudio"
 			"/wd4456", -- warning C4456: declaration of 'xxx' hides previous local declaration
 			"/wd4312", -- warning C4312: 'type cast': conversion from 'UINT' to 'HWAVEIN' of greater size
 		}
+	if _OPTIONS["vs"]=="clangcl" then
+		buildoptions {
+			"-Wno-implicit-const-int-float-conversion",
+			"-Wno-sometimes-uninitialized",
+			"-Wno-unused-but-set-variable",
+		}
+	end
 	if _OPTIONS["vs"]=="intel-15" then
 		buildoptions {
 			"/Qwd869",              -- remark #869: parameter "xxx" was never referenced
@@ -1571,7 +1696,8 @@ project "portaudio"
 				"-Wno-incompatible-pointer-types-discards-qualifiers",
 				"-Wno-pointer-sign",
 				"-Wno-switch",
-				"-Wno-macro-redefined"
+				"-Wno-macro-redefined",
+				"-Wno-unused-label",
 			}
 		else
 			buildoptions_c {
@@ -1629,6 +1755,7 @@ project "portaudio"
 		configuration { }
 		files {
 			MAME_DIR .. "3rdparty/portaudio/src/os/win/pa_win_util.c",
+			MAME_DIR .. "3rdparty/portaudio/src/os/win/pa_win_version.c",
 			MAME_DIR .. "3rdparty/portaudio/src/os/win/pa_win_waveformat.c",
 			MAME_DIR .. "3rdparty/portaudio/src/os/win/pa_win_hostapis.c",
 			MAME_DIR .. "3rdparty/portaudio/src/os/win/pa_win_coinitialize.c",
@@ -1732,11 +1859,6 @@ project "utf8proc"
 			"verbose=-1",
 		}
 
-	configuration { "gmake or ninja" }
-		buildoptions_c {
-			"-Wno-strict-prototypes",
-		}
-
 	configuration { }
 
 	files {
@@ -1825,6 +1947,9 @@ project "asmjit"
 	end
 
 	configuration { }
+		defines {
+			"ASMJIT_STATIC",
+		}
 
 	if _OPTIONS["targetos"]=="macosx" and _OPTIONS["gcc"]~=nil then
 		if string.find(_OPTIONS["gcc"], "clang") and (version < 80000) then
@@ -1837,11 +1962,6 @@ project "asmjit"
 	files {
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/a64.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/asmjit-scope-begin.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/asmjit-scope-end.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/asmjit.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64archtraits_p.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64assembler.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64assembler.h",
@@ -1849,28 +1969,32 @@ project "asmjit"
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64builder.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64compiler.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64compiler.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64emithelper.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64emithelper_p.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64emithelper.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64emitter.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64formatter.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64formatter_p.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64func.cpp",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64formatter.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64func_p.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64func.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64globals.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64instapi.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64instapi_p.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64instapi.cpp",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64instdb_p.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64instdb.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64instdb.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64instdb_p.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64operand.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64operand.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64rapass.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64rapass_p.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64utils.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/armformatter.cpp",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/a64rapass.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/armformatter_p.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/armformatter.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/armglobals.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/armoperand.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/arm/armutils.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/asmjit-scope-begin.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/asmjit-scope-end.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/asmjit.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/api-build_p.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/api-config.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/archcommons.h",
@@ -1878,13 +2002,14 @@ project "asmjit"
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/archtraits.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/assembler.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/assembler.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/builder_p.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/builder.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/builder.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/codebuffer.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/codeholder.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/codeholder.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/codewriter.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/codewriter_p.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/codewriter.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/compiler.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/compiler.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/compilerdefs.h",
@@ -1892,27 +2017,29 @@ project "asmjit"
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/constpool.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/cpuinfo.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/cpuinfo.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/emithelper.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/emithelper_p.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/emithelper.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/emitter.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/emitter.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/emitterutils.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/emitterutils_p.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/emitterutils.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/environment.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/environment.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/errorhandler.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/errorhandler.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/formatter_p.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/formatter.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/formatter.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/formatter_p.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/func.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/func.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/funcargscontext.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/funcargscontext_p.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/funcargscontext.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/globals.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/globals.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/inst.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/inst.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/instdb_p.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/instdb.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/jitallocator.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/jitallocator.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/jitruntime.cpp",
@@ -1922,20 +2049,21 @@ project "asmjit"
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/misc_p.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/operand.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/operand.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/osutils_p.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/osutils.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/osutils.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/osutils_p.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/raassignment_p.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/rabuilders_p.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/radefs_p.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/ralocal.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/ralocal_p.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/rapass.cpp",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/ralocal.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/rapass_p.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/rastack.cpp",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/rapass.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/rastack_p.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/rastack.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/string.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/string.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/support_p.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/support.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/support.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/target.cpp",
@@ -1957,6 +2085,7 @@ project "asmjit"
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/zonetree.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/zonevector.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/core/zonevector.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86archtraits_p.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86assembler.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86assembler.h",
@@ -1964,23 +2093,23 @@ project "asmjit"
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86builder.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86compiler.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86compiler.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86emithelper.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86emithelper_p.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86emithelper.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86emitter.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86formatter.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86formatter_p.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86func.cpp",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86formatter.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86func_p.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86func.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86globals.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86instapi.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86instapi_p.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86instapi.cpp",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86instdb_p.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86instdb.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86instdb.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86instdb_p.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86opcode_p.h",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86operand.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86operand.h",
-		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86rapass.cpp",
 		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86rapass_p.h",
+		MAME_DIR .. "3rdparty/asmjit/src/asmjit/x86/x86rapass.cpp",
 	}
 end

@@ -16,32 +16,31 @@ public:
 	timeplt_audio_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock = 14'318'181);
 
 	void sound_data_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(sh_irqtrigger_w);
-	DECLARE_WRITE_LINE_MEMBER(mute_w);
+	void sh_irqtrigger_w(int state);
+	void mute_w(int state);
 
 protected:
 	timeplt_audio_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock);
 
 	// device-level overrides
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual void device_start() override;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
 
 	void filter_w(offs_t offset, uint8_t data);
 	uint8_t portB_r();
 
-	void timeplt_sound_map(address_map &map);
+	void timeplt_sound_map(address_map &map) ATTR_COLD;
 
 	required_device<cpu_device> m_soundcpu;
 
 private:
 	// internal state
 	required_device<generic_latch_8_device> m_soundlatch;
-	required_device_array<filter_rc_device, 3> m_filter_0;
-	required_device_array<filter_rc_device, 3> m_filter_1;
+	required_device_array<filter_rc_device, 3> m_filter[2];
 
 	uint8_t    m_last_irq_state;
 
-	void set_filter(filter_rc_device &device, int data);
+	void set_filter(int no, int ch, int data);
 };
 
 class locomotn_audio_device : public timeplt_audio_device
@@ -51,9 +50,9 @@ public:
 
 protected:
 	// device-level overrides
-	virtual void device_add_mconfig(machine_config &config) override;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
 
-	void locomotn_sound_map(address_map &map);
+	void locomotn_sound_map(address_map &map) ATTR_COLD;
 };
 
 DECLARE_DEVICE_TYPE(TIMEPLT_AUDIO, timeplt_audio_device)

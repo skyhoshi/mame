@@ -25,7 +25,7 @@ public:
 
 	void init_niyanpai();
 
-	DECLARE_READ_LINE_MEMBER(musobana_outcoin_flag_r);
+	int musobana_outcoin_flag_r();
 
 private:
 	required_device<tmp68301_device> m_maincpu;
@@ -85,7 +85,7 @@ private:
 	uint16_t musobana_inputport_0_r();
 	void musobana_inputport_w(uint16_t data);
 
-	virtual void video_start() override;
+	virtual void video_start() override ATTR_COLD;
 	DECLARE_MACHINE_START(musobana);
 
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
@@ -97,12 +97,12 @@ private:
 	void update_pixel(int vram, int x, int y);
 	void gfxdraw(int vram);
 
-	DECLARE_WRITE_LINE_MEMBER(vblank_irq);
+	void vblank_irq(int state);
 
-	void mhhonban_map(address_map &map);
-	void musobana_map(address_map &map);
-	void niyanpai_map(address_map &map);
-	void zokumahj_map(address_map &map);
+	void mhhonban_map(address_map &map) ATTR_COLD;
+	void musobana_map(address_map &map) ATTR_COLD;
+	void niyanpai_map(address_map &map) ATTR_COLD;
+	void zokumahj_map(address_map &map) ATTR_COLD;
 
 	TIMER_CALLBACK_MEMBER(clear_busy_flag);
 };

@@ -92,10 +92,10 @@ public:
 	{ }
 
 protected:
-	DECLARE_READ_LINE_MEMBER(cass_r);
-	DECLARE_WRITE_LINE_MEMBER(cass_w);
+	int cass_r();
+	void cass_w(int state);
 	DECLARE_QUICKLOAD_LOAD_MEMBER(quickload_cb);
-	void mem_map(address_map &map);
+	void mem_map(address_map &map) ATTR_COLD;
 	required_device<s2650_device> m_maincpu;
 	required_device<cassette_image_device> m_cass;
 };
@@ -113,10 +113,10 @@ public:
 	void ravens(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
-	void io_map(address_map &map);
+	void io_map(address_map &map) ATTR_COLD;
 	u8 port17_r();
 	void display_w(offs_t offset, u8 data);
 	void leds_w(u8 data);
@@ -137,11 +137,11 @@ public:
 	void ravens2(machine_config &config);
 
 protected:
-	virtual void machine_reset() override;
-	virtual void machine_start() override;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
-	void io_map(address_map &map);
+	void io_map(address_map &map) ATTR_COLD;
 	void kbd_put(u8 data);
 	u8 port07_r();
 	void port1b_w(u8 data);
@@ -151,12 +151,12 @@ private:
 	required_device<generic_terminal_device> m_terminal;
 };
 
-WRITE_LINE_MEMBER( ravens_base::cass_w )
+void ravens_base::cass_w(int state)
 {
 	m_cass->output(state ? -1.0 : +1.0);
 }
 
-READ_LINE_MEMBER( ravens_base::cass_r )
+int ravens_base::cass_r()
 {
 	return (m_cass->input() > 0.03) ? 1 : 0;
 }

@@ -14,12 +14,12 @@ Hardware notes:
 - 1-bit sound
 
 Known releases:
-- Hartung Game Master (original version)
-- Hartung Game Tronic / Mega Tronic / Super Game
-- Systema 2000 (UK)
-- Impel Game Master (Hong Kong)
-- Videojet Game Master (France)
-- Prodis PDJ-10 (Spain)
+- Hartung Game Master (Germany, gray)
+- Impel Game Master (Hong Kong, gray)
+- Systema 2000 (UK, gray)
+- <unknown> Game Master / Game Tronic / Mega Tronic / Super Game (purple)
+- Videojet Game Master (France, gray or white)
+- Prodis PDJ-10 (Spain, gray or white)
 - Delplay Game Plus (France, vertical orientation)
 
 I presume it's an anonymous Hong Kong production. Most of the games too,
@@ -42,7 +42,7 @@ BTANB:
 
 #include "bus/generic/carts.h"
 #include "bus/generic/slot.h"
-#include "cpu/upd7810/upd7811.h"
+#include "cpu/upd7810/upd7810.h"
 #include "sound/spkrdev.h"
 #include "video/sed1520.h"
 
@@ -71,7 +71,7 @@ public:
 	void gmaster(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	required_device<upd78c11_device> m_maincpu;
@@ -80,6 +80,8 @@ private:
 	required_device<screen_device> m_screen;
 	required_device<speaker_sound_device> m_speaker;
 
+	u8 m_chipsel = 0;
+
 	u8 io_r(offs_t offset);
 	void io_w(offs_t offset, u8 data);
 	void portb_w(u8 data);
@@ -87,9 +89,7 @@ private:
 	u32 screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	template<int N> SED1520_UPDATE_CB(screen_update_cb);
 
-	void main_map(address_map &map);
-
-	u8 m_chipsel = 0;
+	void main_map(address_map &map) ATTR_COLD;
 };
 
 void gmaster_state::machine_start()
@@ -173,7 +173,7 @@ void gmaster_state::main_map(address_map &map)
 {
 	// 0x0000-0x0fff is internal ROM
 	map(0x4000, 0x47ff).mirror(0x3800).rw(FUNC(gmaster_state::io_r), FUNC(gmaster_state::io_w)).share("ram");
-	map(0x8000, 0xfeff).r("cartslot", FUNC(generic_slot_device::read_rom));
+	map(0x8000, 0xffff).r("cartslot", FUNC(generic_slot_device::read_rom));
 	// 0xff00-0xffff is internal RAM
 }
 

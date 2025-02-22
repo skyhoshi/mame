@@ -59,7 +59,6 @@
 
 #include "bus/ata/gdrom.h"
 #include "cpu/arm7/arm7.h"
-#include "cpu/arm7/arm7core.h"
 #include "cpu/sh/sh4.h"
 #include "imagedev/cdromimg.h"
 #include "machine/aicartc.h"
@@ -454,7 +453,9 @@ void dc_cons_state::dc(machine_config &config)
 	dc_controller_device &dcctrl3(DC_CONTROLLER(config, "dcctrl3", 0, m_maple, 3));
 	dcctrl3.set_port_tags("P4:0", "P4:1", "P4:A0", "P4:A1", "P4:A2", "P4:A3", "P4:A4", "P4:A5");
 
-	SOFTWARE_LIST(config, "cd_list").set_original("dc");
+	SOFTWARE_LIST(config, "gdrom_list").set_original("dc");
+	// TODO: hookup Mil-CD/multisession CD-ROMs SW list (later DC models don't support this)
+	// TODO: hookup Video CD SW list (thru DreamMovie VCD/MP3 player disc + remote dongle)
 }
 
 void dc_cons_state::dc_fish(machine_config &config)
@@ -589,16 +590,18 @@ ROM_START( dcdev )
 	ROM_LOAD_BIOS(1, "set5v1.001.ic507", 0x000000, 0x200000, CRC(5702d38f) SHA1(ea7a3ae1de73683008dd795c252941a4fc81b42e) )
 	ROM_SYSTEM_BIOS(2, "0976", "Katana Set5 v0.976 (Japan)")    // BOOT flash rom update from Katana SDK 1.20J
 	ROM_LOAD_BIOS(2, "set5v0.976.ic507", 0x000000, 0x200000, CRC(dcb2e86f) SHA1(c88b4b6704811e3a428ee225727e4f7df467a3b5) )
+	ROM_SYSTEM_BIOS(3, "0972", "Katana Set5 v0.972 (Japan)")    // BOOT flash rom update from Katana SDK 1.00b2
+	ROM_LOAD_BIOS(3, "set5v0.972.ic507", 0x000000, 0x200000, CRC(1a2f2a91) SHA1(08df891f02cf959189bc9b7c4ac1a4e6a4475b50) )
 
 	// 27C160 EPROM (DIP42) IC??? labeled
 	// SET5 7676
 	// V0.71 98/11/13
-	ROM_SYSTEM_BIOS(3, "071", "Katana Set5 Checker v0.71")
-	ROM_LOAD_BIOS(3, "set5v0.71.bin", 0x000000, 0x200000, CRC(52d01969) SHA1(28aec4a01419d2d2a664c540bef30ea289ca0644) )
+	ROM_SYSTEM_BIOS(4, "071", "Katana Set5 Checker v0.71")
+	ROM_LOAD_BIOS(4, "set5v0.71.bin", 0x000000, 0x200000, CRC(52d01969) SHA1(28aec4a01419d2d2a664c540bef30ea289ca0644) )
 	// SET5 FC52
 	// V0.41 98/08/27
-	ROM_SYSTEM_BIOS(4, "041", "Katana Set5 Checker v0.41")
-	ROM_LOAD_BIOS(4, "set5v0.41.bin", 0x000000, 0x200000, CRC(485877bd) SHA1(dc1af1f1248ffa87d57bc5ef2ea41aac95ecfc5e) )
+	ROM_SYSTEM_BIOS(5, "041", "Katana Set5 Checker v0.41")
+	ROM_LOAD_BIOS(5, "set5v0.41.bin", 0x000000, 0x200000, CRC(485877bd) SHA1(dc1af1f1248ffa87d57bc5ef2ea41aac95ecfc5e) )
 
 	ROM_REGION64_LE(0x040000, "dcflash", ROMREGION_ERASEFF)
 	// Dev.Boxes have empty (FF filled) flash ROM

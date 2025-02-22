@@ -72,7 +72,7 @@ public:
 protected:
 	zxbus_slot_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, u32 clock);
 
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	required_device<zxbus_device> m_zxbus_bus;
 };
@@ -86,19 +86,23 @@ public:
 	zxbus_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock);
 
 	template <typename T> void set_iospace(T &&tag, int spacenum) { m_iospace.set_tag(std::forward<T>(tag), spacenum); }
-	template<typename T> void install_device(offs_t addrstart, offs_t addrend, T &device, void (T::*map)(class address_map &map), uint64_t unitmask = ~u64(0))
+	template<typename T> void install_device(offs_t addrstart, offs_t addrend, T &device, void (T::*map)(class address_map &map), u64 unitmask = ~u64(0))
 	{
 		m_iospace->install_device(addrstart, addrend, device, map, unitmask);
 	}
 
 	void add_slot(zxbus_slot_device &slot);
+	void install_shadow_io(memory_view::memory_view_entry &io_view);
 
 protected:
 	zxbus_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, u32 clock);
 
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
+private:
 	required_address_space m_iospace;
+	memory_view::memory_view_entry *m_shadow_io_view;
+
 	std::forward_list<zxbus_slot_device *> m_slot_list;
 };
 
@@ -107,21 +111,23 @@ DECLARE_DEVICE_TYPE(ZXBUS, zxbus_device)
 
 class device_zxbus_card_interface : public device_interface
 {
-public:
-	virtual ~device_zxbus_card_interface();
+	friend class zxbus_slot_device;
 
-	void set_zxbusbus(zxbus_device &bus) { assert(!device().started()); m_zxbus = &bus; }
+public:
+	virtual void map_shadow_io(address_map &map) ATTR_COLD {}
 
 protected:
 	device_zxbus_card_interface(const machine_config &mconfig, device_t &device);
 
 	virtual void interface_pre_start() override;
 
+	void set_zxbusbus(zxbus_device &zxbus) { assert(!device().started()); m_zxbus = &zxbus; }
+
 	zxbus_device *m_zxbus;
 };
 
 
 void zxbus_cards(device_slot_interface &device);
-
+void zxbus_gmx_cards(device_slot_interface &device);
 
 #endif // MAME_BUS_SPECTRUM_ZXBUS_H

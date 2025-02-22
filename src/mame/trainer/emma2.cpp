@@ -76,10 +76,10 @@ private:
 	void segment_w(uint8_t data);
 	void digit_w(uint8_t data);
 	uint8_t keyboard_r();
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
-	void mem_map(address_map &map);
+	void mem_map(address_map &map) ATTR_COLD;
 
 	uint8_t m_digit = 0U;
 	uint8_t m_seg = 0U;
@@ -202,7 +202,7 @@ void emma2_state::emma2(machine_config &config)
 	MOS6522(config, m_via, 1'000'000);  // #2 from cpu
 	m_via->irq_handler().set_inputline(m_maincpu, m6502_device::IRQ_LINE);
 
-	PIA6821(config, m_pia, 0);
+	PIA6821(config, m_pia);
 	m_pia->writepa_handler().set(FUNC(emma2_state::segment_w));
 	m_pia->writepb_handler().set(FUNC(emma2_state::digit_w));
 	m_pia->readpb_handler().set(FUNC(emma2_state::keyboard_r));

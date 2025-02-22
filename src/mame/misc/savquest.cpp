@@ -77,7 +77,7 @@
 #include "machine/idectrl.h"
 #include "machine/lpci.h"
 #include "machine/pckeybrd.h"
-#include "video/pc_vga.h"
+#include "video/pc_vga_s3.h"
 #include "video/voodoo_2.h"
 
 
@@ -100,8 +100,8 @@ protected:
 	// driver_device overrides
 //  virtual void video_start();
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	std::unique_ptr<uint32_t[]> m_bios_f0000_ram;
@@ -112,7 +112,7 @@ private:
 
 	std::unique_ptr<uint8_t[]> m_smram;
 
-	required_device<s3_vga_device> m_vga;
+	required_device<s3trio64_vga_device> m_vga;
 	required_device<voodoo_2_device> m_voodoo;
 
 	int m_haspind = 0;
@@ -143,13 +143,13 @@ private:
 	uint8_t parallel_port_r(offs_t offset);
 	void parallel_port_w(offs_t offset, uint8_t data);
 
-	DECLARE_WRITE_LINE_MEMBER(vblank_assert);
+	void vblank_assert(int state);
 
 	uint8_t smram_r(offs_t offset);
 	void smram_w(offs_t offset, uint8_t data);
 
-	void savquest_io(address_map &map);
-	void savquest_map(address_map &map);
+	void savquest_io(address_map &map) ATTR_COLD;
+	void savquest_map(address_map &map) ATTR_COLD;
 
 	void intel82439tx_init();
 	void vid_3dfx_init();
@@ -782,16 +782,13 @@ void savquest_state::savquest_map(address_map &map)
 void savquest_state::savquest_io(address_map &map)
 {
 	pcat32_io_common(map);
-	map(0x0070, 0x007f).rw(m_mc146818, FUNC(ds12885_device::read), FUNC(ds12885_device::write));
 
 	map(0x00e8, 0x00ef).noprw();
 
 	map(0x0170, 0x0177).rw("ide2", FUNC(ide_controller_32_device::cs0_r), FUNC(ide_controller_32_device::cs0_w));
 	map(0x01f0, 0x01f7).rw("ide", FUNC(ide_controller_32_device::cs0_r), FUNC(ide_controller_32_device::cs0_w));
 	map(0x0378, 0x037b).rw(FUNC(savquest_state::parallel_port_r), FUNC(savquest_state::parallel_port_w));
-	map(0x03b0, 0x03bf).rw(m_vga, FUNC(vga_device::port_03b0_r), FUNC(vga_device::port_03b0_w));
-	map(0x03c0, 0x03cf).rw(m_vga, FUNC(vga_device::port_03c0_r), FUNC(vga_device::port_03c0_w));
-	map(0x03d0, 0x03df).rw(m_vga, FUNC(vga_device::port_03d0_r), FUNC(vga_device::port_03d0_w));
+	map(0x03b0, 0x03df).m("vga", FUNC(s3trio64_vga_device::io_map));
 	map(0x0370, 0x0377).rw("ide2", FUNC(ide_controller_32_device::cs1_r), FUNC(ide_controller_32_device::cs1_w));
 	map(0x03f0, 0x03f7).rw("ide", FUNC(ide_controller_32_device::cs1_r), FUNC(ide_controller_32_device::cs1_w));
 
@@ -833,7 +830,7 @@ void savquest_state::machine_reset()
 	m_haspstate = HASPSTATE_NONE;
 }
 
-WRITE_LINE_MEMBER(savquest_state::vblank_assert)
+void savquest_state::vblank_assert(int state)
 {
 }
 
@@ -871,7 +868,14 @@ void savquest_state::savquest(machine_config &config)
 	ISA16_SLOT(config, "isa1", 0, "isa", savquest_isa16_cards, "sb16", false);
 
 	/* video hardware */
-	pcvideo_s3_vga(config);
+	// TODO: map to ISA bus, make sure that the Voodoo can override s3 in screen update
+	screen_device &screen(SCREEN(config, "screen", SCREEN_TYPE_RASTER));
+	screen.set_raw(25.1748_MHz_XTAL, 900, 0, 640, 526, 0, 480);
+	screen.set_screen_update("vga", FUNC(s3trio64_vga_device::screen_update));
+
+	s3trio64_vga_device &vga(S3_TRIO64_VGA(config, "vga", 0));
+	vga.set_screen("screen");
+	vga.set_vram_size(0x100000);
 
 	VOODOO_2(config, m_voodoo, voodoo_2_device::NOMINAL_CLOCK);
 	m_voodoo->set_fbmem(4);
@@ -899,4 +903,4 @@ ROM_END
 } // Anonymous namespace
 
 
-GAME(1999, savquest, 0, savquest, savquest, savquest_state, empty_init, ROT0, "Interactive Light", "Savage Quest", MACHINE_IS_SKELETON)
+GAME(1999, savquest, 0, savquest, savquest, savquest_state, empty_init, ROT0, "Interactive Light", "Savage Quest", MACHINE_NO_SOUND | MACHINE_NOT_WORKING)

@@ -77,25 +77,25 @@ public:
 	void instruct(machine_config &config);
 
 protected:
-	virtual void machine_reset() override;
-	virtual void machine_start() override;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	uint8_t port_r();
 	uint8_t portfc_r();
 	uint8_t portfd_r();
 	uint8_t portfe_r();
-	DECLARE_READ_LINE_MEMBER(sense_r);
-	DECLARE_WRITE_LINE_MEMBER(flag_w);
+	int sense_r();
+	void flag_w(int state);
 	void port_w(uint8_t data);
 	void portf8_w(uint8_t data);
 	void portf9_w(uint8_t data);
 	void portfa_w(uint8_t data);
 	DECLARE_QUICKLOAD_LOAD_MEMBER(quickload_cb);
 	INTERRUPT_GEN_MEMBER(t2l_int);
-	void data_map(address_map &map);
-	void io_map(address_map &map);
-	void mem_map(address_map &map);
+	void data_map(address_map &map) ATTR_COLD;
+	void io_map(address_map &map) ATTR_COLD;
+	void mem_map(address_map &map) ATTR_COLD;
 
 	uint16_t m_lar = 0U;
 	uint8_t m_digit = 0U;
@@ -113,7 +113,7 @@ private:
 };
 
 // flag led
-WRITE_LINE_MEMBER( instruct_state::flag_w )
+void instruct_state::flag_w(int state)
 {
 	m_leds[8] = !state;
 }
@@ -182,7 +182,7 @@ uint8_t instruct_state::portfe_r()
 
 
 // Read cassette and SENS key
-READ_LINE_MEMBER( instruct_state::sense_r )
+int instruct_state::sense_r()
 {
 	if (m_cassin)
 		return (m_cass->input() > 0.03) ? 1 : 0;

@@ -49,14 +49,14 @@ public:
 	void init_cosmica();
 	void init_panic();
 
-	DECLARE_WRITE_LINE_MEMBER(panic_coin_inserted);
+	void panic_coin_inserted(int state);
 	DECLARE_INPUT_CHANGED_MEMBER(cosmica_coin_inserted);
 	DECLARE_INPUT_CHANGED_MEMBER(coin_inserted_irq0);
 	DECLARE_INPUT_CHANGED_MEMBER(coin_inserted_nmi);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	/* memory pointers */
@@ -114,9 +114,9 @@ private:
 	pen_t panic_map_color(uint8_t x, uint8_t y);
 	pen_t cosmica_map_color(uint8_t x, uint8_t y);
 	pen_t magspot_map_color(uint8_t x, uint8_t y);
-	void cosmica_map(address_map &map);
-	void magspot_map(address_map &map);
-	void panic_map(address_map &map);
+	void cosmica_map(address_map &map) ATTR_COLD;
+	void magspot_map(address_map &map) ATTR_COLD;
+	void panic_map(address_map &map) ATTR_COLD;
 };
 
 #endif // MAME_UNIVERSAL_COSMIC_H

@@ -112,8 +112,8 @@ public:
 	void apple1(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -143,13 +143,13 @@ private:
 	void ram_w(offs_t offset, uint8_t data);
 	uint8_t pia_keyboard_r();
 	void pia_display_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(pia_display_gate_w);
+	void pia_display_gate_w(int state);
 	DECLARE_SNAPSHOT_LOAD_MEMBER(snapshot_cb);
 	TIMER_CALLBACK_MEMBER(ready_start_cb);
 	TIMER_CALLBACK_MEMBER(ready_end_cb);
 	TIMER_CALLBACK_MEMBER(keyboard_strobe_cb);
 
-	void apple1_map(address_map &map);
+	void apple1_map(address_map &map) ATTR_COLD;
 
 	void plot_text_character(bitmap_ind16 &bitmap, int xpos, int ypos, int xscale, uint32_t code, const uint8_t *textgfx_data, uint32_t textgfx_datalen);
 	void poll_keyboard();
@@ -475,7 +475,7 @@ void apple1_state::pia_display_w(uint8_t data)
 
 // CB2 here is connected two places: Port B bit 7 for CPU readback,
 // and to the display hardware
-WRITE_LINE_MEMBER(apple1_state::pia_display_gate_w)
+void apple1_state::pia_display_gate_w(int state)
 {
 	m_pia->portb_w((state << 7) ^ 0x80);
 
@@ -590,7 +590,7 @@ void apple1_state::apple1(machine_config &config)
 
 	PALETTE(config, "palette", palette_device::MONOCHROME);
 
-	PIA6821(config, m_pia, 0);
+	PIA6821(config, m_pia);
 	m_pia->readpa_handler().set(FUNC(apple1_state::pia_keyboard_r));
 	m_pia->writepb_handler().set(FUNC(apple1_state::pia_display_w));
 	m_pia->cb2_handler().set(FUNC(apple1_state::pia_display_gate_w));

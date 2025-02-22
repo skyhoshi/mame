@@ -31,15 +31,15 @@ public:
 	auto kbrdy_handler() { return m_kbrdy_cb.bind(); }
 	auto kbdata_handler() { return m_kbdata_cb.bind(); }
 
-	DECLARE_WRITE_LINE_MEMBER( kback_w );
+	void kback_w(int state);
 
 protected:
 	// device-level overrides
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 	// optional information overrides
-	virtual const tiny_rom_entry *device_rom_region() const override;
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual ioport_constructor device_input_ports() const override;
+	virtual const tiny_rom_entry *device_rom_region() const override ATTR_COLD;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual ioport_constructor device_input_ports() const override ATTR_COLD;
 
 private:
 	required_device<i8021_device> m_maincpu;
@@ -59,7 +59,7 @@ private:
 	uint8_t kb_p1_r();
 	void kb_p1_w(uint8_t data);
 	void kb_p2_w(uint8_t data);
-	DECLARE_READ_LINE_MEMBER( kb_t1_r );
+	int kb_t1_r();
 };
 
 

@@ -118,15 +118,15 @@ private:
 	u8 keyboard_r(offs_t offset);
 	u8 video_r(offs_t offset);
 	u8 zx_r();
-	DECLARE_WRITE_LINE_MEMBER(ctc_z0_w);
-	DECLARE_WRITE_LINE_MEMBER(ctc_z1_w);
+	void ctc_z0_w(int state);
+	void ctc_z1_w(int state);
 	u32 screen_update_bcs3(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	u32 screen_update_bcs3a(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	void bcs3_io(address_map &map);
-	void bcs3_mem(address_map &map);
-	void bcs3a_mem(address_map &map);
-	void machine_start() override;
+	void bcs3_io(address_map &map) ATTR_COLD;
+	void bcs3_mem(address_map &map) ATTR_COLD;
+	void bcs3a_mem(address_map &map) ATTR_COLD;
+	void machine_start() override ATTR_COLD;
 	bool m_cassbit = 0;
 	u8 s_curs = 0U;
 	u8 s_init = 0U;
@@ -369,7 +369,7 @@ static GFXDECODE_START( gfx_bcs3 )
 	GFXDECODE_ENTRY( "chargen", 0x0000, bcs3_charlayout, 0, 1 )
 GFXDECODE_END
 
-WRITE_LINE_MEMBER( bcs3_state::ctc_z0_w )
+void bcs3_state::ctc_z0_w(int state)
 {
 	m_ctc->trg1(state);
 	if (state && m_cass)
@@ -381,7 +381,7 @@ WRITE_LINE_MEMBER( bcs3_state::ctc_z0_w )
 
 // The manual says the cassette pulses come from here, but
 // it's total silence during cassette saving.
-WRITE_LINE_MEMBER( bcs3_state::ctc_z1_w )
+void bcs3_state::ctc_z1_w(int state)
 {
 	m_ctc->trg2(state);
 }

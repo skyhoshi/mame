@@ -31,7 +31,7 @@
 **************************************************************************************************/
 
 #include "emu.h"
-#include "video/huc6272.h"
+#include "huc6272.h"
 
 #define VERBOSE (LOG_GENERAL)
 
@@ -172,8 +172,6 @@ void huc6272_device::device_validity_check(validity_checker &valid) const
 
 void huc6272_device::device_start()
 {
-	m_irq_changed_cb.resolve_safe();
-
 	save_item(NAME(m_register));
 	save_item(NAME(m_kram_addr_r));
 	save_item(NAME(m_kram_inc_r));

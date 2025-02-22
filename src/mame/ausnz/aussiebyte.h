@@ -75,8 +75,8 @@ public:
 	DECLARE_QUICKLOAD_LOAD_MEMBER(quickload_cb);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	u8 memory_read_byte(offs_t offset);
@@ -100,20 +100,19 @@ private:
 	u8 port37_r();
 	u8 rtc_r(offs_t offset);
 	void rtc_w(offs_t offset, u8 data);
-	DECLARE_WRITE_LINE_MEMBER(fdc_intrq_w);
-	DECLARE_WRITE_LINE_MEMBER(fdc_drq_w);
-	DECLARE_WRITE_LINE_MEMBER(busreq_w);
-	DECLARE_WRITE_LINE_MEMBER(sio1_rdya_w);
-	DECLARE_WRITE_LINE_MEMBER(sio1_rdyb_w);
-	DECLARE_WRITE_LINE_MEMBER(sio2_rdya_w);
-	DECLARE_WRITE_LINE_MEMBER(sio2_rdyb_w);
+	void fdc_intrq_w(int state);
+	void fdc_drq_w(int state);
+	void sio1_rdya_w(int state);
+	void sio1_rdyb_w(int state);
+	void sio2_rdya_w(int state);
+	void sio2_rdyb_w(int state);
 	void address_w(u8 data);
 	void register_w(u8 data);
 	MC6845_UPDATE_ROW(crtc_update_row);
 	MC6845_ON_UPDATE_ADDR_CHANGED(crtc_update_addr);
 
-	void io_map(address_map &map);
-	void mem_map(address_map &map);
+	void io_map(address_map &map) ATTR_COLD;
+	void mem_map(address_map &map) ATTR_COLD;
 
 	u8 crt8002(u8 ac_ra, u8 ac_chr, u8 ac_attr, u16 ac_cnt, bool ac_curs);
 	bool m_port15 = false; // rom switched in (0), out (1)

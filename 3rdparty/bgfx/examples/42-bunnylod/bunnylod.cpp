@@ -68,11 +68,15 @@ public:
 	static void remapIndices(uint32_t* _indices, uint32_t _num)
 	{
 		uint32_t target = 0;
-		for (uint32_t i = 0; i < _num; i++) {
+		for (uint32_t i = 0; i < _num; i++)
+		{
 			uint32_t map = _indices[i];
-			if (i != map) {
+			if (i != map)
+			{
 				_indices[i] = _indices[map];
-			} else {
+			}
+			else
+			{
 				_indices[i] = target;
 				++target;
 			}
@@ -264,6 +268,7 @@ public:
 		init.vendorId = args.m_pciId;
 		init.platformData.nwh  = entry::getNativeWindowHandle(entry::kDefaultWindowHandle);
 		init.platformData.ndt  = entry::getNativeDisplayHandle();
+		init.platformData.type = entry::getNativeWindowHandleType(entry::kDefaultWindowHandle);
 		init.resolution.width  = m_width;
 		init.resolution.height = m_height;
 		init.resolution.reset  = m_reset;

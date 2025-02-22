@@ -10,7 +10,6 @@
 #include "emu.h"
 #include "ncr53c90.h"
 
-#define LOG_GENERAL (1U << 0)
 #define LOG_STATE   (1U << 1)
 #define LOG_FIFO    (1U << 2)
 #define LOG_COMMAND (1U << 3)
@@ -197,7 +196,7 @@ ncr53c96_device::ncr53c96_device(const machine_config &mconfig, const char *tag,
 ncr53cf94_device::ncr53cf94_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock)
 	: ncr53c94_device(mconfig, type, tag, owner, clock)
 	, config4(0)
-	, family_id(0x02)
+	, family_id(0x04)
 	, revision_level(0x02)
 {
 }
@@ -239,9 +238,6 @@ void ncr53c90_device::device_start()
 	save_item(NAME(irq));
 	save_item(NAME(drq));
 	save_item(NAME(test_mode));
-
-	m_irq_handler.resolve_safe();
-	m_drq_handler.resolve_safe();
 
 	config = 0;
 	bus_id = 0;
@@ -333,6 +329,7 @@ void ncr53c90_device::step(bool timeout)
 		reset_disconnect();
 
 		if (!(config & 0x40)) {
+			LOG("SCSI reset interrupt\n");
 			istatus |= I_SCSI_RESET;
 			check_irq();
 		}
@@ -806,9 +803,7 @@ void ncr53c90_device::bus_complete()
 
 void ncr53c90_device::delay(int cycles)
 {
-	if(!clock_conv)
-		return;
-	cycles *= clock_conv;
+	cycles *= clock_conv ? clock_conv : 8;
 	tm->adjust(clocks_to_attotime(cycles));
 }
 
@@ -922,6 +917,15 @@ void ncr53c90_device::command_pop_and_chain()
 	}
 }
 
+void ncr53c90_device::load_tcounter()
+{
+	LOGMASKED(LOG_COMMAND, "DMA command: tcounter reloaded to %d\n", tcount & tcounter_mask);
+	tcounter = tcount & tcounter_mask;
+
+	// clear transfer count zero flag when counter is reloaded
+	status &= ~S_TC0;
+}
+
 void ncr53c90_device::start_command()
 {
 	uint8_t c = command[0] & 0x7f;
@@ -936,11 +940,7 @@ void ncr53c90_device::start_command()
 	dma_command = command[0] & 0x80;
 	if (dma_command)
 	{
-		LOGMASKED(LOG_COMMAND, "DMA command: tcounter reloaded to %d\n", tcount);
-		tcounter = tcount;
-
-		// clear transfer count zero flag when counter is reloaded
-		status &= ~S_TC0;
+		load_tcounter();
 	}
 	else
 	{
@@ -1179,16 +1179,11 @@ void ncr53c90_device::clock_w(uint8_t data)
 void ncr53c90_device::dma_set(int dir)
 {
 	dma_dir = dir;
-
-	// account for data already in the fifo
-	if (dir == DMA_OUT && fifo_pos)
-	{
-		decrement_tcounter(fifo_pos);
-	}
 }
 
 void ncr53c90_device::dma_w(uint8_t val)
 {
+	LOGMASKED(LOG_FIFO, "dma_w 0x%02x fifo_pos %d tcounter %d (%s)\n", val, fifo_pos, tcounter, machine().describe_context());
 	fifo_push(val);
 	decrement_tcounter();
 	check_drq();
@@ -1365,6 +1360,8 @@ void ncr53c94_device::dma16_w(u16 data)
 		return;
 	}
 
+	LOGMASKED(LOG_FIFO, "dma16_w 0x%04x fifo_pos %d tcounter %d (%s)\n", data, fifo_pos, tcounter, machine().describe_context());
+
 	// push two bytes into fifo
 	fifo[fifo_pos++] = data;
 	fifo[fifo_pos++] = data >> 8;
@@ -1424,6 +1421,15 @@ void ncr53cf94_device::device_reset()
 	ncr53c94_device::device_reset();
 }
 
+void ncr53cf94_device::load_tcounter()
+{
+	ncr53c94_device::load_tcounter();
+
+	// ID may be read by executing DMA NOP command twice, first with the features bit clear and then with it set
+	if ((config2 & S2FE) == 0)
+		tcount = (1 << 23) | (family_id << 19) | (revision_level << 16) | (tcount & 0xffff);
+}
+
 void ncr53cf94_device::conf2_w(uint8_t data)
 {
 	tcounter_mask = (data & S2FE) ? 0xffffff : 0xffff;
@@ -1432,10 +1438,6 @@ void ncr53cf94_device::conf2_w(uint8_t data)
 
 uint8_t ncr53cf94_device::tcounter_hi2_r()
 {
-	// tcounter is 24-bit when the features bit is set, otherwise it returns the ID
-	if ((config2 & S2FE) == 0)
-		return (1 << 7) | (family_id << 3) | revision_level;
-
 	LOG("tcounter_hi2_r %02x (%s)\n", (tcounter >> 16) & 0xff, machine().describe_context());
 	return tcounter >> 16;
 }

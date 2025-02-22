@@ -425,13 +425,13 @@ test1f diagnostic hacks:
 #include "emu.h"
 #include "saturn.h"
 
+#include "saturn_cdb.h"
+#include "stvcd.h"
+
 #include "cpu/m68000/m68000.h"
 #include "cpu/scudsp/scudsp.h"
-#include "cpu/sh/sh2.h"
 #include "machine/nvram.h"
 #include "machine/smpc.h"
-#include "machine/stvcd.h"
-#include "saturn_cdb.h"
 
 #include "bus/saturn/bram.h"
 #include "bus/saturn/dram.h"
@@ -523,9 +523,9 @@ private:
 	required_device<saturn_control_port_device> m_ctrl1;
 	required_device<saturn_control_port_device> m_ctrl2;
 
-	void saturn_mem(address_map &map);
-	void sound_mem(address_map &map);
-	void scsp_mem(address_map &map);
+	void saturn_mem(address_map &map) ATTR_COLD;
+	void sound_mem(address_map &map) ATTR_COLD;
+	void scsp_mem(address_map &map) ATTR_COLD;
 };
 
 
@@ -601,9 +601,9 @@ INPUT_CHANGED_MEMBER(sat_console_state::tray_close)
 
 static INPUT_PORTS_START( saturn )
 	PORT_START("RESET") /* hardwired buttons */
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER("smpc", smpc_hle_device, trigger_nmi_r, 0) PORT_NAME("Reset Button")
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, sat_console_state, tray_open,0) PORT_NAME("Tray Open Button")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, sat_console_state, tray_close,0) PORT_NAME("Tray Close")
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER("smpc", FUNC(smpc_hle_device::trigger_nmi_r), 0) PORT_NAME("Reset Button")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(sat_console_state::tray_open), 0) PORT_NAME("Tray Open Button")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(sat_console_state::tray_close), 0) PORT_NAME("Tray Close")
 
 	PORT_START("fake")
 	PORT_CONFNAME(0x01,0x00,"Master-Slave Comms")
@@ -812,12 +812,12 @@ uint8_t sat_console_state::smpc_direct_mode(uint16_t in_value,bool which)
 void sat_console_state::saturn(machine_config &config)
 {
 	/* basic machine hardware */
-	SH2(config, m_maincpu, MASTER_CLOCK_352/2); // 28.6364 MHz
+	SH7604(config, m_maincpu, MASTER_CLOCK_352/2); // 28.6364 MHz
 	m_maincpu->set_addrmap(AS_PROGRAM, &sat_console_state::saturn_mem);
 	m_maincpu->set_is_slave(0);
 	TIMER(config, "scantimer").configure_scanline(FUNC(sat_console_state::saturn_scanline), "screen", 0, 1);
 
-	SH2(config, m_slave, MASTER_CLOCK_352/2); // 28.6364 MHz
+	SH7604(config, m_slave, MASTER_CLOCK_352/2); // 28.6364 MHz
 	m_slave->set_addrmap(AS_PROGRAM, &sat_console_state::saturn_mem);
 	m_slave->set_is_slave(1);
 	TIMER(config, "slave_scantimer").configure_scanline(FUNC(sat_console_state::saturn_slave_scanline), "screen", 0, 1);
@@ -900,6 +900,7 @@ void sat_console_state::saturnus(machine_config &config)
 	SATURN_CDB(config, "saturn_cdb", 16000000);
 
 	SOFTWARE_LIST(config, "cd_list").set_original("saturn").set_filter("NTSC-U");
+	SOFTWARE_LIST(config, "photocd_list").set_compatible("photo_cd");
 
 	SATURN_CART_SLOT(config, "exp", saturn_cart, nullptr);
 	SOFTWARE_LIST(config, "cart_list").set_original("sat_cart");
@@ -913,6 +914,7 @@ void sat_console_state::saturneu(machine_config &config)
 	SATURN_CDB(config, "saturn_cdb", 16000000);
 
 	SOFTWARE_LIST(config, "cd_list").set_original("saturn").set_filter("PAL");
+	SOFTWARE_LIST(config, "photocd_list").set_compatible("photo_cd");
 
 	SATURN_CART_SLOT(config, "exp", saturn_cart, nullptr);
 	SOFTWARE_LIST(config, "cart_list").set_original("sat_cart");
@@ -926,6 +928,7 @@ void sat_console_state::saturnjp(machine_config &config)
 	SATURN_CDB(config, "saturn_cdb", 16000000);
 
 	SOFTWARE_LIST(config, "cd_list").set_original("saturn").set_filter("NTSC-J");
+	SOFTWARE_LIST(config, "photocd_list").set_compatible("photo_cd");
 
 	SATURN_CART_SLOT(config, "exp", saturn_cart, nullptr);
 	SOFTWARE_LIST(config, "cart_list").set_original("sat_cart");

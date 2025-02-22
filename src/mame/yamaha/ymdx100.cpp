@@ -7,7 +7,7 @@ Yamaha DX27 and DX100 digital synthesizers
 The DX27 and DX100 are mid-tier professional synthesizers released by Yamaha
 around 1985. The DX27 is a full-size keyboard with 61 full-size keys that can
 only run on AC power. The DX100 is a smaller, wearable keyboard with only 49
-small-size keys and can run on either AC power or batteries. Both keybaords have
+small-size keys and can run on either AC power or batteries. Both keyboards have
 full MIDI in/out/thru, and can also hook up to a Yamaha foot pedal and breath
 controller.
 
@@ -133,7 +133,7 @@ service manual, but is still readily available.
     1 2 3 4 5 6 7 8 9 0 - = -> 1 2 3 4 5 6 7 8 9 10 11 12
     Q W  T Y  O P -> PBend KeyShift  Store Func      BankA BankB
     E R  U I  [ ] -> -1    +1        Edit  Internal  BankC BankD
-    Octave 3 will be avaible over [Z S X D C  V G B H N J M]
+    Octave 3 will be available over [Z S X D C  V G B H N J M]
     Pitch bend will be ' /
     Mod wheel will be ; .
     Data entry slider will be L ,
@@ -272,21 +272,21 @@ public:
 
 	void dx100(machine_config &config);
 
-	DECLARE_WRITE_LINE_MEMBER(led_w)       { m_led = state; }
-	DECLARE_CUSTOM_INPUT_MEMBER(midi_in_r) { return m_midi_in; }
+	void led_w(int state)                  { m_led = state; }
+	ioport_value midi_in_r() { return m_midi_in; }
 
 protected:
 	virtual void driver_start() override;
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	HD44780_PIXEL_UPDATE(lcd_pixel_update);
 	void palette_init(palette_device &palette);
 
-	DECLARE_WRITE_LINE_MEMBER(p22_w);
+	void p22_w(int state);
 
-	void mem_map(address_map &map);
+	void mem_map(address_map &map) ATTR_COLD;
 
 	required_device<hd6303x_cpu_device> m_maincpu;
 	required_device<m58990_device> m_adc;
@@ -331,16 +331,14 @@ void yamaha_dx100_state::palette_init(palette_device &palette)
 	palette.set_pen_color(2, rgb_t(0xe7, 0xe7, 0xe7)); // lcd pixel off
 }
 
-WRITE_LINE_MEMBER(yamaha_dx100_state::p22_w)
+void yamaha_dx100_state::p22_w(int state)
 {
 	if (state)
-		m_maincpu->m6801_clock_serial();
+		m_maincpu->clock_serial();
 }
 
 void yamaha_dx100_state::mem_map(address_map &map)
 {
-	map(0x0000, 0x001f).m(m_maincpu, FUNC(hd6303x_cpu_device::hd6301x_io));
-	map(0x0040, 0x00ff).ram(); // internal RAM
 	map(0x0800, 0x0fff).ram().share("nvram");
 	map(0x1000, 0x17ff).ram();
 	map(0x2000, 0x2001).rw("lcdc", FUNC(hd44780_device::read), FUNC(hd44780_device::write));
@@ -355,10 +353,10 @@ static INPUT_PORTS_START(dx100)
 	// TODO: Should 0x02, 0x04, 0x10, and 0x80 be listed here?
 	// They should be handled by the other interconnections in this file.
 	// If so, verify the active states of the MIDI ports.
-	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_OUTPUT )   PORT_NAME("LED") PORT_WRITE_LINE_MEMBER(yamaha_dx100_state, led_w)
+	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_OUTPUT )   PORT_NAME("LED") PORT_WRITE_LINE_MEMBER(FUNC(yamaha_dx100_state::led_w))
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_UNUSED )  // tied to ground
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_CUSTOM )  // 500khz clock
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_CUSTOM )  PORT_CUSTOM_MEMBER(yamaha_dx100_state, midi_in_r)
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_CUSTOM )  PORT_CUSTOM_MEMBER(FUNC(yamaha_dx100_state::midi_in_r))
 	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_OUTPUT )  // MIDI out
 	PORT_CONFNAME( 0x20, 0x00, "Foot Switch" )
 	PORT_CONFSETTING( 0x00, "Connected" )
@@ -624,7 +622,7 @@ void yamaha_dx100_state::dx100(machine_config &config)
 
 	PALETTE(config, "palette", FUNC(yamaha_dx100_state::palette_init), 3);
 
-	hd44780_device &lcdc(HD44780(config, "lcdc", 0)); // HD44780RA00
+	hd44780_device &lcdc(HD44780(config, "lcdc", 270'000)); // HD44780RA00, 91K resistor
 	lcdc.set_lcd_size(1, 16);
 	lcdc.set_pixel_update_cb(FUNC(yamaha_dx100_state::lcd_pixel_update));
 

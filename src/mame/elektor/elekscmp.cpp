@@ -49,18 +49,18 @@ public:
 	DECLARE_INPUT_CHANGED_MEMBER(reset_button);
 
 private:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 	u8 keyboard_r();
 	void hex_display_w(offs_t offset, u8 data);
-	DECLARE_READ_LINE_MEMBER(cass_r);
+	int cass_r();
 	TIMER_DEVICE_CALLBACK_MEMBER(kansas_r);
 	TIMER_DEVICE_CALLBACK_MEMBER(kansas_w);
 	u8 convert_key(u8 data);
 	bool m_cassinbit = 0, m_cassoutbit = 0, m_cassold = 0;
 	u8 m_cass_data[4]{};
 
-	void mem_map(address_map &map);
+	void mem_map(address_map &map) ATTR_COLD;
 
 	required_device<scmp_device> m_maincpu;
 	required_device<cassette_image_device> m_cass;
@@ -145,7 +145,7 @@ TIMER_DEVICE_CALLBACK_MEMBER( elekscmp_state::kansas_w )
 		m_cass->output(BIT(m_cass_data[3], 1) ? -1.0 : +1.0); // 1200Hz
 }
 
-READ_LINE_MEMBER( elekscmp_state::cass_r )
+int elekscmp_state::cass_r()
 {
 	return m_cassinbit;
 }
@@ -193,7 +193,7 @@ static INPUT_PORTS_START( elekscmp )
 	PORT_BIT(0x80, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_NAME("Run") PORT_CODE(KEYCODE_ENTER) PORT_CHAR('X')
 
 	PORT_START("RESET")
-	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_NAME("NRST") PORT_CODE(KEYCODE_F1) PORT_CHANGED_MEMBER(DEVICE_SELF, elekscmp_state, reset_button, 0) PORT_CHAR('N')
+	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_NAME("NRST") PORT_CODE(KEYCODE_F1) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(elekscmp_state::reset_button), 0) PORT_CHAR('N')
 INPUT_PORTS_END
 
 INPUT_CHANGED_MEMBER(elekscmp_state::reset_button)

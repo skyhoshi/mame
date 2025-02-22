@@ -8,11 +8,9 @@
    for JAMMA use.
 
    TODO:
-   - remove m_input_hack functions, needed to make inputs working
-   - lsrquiz2i, lsrquizg: access violation on microtouch_device destructor when exiting emulation
-                          Caused by microtouch_device::rcv_complete() overrunning the m_rx_buffer
-                          array space with 149 (array size=16).
-
+   - remove m_input_hack functions, needed to make inputs working;
+   - extra RTC device mapped on i2c bus (shared with the Akiko one?);
+   - later gambling games requires extra hopper devices;
 
    Known Games:
    Dumped | Title                | Rev.  | Year | Notes
@@ -320,6 +318,7 @@ routines :
 #include "amiga.h"
 #include "imagedev/cdromimg.h"
 #include "machine/microtch.h"
+#include "machine/nvram.h"
 #include "speaker.h"
 
 
@@ -337,16 +336,17 @@ public:
 		: amiga_state(mconfig, type, tag)
 		, m_player_ports(*this, {"P1", "P2"})
 		, m_microtouch(*this, "microtouch")
-		, m_cdda(*this, "cdda")
+		, m_akiko(*this, "akiko")
+		, m_nvram(*this, "nvram")
 	{ }
 
 	void handle_joystick_cia(uint8_t pra, uint8_t dra);
 	uint16_t handle_joystick_potgor(uint16_t potgor);
 
-	DECLARE_CUSTOM_INPUT_MEMBER(cubo_input);
-	template <int P> DECLARE_READ_LINE_MEMBER(cd32_sel_mirror_input);
+	ioport_value cubo_input();
+	template <int P> int cd32_sel_mirror_input();
 
-	DECLARE_WRITE_LINE_MEMBER( akiko_int_w );
+	void akiko_int_w(int state);
 	void akiko_cia_0_port_a_write(uint8_t data);
 
 	void init_cubo();
@@ -366,15 +366,17 @@ public:
 	uint16_t m_potgo_value = 0;
 
 	void cubo(machine_config &config);
-	void cubo_mem(address_map &map);
-	void overlay_2mb_map32(address_map &map);
+	void cubo_mem(address_map &map) ATTR_COLD;
+	void overlay_2mb_map32(address_map &map) ATTR_COLD;
 protected:
+	virtual void machine_start() override;
 	virtual void rs232_tx(int state) override;
 	virtual void potgo_w(uint16_t data) override;
 
 private:
 	required_device<microtouch_device> m_microtouch;
-	required_device<cdda_device> m_cdda;
+	required_device<akiko_device> m_akiko;
+	required_device<nvram_device> m_nvram;
 
 	typedef void (cubo_state::*input_hack_func)();
 	input_hack_func m_input_hack{};
@@ -386,10 +388,21 @@ private:
 	void lasstixx_input_hack();
 	void mgnumber_input_hack();
 	void mgprem11_input_hack();
+
+	std::unique_ptr<u8[]> m_nvram_data;
 };
 
+void cubo_state::machine_start()
+{
+	amiga_state::machine_start();
 
-WRITE_LINE_MEMBER( cubo_state::akiko_int_w )
+	m_nvram_data = make_unique_clear<u8[]>(0x800);
+	subdevice<nvram_device>("nvram")->set_base(&m_nvram_data[0], 0x800);
+
+	save_pointer(NAME(m_nvram_data), 0x800);
+}
+
+void cubo_state::akiko_int_w(int state)
 {
 	set_interrupt(INTENA_SETCLR | INTENA_PORTS);
 }
@@ -414,7 +427,7 @@ WRITE_LINE_MEMBER( cubo_state::akiko_int_w )
 void cubo_state::akiko_cia_0_port_a_write(uint8_t data)
 {
 	/* bit 0 = cd audio mute */
-	m_cdda->set_output_gain( 0, ( data & 1 ) ? 0.0 : 1.0 );
+	m_akiko->set_mute(data & 1);
 
 	/* bit 1 = Power Led on Amiga */
 	m_power_led = BIT(~data, 1);
@@ -435,10 +448,16 @@ void cubo_state::cubo_mem(address_map &map)
 {
 	map.unmap_value_high();
 	map(0x000000, 0x1fffff).m(m_overlay, FUNC(address_map_bank_device::amap32));
+	map(0x600000, 0x601fff).lrw8(
+		NAME([this] (offs_t offset) { return m_nvram_data[offset]; }),
+		NAME([this] (offs_t offset, u8 data) { m_nvram_data[offset] = data; })
+	).umask32(0x000000ff);
 	map(0x800000, 0x800003).portr("DIPSW1");
+	map(0x800008, 0x80000b).portw("OUTPUT1");
 	map(0x800010, 0x800013).portr("DIPSW2");
+	map(0x800018, 0x80001b).portw("OUTPUT2");
 	map(0xa80000, 0xb7ffff).noprw();
-	map(0xb80000, 0xb8003f).rw("akiko", FUNC(akiko_device::read), FUNC(akiko_device::write));
+	map(0xb80000, 0xb8003f).rw(m_akiko, FUNC(akiko_device::read), FUNC(akiko_device::write));
 	map(0xbf0000, 0xbfffff).rw(FUNC(cubo_state::cia_r), FUNC(cubo_state::gayle_cia_w));
 	map(0xc00000, 0xdfffff).m(m_chipset, FUNC(address_map_bank_device::amap32));
 	map(0xe00000, 0xe7ffff).rom().region("kickstart", 0x80000);
@@ -537,13 +556,13 @@ uint16_t cubo_state::handle_joystick_potgor(uint16_t potgor)
 	return potgor;
 }
 
-CUSTOM_INPUT_MEMBER( cubo_state::cubo_input )
+ioport_value cubo_state::cubo_input()
 {
 	return handle_joystick_potgor(m_potgo_value) >> 8;
 }
 
 template <int P>
-READ_LINE_MEMBER( cubo_state::cd32_sel_mirror_input )
+int cubo_state::cd32_sel_mirror_input()
 {
 	uint8_t bits = m_player_ports[P]->read();
 	return (bits & 0x20)>>5;
@@ -555,22 +574,22 @@ static INPUT_PORTS_START( cubo )
 	PORT_START("CIA0PORTA")
 	PORT_BIT( 0x3f, IP_ACTIVE_LOW, IPT_CUSTOM )
 	/* this is the regular port for reading a single button joystick on the Amiga, many CD32 games require this to mirror the pad start button! */
-	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(cubo_state, cd32_sel_mirror_input<1>)
-	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(cubo_state, cd32_sel_mirror_input<0>)
+	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(FUNC(cubo_state::cd32_sel_mirror_input<1>))
+	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(FUNC(cubo_state::cd32_sel_mirror_input<0>))
 
 	PORT_START("CIA0PORTB")
 	PORT_BIT( 0xff, IP_ACTIVE_LOW, IPT_UNKNOWN )
 
 	PORT_START("joy_0_dat")
-	PORT_BIT( 0x0303, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(cubo_state, amiga_joystick_convert<1>)
+	PORT_BIT( 0x0303, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(cubo_state::amiga_joystick_convert<1>))
 	PORT_BIT( 0xfcfc, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("joy_1_dat")
-	PORT_BIT( 0x0303, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(cubo_state, amiga_joystick_convert<0>)
+	PORT_BIT( 0x0303, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(cubo_state::amiga_joystick_convert<0>))
 	PORT_BIT( 0xfcfc, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("potgo")
-	PORT_BIT( 0xff00, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(cubo_state, cubo_input)
+	PORT_BIT( 0xff00, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(cubo_state::cubo_input))
 	PORT_BIT( 0x00ff, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 
@@ -638,7 +657,7 @@ static INPUT_PORTS_START( cubo )
 	PORT_DIPNAME( 0x02, 0x02, "DSW2 2" )
 	PORT_DIPSETTING(    0x02, "Reset" )
 	PORT_DIPSETTING(    0x00, "Set" )
-	PORT_DIPNAME( 0x04, 0x04, "DSW2 3" )
+	PORT_DIPNAME( 0x04, 0x04, "DSW2 3" ) // PIC data
 	PORT_DIPSETTING(    0x04, "Reset" )
 	PORT_DIPSETTING(    0x00, "Set" )
 	PORT_DIPNAME( 0x08, 0x08, "DSW2 4" )
@@ -647,7 +666,7 @@ static INPUT_PORTS_START( cubo )
 	PORT_DIPNAME( 0x10, 0x10, "DSW2 5" )
 	PORT_DIPSETTING(    0x10, "Reset" )
 	PORT_DIPSETTING(    0x00, "Set" )
-	PORT_DIPNAME( 0x20, 0x20, "DSW2 6" )
+	PORT_DIPNAME( 0x20, 0x20, "DSW2 6" ) // i2c SDA for RTC
 	PORT_DIPSETTING(    0x20, "Reset" )
 	PORT_DIPSETTING(    0x00, "Set" )
 	PORT_DIPNAME( 0x40, 0x40, "DSW2 7" )
@@ -656,6 +675,20 @@ static INPUT_PORTS_START( cubo )
 	PORT_DIPNAME( 0x80, 0x80, "DSW2 8" )
 	PORT_DIPSETTING(    0x80, "Reset" )
 	PORT_DIPSETTING(    0x00, "Set" )
+
+	PORT_START("OUTPUT1")
+	// bit 1 pic clock
+	// bit 2 hopper related
+	// bit 3 pic data write
+	// bit 6 pic enable
+	// bit 7 hopper motor
+
+	PORT_START("OUTPUT2")
+	// bit 0 chip select (0) normal ticket (1) "Suzo" / "MKXX" motor, "erogatore megagettoni"
+	// bit 4 ticket motor out
+	// bit 5 i2c RTC data
+	// bit 6 i2c RTC CS?
+	// bit 7 i2c RTC clock
 INPUT_PORTS_END
 
 static INPUT_PORTS_START( cndypuzl )
@@ -1075,24 +1108,26 @@ void cubo_state::cubo(machine_config &config)
 	ADDRESS_MAP_BANK(config, m_overlay).set_map(&cubo_state::overlay_2mb_map32).set_options(ENDIANNESS_BIG, 32, 22, 0x200000);
 	ADDRESS_MAP_BANK(config, m_chipset).set_map(&cubo_state::aga_map).set_options(ENDIANNESS_BIG, 32, 9, 0x200);
 
-	AMIGA_COPPER(config, m_copper, amiga_state::CLK_28M_PAL / 2);
+	AGNUS_COPPER(config, m_copper, amiga_state::CLK_28M_PAL / 2);
 	m_copper->set_host_cpu_tag(m_maincpu);
 	m_copper->mem_read_cb().set(FUNC(amiga_state::chip_ram_r));
 	m_copper->set_ecs_mode(true);
 
 	I2C_24C08(config, "i2cmem", 0); // AT24C08N
 
-	akiko_device &akiko(AKIKO(config, "akiko", 0));
-	akiko.mem_r_callback().set(FUNC(amiga_state::chip_ram_r));
-	akiko.mem_w_callback().set(FUNC(amiga_state::chip_ram_w));
-	akiko.int_callback().set(FUNC(cubo_state::akiko_int_w));
-	akiko.scl_callback().set("i2cmem", FUNC(i2cmem_device::write_scl));
-	akiko.sda_r_callback().set("i2cmem", FUNC(i2cmem_device::read_sda));
-	akiko.sda_w_callback().set("i2cmem", FUNC(i2cmem_device::write_sda));
+	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_1); // unknown type, odeontw accesses it
+
+	AKIKO(config, m_akiko, 0);
+	m_akiko->mem_r_callback().set(FUNC(amiga_state::chip_ram_r));
+	m_akiko->mem_w_callback().set(FUNC(amiga_state::chip_ram_w));
+	m_akiko->int_callback().set(FUNC(cubo_state::akiko_int_w));
+	m_akiko->scl_callback().set("i2cmem", FUNC(i2cmem_device::write_scl));
+	m_akiko->sda_r_callback().set("i2cmem", FUNC(i2cmem_device::read_sda));
+	m_akiko->sda_w_callback().set("i2cmem", FUNC(i2cmem_device::write_sda));
 
 	// video hardware
 	pal_video(config);
-	m_screen->set_screen_update(FUNC(amiga_state::screen_update_amiga_aga));
+	m_screen->set_screen_update(FUNC(amiga_state::screen_update));
 	PALETTE(config, m_palette, FUNC(amiga_state::amiga_palette), 4096);
 
 	MCFG_VIDEO_START_OVERRIDE(amiga_state, amiga_aga)
@@ -1109,10 +1144,6 @@ void cubo_state::cubo(machine_config &config)
 	m_paula->mem_read_cb().set(FUNC(amiga_state::chip_ram_r));
 	m_paula->int_cb().set(FUNC(amiga_state::paula_int_w));
 
-	CDDA(config, m_cdda);
-	m_cdda->add_route(0, "lspeaker", 0.50);
-	m_cdda->add_route(1, "rspeaker", 0.50);
-
 	/* cia */
 	// these are setup differently on other amiga drivers (needed for floppy to work) which is correct / why?
 	MOS8520(config, m_cia_0, amiga_state::CLK_E_PAL);
@@ -1125,10 +1156,8 @@ void cubo_state::cubo(machine_config &config)
 
 	MICROTOUCH(config, m_microtouch, 9600).stx().set(FUNC(cubo_state::rs232_rx_w));
 
-	CDROM(config, "cd32_cdrom").set_interface("cd32_cdrom");
-
 	/* fdc */
-	AMIGA_FDC(config, m_fdc, amiga_state::CLK_7M_PAL);
+	PAULA_FDC(config, m_fdc, amiga_state::CLK_7M_PAL);
 	m_fdc->index_callback().set("cia_1", FUNC(mos8520_device::flag_w));
 	m_fdc->read_dma_callback().set(FUNC(amiga_state::chip_ram_r));
 	m_fdc->write_dma_callback().set(FUNC(amiga_state::chip_ram_w));
@@ -1163,77 +1192,110 @@ void cubo_state::init_cubo()
 ROM_START( cndypuzl )
 	CD32_BIOS
 
-	DISK_REGION( "cdrom" )
+	ROM_REGION(0x1000, "pic", 0) // unknown type
+	ROM_LOAD( "pic.bin", 0x000000, 0x1000, NO_DUMP )
+
+	DISK_REGION( "akiko" )
 	DISK_IMAGE_READONLY( "cndypuzl", 0, BAD_DUMP SHA1(5f41ed3521b3e05d233ac1245b78cb0b118b2b90) )
 ROM_END
 
 ROM_START( haremchl )
 	CD32_BIOS
 
-	DISK_REGION( "cdrom" )
+	ROM_REGION(0x1000, "pic", 0) // unknown type
+	ROM_LOAD( "pic.bin", 0x000000, 0x1000, NO_DUMP )
+
+	DISK_REGION( "akiko" )
 	DISK_IMAGE_READONLY( "haremchl", 0, BAD_DUMP SHA1(abbab347c0d7c5eef0465d0eee770754a452e874) )
 ROM_END
 
 ROM_START( lsrquiz )
 	CD32_BIOS
 
-	DISK_REGION( "cdrom" )
+	ROM_REGION(0x1000, "pic", 0) // unknown type
+	ROM_LOAD( "pic.bin", 0x000000, 0x1000, NO_DUMP )
+
+	DISK_REGION( "akiko" )
 	DISK_IMAGE_READONLY( "lsrquiz", 0, BAD_DUMP SHA1(41fb6cd0c9d36bd77e9c3db69d36801edc791e96) )
 ROM_END
 
 ROM_START( lsrquiz2i )
 	CD32_BIOS
 
-	DISK_REGION( "cdrom" )
+	ROM_REGION(0x1000, "pic", 0) // unknown type
+	ROM_LOAD( "pic.bin", 0x000000, 0x1000, NO_DUMP )
+
+	DISK_REGION( "akiko" )
 	DISK_IMAGE_READONLY( "lsrquiz2", 0, BAD_DUMP SHA1(78e261df1c548fa492e6cf37a9469640bb8816bf) )
 ROM_END
 
 ROM_START( lsrquizg )
 	CD32_BIOS
 
-	DISK_REGION( "cdrom" )
+	ROM_REGION(0x1000, "pic", 0) // unknown type
+	ROM_LOAD( "pic.bin", 0x000000, 0x1000, NO_DUMP )
+
+	DISK_REGION( "akiko" )
 	DISK_IMAGE_READONLY( "laserquizgreek2pro", 0, BAD_DUMP SHA1(8538915b4a0078f19197a5562e37ed3e6d0429a4) )
 ROM_END
 
 ROM_START( mgprem11 )
 	CD32_BIOS
 
-	DISK_REGION( "cdrom" )
+	ROM_REGION(0x1000, "pic", 0) // unknown type
+	ROM_LOAD( "pic.bin", 0x000000, 0x1000, NO_DUMP )
+
+	DISK_REGION( "akiko" )
 	DISK_IMAGE_READONLY( "mgprem11", 0, BAD_DUMP SHA1(7808db33d5949f6c86d12b32bc388c12377e7038) )
 ROM_END
 
 ROM_START( lasstixx )
 	CD32_BIOS
 
-	DISK_REGION( "cdrom" )
+	ROM_REGION(0x1000, "pic", 0) // unknown type
+	ROM_LOAD( "pic.bin", 0x000000, 0x1000, NO_DUMP )
+
+	DISK_REGION( "akiko" )
 	DISK_IMAGE_READONLY( "lasstixx", 0, BAD_DUMP SHA1(b8f6138e1f1840c193e786c56dab03c512f3e21f) )
 ROM_END
 
 ROM_START( mgnumber )
 	CD32_BIOS
 
-	DISK_REGION( "cdrom" )
+	ROM_REGION(0x1000, "pic", 0) // unknown type
+	ROM_LOAD( "pic.bin", 0x000000, 0x1000, NO_DUMP )
+
+	DISK_REGION( "akiko" )
 	DISK_IMAGE_READONLY( "magicnumber", 0, BAD_DUMP SHA1(60e1fadc42694742d19cc0ac2b6e99e9e33faa3d) )
 ROM_END
 
 ROM_START( odeontw )
 	CD32_BIOS
 
-	DISK_REGION( "cdrom" )
+	ROM_REGION(0x1000, "pic", 0) // unknown type
+	ROM_LOAD( "pic.bin", 0x000000, 0x1000, NO_DUMP )
+
+	DISK_REGION( "akiko" )
 	DISK_IMAGE_READONLY( "twister32_17_3", 0, BAD_DUMP SHA1(a40ec484708e22059f7186415283084ebf01323e) ) // has its audio cut a little, worth to mark as redump needed
 ROM_END
 
 ROM_START( odeontw2 )
 	CD32_BIOS
 
-	DISK_REGION( "cdrom" )
+	ROM_REGION(0x1000, "pic", 0) // unknown type
+	ROM_LOAD( "pic.bin", 0x000000, 0x1000, NO_DUMP )
+
+	DISK_REGION( "akiko" )
 	DISK_IMAGE_READONLY( "odeontw2", 0, BAD_DUMP SHA1(f39e09f35b65a6ae9f1eba4a22f970626b7d3b71) )
 ROM_END
 
 ROM_START( eldoralg )
 	CD32_BIOS
 
-	DISK_REGION( "cdrom" )
+	ROM_REGION(0x1000, "pic", 0) // unknown type
+	ROM_LOAD( "pic.bin", 0x000000, 0x1000, NO_DUMP )
+
+	DISK_REGION( "akiko" )
 	DISK_IMAGE_READONLY( "eldorado", 0, BAD_DUMP SHA1(bc1617c2e3438b729421c1d8b1bf88840b12f030) )
 ROM_END
 
@@ -1378,9 +1440,9 @@ GAME( 1995, lsrquiz2i, cubo, cubo, lsrquiz2, cubo_state, init_lsrquiz2, ROT0, "C
 GAME( 1995, lasstixx,  cubo, cubo, lasstixx, cubo_state, init_lasstixx, ROT0, "CD Express",    "Laser Strixx 2",            MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
 GAME( 1995, mgnumber,  cubo, cubo, mgnumber, cubo_state, init_mgnumber, ROT0, "CD Express",    "Magic Number",              MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
 GAME( 1996, mgprem11,  cubo, cubo, mgprem11, cubo_state, init_mgprem11, ROT0, "CD Express",    "Magic Premium (v1.1)",      MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1997, eldoralg,  cubo, cubo, eldoralg, cubo_state, init_cubo,     ROT0, "Shangai Games", "Eldorado (4.2)",            MACHINE_NOT_WORKING | MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND ) // touchscreen is offset and cannot be calibrated, joystick buttons aren't recognized properly, has slight GFX bug with roulette ball
-GAME( 1998, odeontw,   cubo, cubo, eldoralg, cubo_state, init_cubo,     ROT0, "CD Express",    "Odeon Twister (v1.4)",      MACHINE_NOT_WORKING | MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND ) // "Invalid NVRAM", accesses area $6xxxxx and claims invalid RAM config if bypassed
-GAME( 1998, odeontw2,  cubo, cubo, eldoralg, cubo_state, init_cubo,     ROT0, "CD Express",    "Odeon Twister 2 (v202.19)", MACHINE_NOT_WORKING | MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND ) // Resets halfway thru "please wait" in service mode, therefore NVRAM cannot be inited
+GAME( 1997, eldoralg,  cubo, cubo, eldoralg, cubo_state, init_cubo,     ROT0, "Shangai Games", "Eldorado (4.2)",            MACHINE_NOT_WORKING | MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND ) // touchscreen is offset and throws errors in calibration menu, joystick buttons aren't recognized properly in places, uses SPRES=3 (SHRES) for roulette ball in attract
+GAME( 1998, odeontw,   cubo, cubo, eldoralg, cubo_state, init_cubo,     ROT0, "CD Express",    "Odeon Twister (v1.4)",      MACHINE_NOT_WORKING | MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND ) // claims invalid RAM config once intialized (i2c RTC?), hangs with NVRAM viewer in service mode
+GAME( 1998, odeontw2,  cubo, cubo, eldoralg, cubo_state, init_cubo,     ROT0, "CD Express",    "Odeon Twister 2 (v202.19)", MACHINE_NOT_WORKING | MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND ) // "Security checking failed" once initialized
 // Laser Gate 2, alt title for Eldorado?
 // Lucky Five
 // Greyhound Race

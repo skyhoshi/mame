@@ -207,8 +207,8 @@
 
 
 // configurable logging
-#define LOG_COMMS     (1U <<  1)
-#define LOG_A1OUT     (1U <<  2)
+#define LOG_COMMS     (1U << 1)
+#define LOG_A1OUT     (1U << 2)
 
 //#define VERBOSE (LOG_GENERAL | LOG_COMMS | LOG_A1OUT)
 
@@ -235,11 +235,11 @@ public:
 
 	void alphaone(machine_config &config);
 
-	DECLARE_READ_LINE_MEMBER(clock_r);
+	int clock_r();
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	required_shared_ptr_array<uint8_t, 2> m_zram;
 	required_memory_bank m_rambank;
@@ -262,7 +262,7 @@ private:
 	void dual_pokey_w(offs_t offset, uint8_t data);
 	void out_0_w(uint8_t data);
 
-	void alpha_map(address_map &map);
+	void alpha_map(address_map &map) ATTR_COLD;
 };
 
 class mhavoc_state : public alphaone_state
@@ -277,19 +277,19 @@ public:
 
 	void mhavoc(machine_config &config);
 
-	DECLARE_CUSTOM_INPUT_MEMBER(coin_service_r);
-	DECLARE_READ_LINE_MEMBER(gamma_rcvd_r);
-	DECLARE_READ_LINE_MEMBER(gamma_xmtd_r);
-	DECLARE_READ_LINE_MEMBER(alpha_rcvd_r);
-	DECLARE_READ_LINE_MEMBER(alpha_xmtd_r);
+	ioport_value coin_service_r();
+	int gamma_rcvd_r();
+	int gamma_xmtd_r();
+	int alpha_rcvd_r();
+	int alpha_xmtd_r();
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	required_device<cpu_device> m_gamma;
 
-	void gamma_map(address_map &map);
+	void gamma_map(address_map &map) ATTR_COLD;
 
 private:
 	required_ioport m_coin;
@@ -317,7 +317,7 @@ private:
 
 	TIMER_CALLBACK_MEMBER(delayed_gamma_w);
 	TIMER_DEVICE_CALLBACK_MEMBER(cpu_irq_clock);
-	void alpha_map(address_map &map);
+	void alpha_map(address_map &map) ATTR_COLD;
 };
 
 class mhavocrv_state : public mhavoc_state
@@ -331,7 +331,7 @@ public:
 	void mhavocrv(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	required_device<tms5220_device> m_tms;
@@ -341,7 +341,7 @@ private:
 	void speech_data_w(uint8_t data);
 	void speech_strobe_w(uint8_t data);
 
-	void gamma_map(address_map &map);
+	void gamma_map(address_map &map) ATTR_COLD;
 };
 
 
@@ -486,7 +486,7 @@ TIMER_CALLBACK_MEMBER(mhavoc_state::delayed_gamma_w)
 	m_gamma->pulse_input_line(INPUT_LINE_NMI, attotime::zero);
 
 	// the sound CPU needs to reply in 250 microseconds (according to Neil Bradley)
-	machine().scheduler().timer_set(attotime::from_usec(250), timer_expired_delegate());
+	machine().scheduler().perfect_quantum(attotime::from_usec(250));
 }
 
 
@@ -557,34 +557,41 @@ void alphaone_state::rom_banksel_w(uint8_t data)
  *
  *************************************/
 
-CUSTOM_INPUT_MEMBER(mhavoc_state::coin_service_r)
+ioport_value mhavoc_state::coin_service_r()
 {
 	return (m_player_1 ? m_service : m_coin)->read() & 0x03;
 }
 
-READ_LINE_MEMBER(mhavoc_state::gamma_rcvd_r)
+int mhavoc_state::gamma_rcvd_r()
 {
 	// Gamma rcvd flag
 	return m_gamma_rcvd;
 }
 
-READ_LINE_MEMBER(mhavoc_state::gamma_xmtd_r)
+int mhavoc_state::gamma_xmtd_r()
 {
 	// Gamma xmtd flag
 	return m_gamma_xmtd;
 }
 
-READ_LINE_MEMBER(mhavoc_state::alpha_rcvd_r)
+int mhavoc_state::alpha_rcvd_r()
 {
 	// Alpha rcvd flag
 	return m_alpha_rcvd;
 }
 
-READ_LINE_MEMBER(mhavoc_state::alpha_xmtd_r)
+int mhavoc_state::alpha_xmtd_r()
 {
 	// Alpha xmtd flag
 	return m_alpha_xmtd;
 }
+
+int alphaone_state::clock_r()
+{
+	// 2.4kHz (divide 2.5MHz by 1024)
+	return (m_alpha->total_cycles() & 0x400) ? 0 : 1;
+}
+
 
 /*************************************
  *
@@ -645,6 +652,7 @@ void mhavoc_state::out_1_w(uint8_t data)
 	// Bit 0 = right coin counter
 	machine().bookkeeping().coin_counter_w(1, data & 0x01);
 }
+
 
 /*************************************
  *
@@ -848,40 +856,21 @@ void alphaone_state::alpha_map(address_map &map)
  *
  *************************************/
 
-READ_LINE_MEMBER(alphaone_state::clock_r)
-{
-	// 2.4kHz (divide 2.5MHz by 1024)
-	return (m_alpha->total_cycles() & 0x400) ? 0 : 1;
-}
-
-
-/* 2008-08 FP:
-   IN0 Bit 4 is tested in the second input test, but it's not clear its effect.
-   According to the memory map at top it should be Diagnostic Step, but it's
-   actually IN0 Bit 5 to have this function. I marked it as UNKNOWN for the moment */
 static INPUT_PORTS_START( mhavoc )
 	PORT_START("IN0")   // alpha
-	// Bits 7-6 = selected based on player_1
-	// Bits 5-4 = common
-	// Bit 3 = Gamma rcvd flag
-	// Bit 2 = Gamma xmtd flag
-	// Bit 1 = 2.4kHz (divide 2.5MHz by 1024)
-	// Bit 0 = Vector generator halt flag
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("avg", avg_device, done_r)
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(mhavoc_state, clock_r)
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(mhavoc_state, gamma_xmtd_r)
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(mhavoc_state, gamma_rcvd_r)
-	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_UNKNOWN )
-	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_SERVICE1 ) PORT_NAME("Diag Step/Coin C") PORT_CODE(KEYCODE_F1)
-	PORT_BIT( 0xc0, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(mhavoc_state, coin_service_r)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("avg", FUNC(avg_device::done_r))
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(FUNC(mhavoc_state::clock_r))
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(FUNC(mhavoc_state::gamma_xmtd_r))
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(FUNC(mhavoc_state::gamma_rcvd_r))
+	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_SERVICE2 ) PORT_NAME("Diagnostic Step") // mentioned in schematics, but N/C?
+	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_SERVICE1 )
+	PORT_BIT( 0xc0, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(mhavoc_state::coin_service_r)) // selected based on player_1
 
 	PORT_START("IN1")   // gamma
-	// Bits 7-2 = input switches
-	// Bit 1 = Alpha rcvd flag
-	// Bit 0 = Alpha xmtd flag
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(mhavoc_state, alpha_xmtd_r)
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(mhavoc_state, alpha_rcvd_r)
-	PORT_BIT( 0x0c, IP_ACTIVE_LOW, IPT_UNKNOWN )
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(FUNC(mhavoc_state::alpha_xmtd_r))
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(FUNC(mhavoc_state::alpha_rcvd_r))
+	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_UNUSED ) // TIRDY, this pcb does not have a TMS5200
+	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_UNUSED )
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_BUTTON2 ) PORT_PLAYER(2)
 	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_BUTTON1 ) PORT_PLAYER(2)
 	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_BUTTON2 )
@@ -949,8 +938,7 @@ static INPUT_PORTS_START( mhavocrv )
 	PORT_INCLUDE( mhavoc )
 
 	PORT_MODIFY("IN1")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("tms", tms5220_device, readyq_r)
-	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_UNKNOWN )
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("tms", FUNC(tms5220_device::readyq_r))
 INPUT_PORTS_END
 
 static INPUT_PORTS_START( mhavocp )
@@ -966,8 +954,8 @@ INPUT_PORTS_END
 
 static INPUT_PORTS_START( alphaone )
 	PORT_START("IN0")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("avg", avg_device, done_r)
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(alphaone_state, clock_r)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("avg", FUNC(avg_device::done_r))
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(FUNC(alphaone_state::clock_r))
 	PORT_BIT( 0x7c, IP_ACTIVE_LOW, IPT_UNKNOWN )
 	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_BUTTON1 )
 

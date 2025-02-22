@@ -47,11 +47,11 @@ public:
 	europc_fdc_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
 protected:
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual void device_start() override;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
 
 private:
-	void map(address_map &map);
+	void map(address_map &map) ATTR_COLD;
 };
 
 DEFINE_DEVICE_TYPE(EUROPC_FDC, europc_fdc_device, "europc_fdc", "EURO PC FDC hookup")
@@ -124,7 +124,7 @@ private:
 	required_device<m3002_device> m_rtc;
 
 	uint8_t europc_portc_r();
-	DECLARE_WRITE_LINE_MEMBER(reset_in_w);
+	void reset_in_w(int state);
 
 	void europc_jim_w(offs_t offset, uint8_t data);
 	uint8_t europc_jim_r(offs_t offset);
@@ -134,8 +134,8 @@ private:
 	uint8_t m_jim_state;
 	isa8_aga_device::mode_t m_jim_mode{};
 
-	void europc_io(address_map &map);
-	void europc_map(address_map &map);
+	void europc_io(address_map &map) ATTR_COLD;
+	void europc_map(address_map &map) ATTR_COLD;
 };
 
 /*
@@ -339,7 +339,7 @@ uint8_t europc_pc_state::europc_portc_r()
 	return data;
 }
 
-WRITE_LINE_MEMBER(europc_pc_state::reset_in_w)
+void europc_pc_state::reset_in_w(int state)
 {
 	m_maincpu->set_input_line(INPUT_LINE_RESET, state ? CLEAR_LINE : ASSERT_LINE);
 	if (!state)

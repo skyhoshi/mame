@@ -105,6 +105,11 @@ public:
 	void radica_eu3a14_altrambase_bb3(machine_config &config);
 	void radica_eu3a14p_altrambase_bb3(machine_config &config);
 
+	void radica_eu3a14_altspritebase(machine_config& config);
+	void radica_eu3a14_altspritebase_bat(machine_config& config);
+
+	int tsbuzz_inputs_r();
+
 private:
 	// screen updates
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
@@ -126,14 +131,14 @@ private:
 	// for callback
 	uint8_t read_full_space(offs_t offset);
 
-	void bank_map(address_map &map);
-	void radica_eu3a14_map(address_map &map);
+	void bank_map(address_map &map) ATTR_COLD;
+	void radica_eu3a14_map(address_map &map) ATTR_COLD;
 
 	// driver_device overrides
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
-	virtual void video_start() override;
+	virtual void video_start() override ATTR_COLD;
 
 	required_device<cpu_device> m_maincpu;
 	required_device<elan_eu3a14sys_device> m_sys;
@@ -149,12 +154,12 @@ private:
 
 	uint8_t m_portdir[3];
 
-	DECLARE_WRITE_LINE_MEMBER(sound_end0) { m_sys->generate_custom_interrupt(2); }
-	DECLARE_WRITE_LINE_MEMBER(sound_end1) { m_sys->generate_custom_interrupt(3); }
-	DECLARE_WRITE_LINE_MEMBER(sound_end2) { m_sys->generate_custom_interrupt(4); }
-	DECLARE_WRITE_LINE_MEMBER(sound_end3) { m_sys->generate_custom_interrupt(5); }
-	DECLARE_WRITE_LINE_MEMBER(sound_end4) { m_sys->generate_custom_interrupt(6); }
-	DECLARE_WRITE_LINE_MEMBER(sound_end5) { m_sys->generate_custom_interrupt(7); }
+	void sound_end0(int state) { m_sys->generate_custom_interrupt(2); }
+	void sound_end1(int state) { m_sys->generate_custom_interrupt(3); }
+	void sound_end2(int state) { m_sys->generate_custom_interrupt(4); }
+	void sound_end3(int state) { m_sys->generate_custom_interrupt(5); }
+	void sound_end4(int state) { m_sys->generate_custom_interrupt(6); }
+	void sound_end5(int state) { m_sys->generate_custom_interrupt(7); }
 };
 
 
@@ -210,7 +215,7 @@ void elan_eu3a14_state::portc_dat_w(uint8_t data)
 
 void elan_eu3a14_state::bank_map(address_map &map)
 {
-	map(0x000000, 0x3fffff).rom().region("maincpu", 0);
+	map(0x000000, 0x7fffff).rom().region("maincpu", 0);
 }
 
 void elan_eu3a14_state::radica_eu3a14_map(address_map& map)
@@ -249,6 +254,37 @@ void elan_eu3a14_state::radica_eu3a14_map(address_map& map)
 	map(0xfffa, 0xfffb).r(m_sys, FUNC(elan_eu3a05commonsys_device::nmi_vector_r)); // custom vectors handled with NMI for now
 	//map(0xfffe, 0xffff).r(m_sys, FUNC(elan_eu3a05commonsys_device::irq_vector_r));  // allow normal IRQ for brk
 }
+
+
+static INPUT_PORTS_START( eu3a14 )
+	PORT_START("IN0")
+	PORT_BIT( 0xff, IP_ACTIVE_LOW, IPT_UNKNOWN )
+
+	PORT_START("IN1")
+	PORT_BIT( 0xff, IP_ACTIVE_LOW, IPT_UNKNOWN )
+
+	PORT_START("IN2")
+	PORT_BIT( 0xff, IP_ACTIVE_LOW, IPT_UNKNOWN )
+INPUT_PORTS_END
+
+int elan_eu3a14_state::tsbuzz_inputs_r()
+{
+	// Test mode shows 8 directions, 2 buttons and a trigger
+	// presumably the motion detection from the peripherals gets converted
+	// into basic input directions before reaching the SoC
+
+	// TODO: figure out protocol
+	return machine().rand();
+}
+
+static INPUT_PORTS_START( tsbuzz )
+	PORT_INCLUDE( eu3a14 )
+
+	PORT_MODIFY("IN1")
+	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_START1 ) // pause(?), hold this on startup for test mode
+	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_BUTTON1 ) // cheat? skips levels
+	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(FUNC(elan_eu3a14_state::tsbuzz_inputs_r)) // all other inputs read through here
+INPUT_PORTS_END
 
 
 static INPUT_PORTS_START( rad_gtg )
@@ -788,6 +824,20 @@ void elan_eu3a14_state::radica_eu3a14(machine_config &config)
 	m_sound->sound_end_cb<5>().set(FUNC(elan_eu3a14_state::sound_end5));
 }
 
+void elan_eu3a14_state::radica_eu3a14_altspritebase(machine_config& config)
+{
+	radica_eu3a14(config);
+	m_vid->set_default_spriteramaddr(0x04); // at 0x800
+}
+
+void elan_eu3a14_state::radica_eu3a14_altspritebase_bat(machine_config& config)
+{
+	radica_eu3a14(config);
+	m_vid->set_default_spriteramaddr(0x0c); // at 0x1800
+}
+
+
+
 void elan_eu3a14_state::radica_eu3a14_altrambase(machine_config& config)
 {
 	radica_eu3a14(config);
@@ -829,54 +879,143 @@ void elan_eu3a14_state::radica_eu3a14p_altrambase_bb3(machine_config& config)
 
 
 ROM_START( rad_gtg )
-	ROM_REGION( 0x400000, "maincpu", ROMREGION_ERASE00 )
+	ROM_REGION( 0x800000, "maincpu", ROMREGION_ERASE00 )
 	ROM_LOAD( "goldentee.bin", 0x000000, 0x400000, CRC(2d6cdb85) SHA1(ce6ed39d692ff16ea407f39c37b6e731f952b9d5) )
 ROM_END
 
 ROM_START( rad_rsg )
-	ROM_REGION( 0x400000, "maincpu", ROMREGION_ERASE00 )
+	ROM_REGION( 0x800000, "maincpu", ROMREGION_ERASE00 )
 	ROM_LOAD( "realswinggolf.bin", 0x000000, 0x400000, CRC(89e5b6a6) SHA1(0b14aa84d7e7ae7190cd64e3eb125de2104342bc) )
 ROM_END
 
 ROM_START( rad_rsgp )
-	ROM_REGION( 0x400000, "maincpu", ROMREGION_ERASE00 )
+	ROM_REGION( 0x800000, "maincpu", ROMREGION_ERASE00 )
 	ROM_LOAD( "realswinggolf.bin", 0x000000, 0x400000, CRC(89e5b6a6) SHA1(0b14aa84d7e7ae7190cd64e3eb125de2104342bc) )
 ROM_END
 
+ROM_START( rad_rsgpa )
+	ROM_REGION( 0x800000, "maincpu", ROMREGION_ERASE00 )
+	ROM_LOAD( "realswinggolf_multilanguage.bin", 0x000000, 0x400000, CRC(c03752a6) SHA1(7e9cc804edf0c23a8dedfa0c0a51d1bc811ea5c1) )
+ROM_END
 
 ROM_START( rad_foot )
-	ROM_REGION( 0x400000, "maincpu", ROMREGION_ERASE00 )
+	ROM_REGION( 0x800000, "maincpu", ROMREGION_ERASE00 )
 	ROM_LOAD( "connectvfootball.bin", 0x000000, 0x400000, CRC(00ac4fc0) SHA1(2b60ae5c6bc7e9ef7cdbd3f6a0a0657ed3ab5afe) )
 ROM_END
 
 ROM_START( rad_bb3 )
-	ROM_REGION( 0x400000, "maincpu", ROMREGION_ERASE00 )
+	ROM_REGION( 0x800000, "maincpu", ROMREGION_ERASE00 )
 	ROM_LOAD( "baseball3.bin", 0x000000, 0x400000, CRC(af86aab0) SHA1(5fed48a295f045ca839f87b0f9b78ecc51104cdc) )
 ROM_END
 
 ROM_START( rad_bb3p )
-	ROM_REGION( 0x400000, "maincpu", ROMREGION_ERASE00 )
+	ROM_REGION( 0x800000, "maincpu", ROMREGION_ERASE00 )
 	ROM_LOAD( "baseball3.bin", 0x000000, 0x400000, CRC(af86aab0) SHA1(5fed48a295f045ca839f87b0f9b78ecc51104cdc) )
 ROM_END
 
 ROM_START( rad_hnt3 )
-	ROM_REGION( 0x400000, "maincpu", ROMREGION_ERASE00 )
+	ROM_REGION( 0x800000, "maincpu", ROMREGION_ERASE00 )
 	ROM_LOAD( "huntin3.bin", 0x000000, 0x400000, CRC(c8e3e40b) SHA1(81eb16ac5ab6d93525fcfadbc6703b2811d7de7f) )
 ROM_END
 
 ROM_START( rad_hnt3p )
-	ROM_REGION( 0x400000, "maincpu", ROMREGION_ERASE00 )
+	ROM_REGION( 0x800000, "maincpu", ROMREGION_ERASE00 )
 	ROM_LOAD( "huntin3.bin", 0x000000, 0x400000, CRC(c8e3e40b) SHA1(81eb16ac5ab6d93525fcfadbc6703b2811d7de7f) )
 ROM_END
 
 ROM_START( rad_bask )
-	ROM_REGION( 0x400000, "maincpu", ROMREGION_ERASE00 )
+	ROM_REGION( 0x800000, "maincpu", ROMREGION_ERASE00 )
 	ROM_LOAD( "basketball.bin", 0x000000, 0x400000, CRC(7d6ff53c) SHA1(1c75261d55e0107a3b8e8d4c1eb2854750f2d0e8) )
 ROM_END
 
 ROM_START( rad_baskp )
-	ROM_REGION( 0x400000, "maincpu", ROMREGION_ERASE00 )
+	ROM_REGION( 0x800000, "maincpu", ROMREGION_ERASE00 )
 	ROM_LOAD( "basketball.bin", 0x000000, 0x400000, CRC(7d6ff53c) SHA1(1c75261d55e0107a3b8e8d4c1eb2854750f2d0e8) )
+ROM_END
+
+/*
+
+  The Interactive M.A.G. Motion Activated Gear titles use globtops with an unusual square pinout
+  for the main ROM
+
+  10   01
+  +------\
+11|      |48
+  |      |
+  |      |
+24+------+35
+  25    34
+
+
+01 | A10
+02 | A09
+03 | A08
+04 | A19
+05 | A21
+06 | A20
+07 | A18
+08 | A17
+09 | A07
+10 | A06
+11 | A05
+12 | A04
+13 | A00
+14 | A01
+15 | A02
+16 | A03
+17 | /CE
+18 | N/C
+19 | D08
+20 | D00
+21 | N/C
+22 | N/C
+23 | D01
+24 | D09
+25 | D02
+26 | D10
+27 | D03
+28 | D11
+29 | N/C
+30 | VCC
+31 | VCC
+32 | D04
+33 | D12
+34 | D05
+35 | D13
+36 | D06
+37 | D15
+38 | GND
+39 | D07
+40 | D14
+41 | GND
+42 | VCC
+43 | A13
+44 | A14
+45 | A16
+46 | A15
+47 | A12
+48 | A11
+
+*/
+
+ROM_START( tsbuzz )
+	ROM_REGION( 0x800000, "maincpu", ROMREGION_ERASE00 )
+	ROM_LOAD( "toystory_buzz.bin", 0x000000, 0x800000, CRC(8d727ed4) SHA1(228e1d788cdbaf251e15dba01b6c71e82197ea28) )
+ROM_END
+
+ROM_START( batvgc )
+	ROM_REGION( 0x800000, "maincpu", ROMREGION_ERASE00 )
+	ROM_LOAD( "batvgc.bin", 0x000000, 0x800000, CRC(513a5625) SHA1(d8db60818a4452e665c312b8b93642d8b2b33c8f) )
+ROM_END
+
+ROM_START( spidtt )
+	ROM_REGION( 0x800000, "maincpu", ROMREGION_ERASE00 )
+	ROM_LOAD( "mag_spidtt", 0x000000, 0x800000, CRC(05de01de) SHA1(f2891d6e743abdd7bb50d0bb84701b18225a0a7a) )
+ROM_END
+
+ROM_START( teentit )
+	ROM_REGION( 0x800000, "maincpu", ROMREGION_ERASE00 )
+	ROM_LOAD( "teentitansmag.bin", 0x000000, 0x800000, CRC(6087c7ca) SHA1(0bf639218c5f25449f4f98d5c3659a2311a28f72) )
 ROM_END
 
 } // anonymous namespace
@@ -885,8 +1024,8 @@ ROM_END
 CONS( 2006, rad_gtg,  0,        0, radica_eu3a14_altrambase_adc, rad_gtg,       elan_eu3a14_state, empty_init,  "Radica / FarSight Studios (licensed from Incredible Technologies)", "Golden Tee Golf: Home Edition", MACHINE_NOT_WORKING )
 
 CONS( 2005, rad_rsg,  0,        0, radica_eu3a14_altrambase,     rad_rsg,       elan_eu3a14_state, empty_init,  "Radica / FarSight Studios",                                         "Play TV Real Swing Golf", MACHINE_NOT_WORKING )
-// some Connectv branded Real Swing Golf units have a language selection (checksum in test mode confirmed as different on said units)
-CONS( 2005, rad_rsgp, rad_rsg,  0, radica_eu3a14p_altrambase,    rad_rsg,       elan_eu3a14_state, empty_init,  "Radica / FarSight Studios",                                         "Connectv Real Swing Golf", MACHINE_NOT_WORKING )
+CONS( 2005, rad_rsgp, rad_rsg,  0, radica_eu3a14p_altrambase,    rad_rsg,       elan_eu3a14_state, empty_init,  "Radica / FarSight Studios",                                         "Connectv Real Swing Golf (set 1)", MACHINE_NOT_WORKING ) // English only
+CONS( 2005, rad_rsgpa,rad_rsg,  0, radica_eu3a14p_altrambase,    rad_rsg,       elan_eu3a14_state, empty_init,  "Radica / FarSight Studios",                                         "Connectv Real Swing Golf (set 2)", MACHINE_NOT_WORKING ) // English, German, French, Spanish, Italian
 
 // also has a Connectv Real Soccer logo in the roms, apparently unused, maybe that was to be the US title (without the logo being changed to Play TV) but Play TV Soccer ended up being a different game licensed from Epoch instead.
 CONS( 2006, rad_foot, 0,        0, radica_eu3a14p,               radica_foot,   elan_eu3a14_state, empty_init,  "Radica / Medialink",                                                "Connectv Football", MACHINE_NOT_WORKING )
@@ -899,3 +1038,12 @@ CONS( 2005, rad_hnt3p,rad_hnt3, 0, radica_eu3a14p,               radica_hnt3,   
 
 CONS( 2005, rad_bask, 0,        0, radica_eu3a14_altrambase,     radica_bask,   elan_eu3a14_state, empty_init,  "Radica / FarSight Studios",                                         "Play TV Basketball", MACHINE_NOT_WORKING )
 CONS( 2005, rad_baskp,rad_bask, 0, radica_eu3a14p_altrambase,    radica_bask,   elan_eu3a14_state, empty_init,  "Radica / FarSight Studios",                                         "Connectv Basketball", MACHINE_NOT_WORKING )
+
+CONS( 200?, tsbuzz,   0,        0, radica_eu3a14_altspritebase,      tsbuzz,    elan_eu3a14_state, empty_init,  "Thinkway Toys",                                                     "Interactive M.A.G. Motion Activated Gear: Toy Story and Beyond! Buzz Lightyear Galactic Adventure", MACHINE_NOT_WORKING )
+CONS( 200?, batvgc,   0,        0, radica_eu3a14_altspritebase_bat,  tsbuzz,    elan_eu3a14_state, empty_init,  "Thinkway Toys",                                                     "Interactive M.A.G. Motion Activated Gear: The Batman - Villains of Gotham City", MACHINE_NOT_WORKING )
+CONS( 200?, spidtt,   0,        0, radica_eu3a14_altspritebase_bat,  tsbuzz,    elan_eu3a14_state, empty_init,  "Thinkway Toys",                                                     "Interactive M.A.G. Motion Activated Gear: Spider-Man - Triple Threat", MACHINE_NOT_WORKING )
+CONS( 200?, teentit,  0,        0, radica_eu3a14_altspritebase_bat,  tsbuzz,    elan_eu3a14_state, empty_init,  "Thinkway Toys",                                                     "Interactive M.A.G. Motion Activated Gear: Teen Titans Arena Showdown", MACHINE_NOT_WORKING )
+
+// the following Thinkway Toys 'MAG' products likely also fit here
+// MAG: Superman Fight for Metropolis
+// MAG: Disney Pixar Cars I Am Speed

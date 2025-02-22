@@ -3,6 +3,7 @@
 #include "emu.h"
 #include "memorywindow.h"
 
+#include "debugger.h"
 #include "debug/dvmemory.h"
 #include "debug/debugcon.h"
 #include "debug/debugcpu.h"
@@ -12,7 +13,11 @@
 #include <QtGui/QClipboard>
 #include <QtGui/QKeyEvent>
 #include <QtGui/QMouseEvent>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QtGui/QActionGroup>
+#else
 #include <QtWidgets/QActionGroup>
+#endif
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QMenu>
@@ -20,10 +25,6 @@
 #include <QtWidgets/QScrollBar>
 #include <QtWidgets/QToolTip>
 #include <QtWidgets/QVBoxLayout>
-
-#if QT_VERSION < QT_VERSION_CHECK(5, 11, 0)
-#define horizontalAdvance width
-#endif
 
 
 namespace osd::debugger::qt {

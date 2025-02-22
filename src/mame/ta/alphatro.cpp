@@ -29,9 +29,6 @@
 #include "cpu/z80/z80.h"
 #include "imagedev/cassette.h"
 #include "imagedev/floppy.h"
-#include "formats/pc_dsk.h"
-#include "formats/dsk_dsk.h"
-#include "formats/td0_dsk.h"
 #include "machine/clock.h"
 #include "machine/i8251.h"
 #include "machine/ram.h"
@@ -86,8 +83,8 @@ public:
 	DECLARE_INPUT_CHANGED_MEMBER(alphatro_break);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	uint8_t bicom_r(offs_t offset);
@@ -98,20 +95,20 @@ private:
 	uint8_t port30_r();
 	uint8_t portf0_r();
 	void portf0_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(hrq_w);
+	void hrq_w(int state);
 	void alphatro_palette(palette_device &palette) const;
-	DECLARE_WRITE_LINE_MEMBER(kansas_r);
-	DECLARE_WRITE_LINE_MEMBER(kansas_w);
+	void kansas_r(int state);
+	void kansas_w(int state);
 	MC6845_UPDATE_ROW(crtc_update_row);
 
 	std::pair<std::error_condition, std::string> load_cart(device_image_interface &image, generic_slot_device *slot);
 	DECLARE_DEVICE_IMAGE_LOAD_MEMBER(cart_load) { return load_cart(image, m_cart); }
 
-	void alphatro_io(address_map &map);
-	void alphatro_map(address_map &map);
-	void cartbank_map(address_map &map);
-	void monbank_map(address_map &map);
-	void rombank_map(address_map &map);
+	void alphatro_io(address_map &map) ATTR_COLD;
+	void alphatro_map(address_map &map) ATTR_COLD;
+	void cartbank_map(address_map &map) ATTR_COLD;
+	void monbank_map(address_map &map) ATTR_COLD;
+	void rombank_map(address_map &map) ATTR_COLD;
 	void update_banking();
 
 	const bool m_is_ntsc;
@@ -622,7 +619,7 @@ static INPUT_PORTS_START( alphatro )
 	PORT_BIT(0x80,IP_ACTIVE_HIGH,IPT_KEYBOARD) PORT_NAME("F1") PORT_CODE(KEYCODE_F1) PORT_CHAR(UCHAR_MAMEKEY(F1))
 
 	PORT_START("other")
-	PORT_BIT(0x01,IP_ACTIVE_HIGH,IPT_KEYBOARD) PORT_NAME("Break") PORT_CODE(KEYCODE_BACKSPACE) PORT_CHANGED_MEMBER(DEVICE_SELF,alphatro_state,alphatro_break,0)
+	PORT_BIT(0x01,IP_ACTIVE_HIGH,IPT_KEYBOARD) PORT_NAME("Break") PORT_CODE(KEYCODE_BACKSPACE) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(alphatro_state::alphatro_break), 0)
 
 	PORT_START("CONFIG")
 	PORT_CONFNAME(0x01, 0x00, "FDD Unit installed")
@@ -733,7 +730,7 @@ void alphatro_state::alphatro_palette(palette_device &palette) const
 }
 
 
-WRITE_LINE_MEMBER(alphatro_state::kansas_w)
+void alphatro_state::kansas_w(int state)
 {
 	// incoming @19230Hz
 	u8 twobit = m_cass_data[3] & 3;
@@ -762,7 +759,7 @@ WRITE_LINE_MEMBER(alphatro_state::kansas_w)
 	m_usart->write_txc(state);
 }
 
-WRITE_LINE_MEMBER(alphatro_state::kansas_r)
+void alphatro_state::kansas_r(int state)
 {
 	if (!BIT(m_port_10, 3))
 	{
@@ -784,7 +781,7 @@ WRITE_LINE_MEMBER(alphatro_state::kansas_r)
 	m_usart->write_rxc(state);
 }
 
-WRITE_LINE_MEMBER(alphatro_state::hrq_w)
+void alphatro_state::hrq_w(int state)
 {
 	m_maincpu->set_input_line(INPUT_LINE_HALT, state);
 	m_dmac->hlda_w(state);

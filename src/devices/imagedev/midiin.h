@@ -15,6 +15,8 @@
 
 #include "diserial.h"
 
+#include "interface/midiport.h"
+
 #include <memory>
 #include <string>
 #include <system_error>
@@ -45,16 +47,16 @@ public:
 	virtual bool is_writeable() const noexcept override { return false; }
 	virtual bool is_creatable() const noexcept override { return false; }
 	virtual bool is_reset_on_load() const noexcept override { return false; }
-	virtual const char *file_extensions() const noexcept override { return "mid"; }
+	virtual const char *file_extensions() const noexcept override { return "mid,syx"; }
 	virtual bool core_opens_image_file() const noexcept override { return false; }
 	virtual const char *image_type_name() const noexcept override { return "midiin"; }
 	virtual const char *image_brief_type_name() const noexcept override { return "min"; }
 
 protected:
 	// device_t implementation
-	virtual ioport_constructor device_input_ports() const override;
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual ioport_constructor device_input_ports() const override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 	// device_serial_interface implementation
 	virtual void tra_complete() override;    // Tx completed sending byte
@@ -67,7 +69,7 @@ private:
 
 	void xmit_char(uint8_t data);
 
-	std::unique_ptr<osd_midi_device> m_midi;
+	std::unique_ptr<osd::midi_input_port> m_midi;
 	required_ioport m_config;
 	emu_timer *m_timer;
 	devcb_write_line        m_input_cb;
@@ -173,6 +175,7 @@ private:
 		midi_event &event_at(u32 tick);
 		u32 parse_track_data(midi_parser &buffer, u32 start_tick);
 		void parse_midi_data(midi_parser &buffer);
+		void parse_sysex_data(midi_parser &buffer);
 
 		// internal state
 		std::list<midi_event> m_list;

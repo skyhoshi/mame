@@ -15,15 +15,16 @@ class micom_xe_1a_device : public device_t
 {
 public:
 	micom_xe_1a_device(machine_config const &mconfig, char const *tag, device_t *owner, u32 clock = 0) ATTR_COLD;
+	virtual ~micom_xe_1a_device();
 
 	auto buttons_handler() { return m_buttons_callback.bind(); }
 	auto analog_handler() { return m_analog_callback.bind(); }
 
 	u8 out_r();
 
-	DECLARE_WRITE_LINE_MEMBER(req_w);
-	DECLARE_WRITE_LINE_MEMBER(mode_w); // 0 = digital, 1 = analog
-	DECLARE_WRITE_LINE_MEMBER(interface_w); // 0 = PC, 1 = MD
+	void req_w(int state);
+	void mode_w(int state); // 0 = digital, 1 = analog
+	void interface_w(int state); // 0 = PC, 1 = MD
 
 protected:
 	virtual void device_start() override ATTR_COLD;

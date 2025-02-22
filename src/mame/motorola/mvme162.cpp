@@ -160,14 +160,10 @@
 #include "machine/clock.h"
 #include "machine/timekpr.h"
 
-#define LOG_SETUP   (1U <<  1)
-
-//#define VERBOSE (LOG_GENERAL | LOG_SETUP)
-//#define LOG_OUTPUT_STREAM std::cout
-
+#define VERBOSE (0) // (LOG_GENERAL)
+//#define LOG_OUTPUT_STREAM osd_printf_info
 #include "logmacro.h"
 
-#define LOGSETUP(...) LOGMASKED(LOG_SETUP,   __VA_ARGS__)
 
 //**************************************************************************
 //  MACROS / CONSTANTS
@@ -213,7 +209,7 @@ private:
 	void bootvect_w(offs_t offset, uint32_t data, uint32_t mem_mask = ~0);
 	virtual void machine_start () override;
 	virtual void machine_reset () override;
-	void mvme162_mem(address_map &map);
+	void mvme162_mem(address_map &map) ATTR_COLD;
 
 	required_device<cpu_device> m_maincpu;
 	required_device<scc85230_device> m_sccterm;

@@ -41,7 +41,7 @@ public:
 	void vertigo(machine_config &config);
 
 private:
-	DECLARE_WRITE_LINE_MEMBER(adc_eoc_w);
+	void adc_eoc_w(int state);
 	uint16_t vertigo_io_convert(offs_t offset);
 	uint16_t vertigo_coin_r();
 	void vertigo_wsot_w(uint16_t data);
@@ -50,16 +50,16 @@ private:
 	void vertigo_motor_w(uint16_t data);
 	INTERRUPT_GEN_MEMBER(vertigo_interrupt);
 	TIMER_CALLBACK_MEMBER(sound_command_w);
-	DECLARE_WRITE_LINE_MEMBER(v_irq4_w);
-	DECLARE_WRITE_LINE_MEMBER(v_irq3_w);
+	void v_irq4_w(int state);
+	void v_irq3_w(int state);
 	void update_irq(uint8_t data);
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 	void exidy440_audio(machine_config &config);
-	void vertigo_map(address_map &map);
-	void vertigo_motor(address_map &map);
-	void exidy440_audio_map(address_map &map);
+	void vertigo_map(address_map &map) ATTR_COLD;
+	void vertigo_motor(address_map &map) ATTR_COLD;
+	void exidy440_audio_map(address_map &map) ATTR_COLD;
 
 	struct am2901
 	{

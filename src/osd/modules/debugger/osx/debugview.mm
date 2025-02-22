@@ -432,15 +432,15 @@ static void debugwin_view_update(debug_view &view, void *osdprivate)
 	NSRange const run = NSMakeRange(0, [text length]);
 	[text addAttribute:NSFontAttributeName value:font range:run];
 	NSPasteboard *const board = [NSPasteboard generalPasteboard];
-	[board declareTypes:[NSArray arrayWithObject:NSRTFPboardType] owner:nil];
-	[board setData:[text RTFFromRange:run documentAttributes:[NSDictionary dictionary]] forType:NSRTFPboardType];
+	[board declareTypes:[NSArray arrayWithObject:NSPasteboardTypeRTF] owner:nil];
+	[board setData:[text RTFFromRange:run documentAttributes:[NSDictionary dictionary]] forType:NSPasteboardTypeRTF];
 	[text deleteCharactersInRange:run];
 }
 
 
 - (IBAction)paste:(id)sender {
 	NSPasteboard *const board = [NSPasteboard generalPasteboard];
-	NSString *const avail = [board availableTypeFromArray:[NSArray arrayWithObject:NSStringPboardType]];
+	NSString *const avail = [board availableTypeFromArray:[NSArray arrayWithObject:NSPasteboardTypeString]];
 	if (avail == nil)
 	{
 		NSBeep();
@@ -764,8 +764,8 @@ static void debugwin_view_update(debug_view &view, void *osdprivate)
 - (void)mouseDown:(NSEvent *)event {
 	NSPoint const location = [self convertPoint:[event locationInWindow] fromView:nil];
 	NSUInteger const modifiers = [event modifierFlags];
-	view->process_click(((modifiers & NSCommandKeyMask) && [[self window] isMainWindow]) ? DCK_RIGHT_CLICK
-					  : (modifiers & NSAlternateKeyMask) ? DCK_MIDDLE_CLICK
+	view->process_click(((modifiers & NSEventModifierFlagCommand) && [[self window] isMainWindow]) ? DCK_RIGHT_CLICK
+					  : (modifiers & NSEventModifierFlagOption) ? DCK_MIDDLE_CLICK
 					  : DCK_LEFT_CLICK,
 						[self convertLocation:location]);
 }
@@ -776,8 +776,8 @@ static void debugwin_view_update(debug_view &view, void *osdprivate)
 	NSPoint const location = [self convertPoint:[event locationInWindow] fromView:nil];
 	NSUInteger const modifiers = [event modifierFlags];
 	if (view->cursor_supported()
-	 && !(modifiers & NSAlternateKeyMask)
-	 && (!(modifiers & NSCommandKeyMask) || ![[self window] isMainWindow]))
+	 && !(modifiers & NSEventModifierFlagOption)
+	 && (!(modifiers & NSEventModifierFlagCommand) || ![[self window] isMainWindow]))
 	{
 		view->set_cursor_position([self convertLocation:location]);
 		view->set_cursor_visible(true);
@@ -804,34 +804,34 @@ static void debugwin_view_update(debug_view &view, void *osdprivate)
 
 	if ([str length] == 1)
 	{
-		if (modifiers & NSNumericPadKeyMask)
+		if (modifiers & NSEventModifierFlagNumericPad)
 		{
 			switch ([str characterAtIndex:0])
 			{
 			case NSUpArrowFunctionKey:
-				if (modifiers & NSCommandKeyMask)
+				if (modifiers & NSEventModifierFlagCommand)
 					view->process_char(DCH_CTRLHOME);
 				else
 					view->process_char(DCH_UP);
 				return;
 			case NSDownArrowFunctionKey:
-				if (modifiers & NSCommandKeyMask)
+				if (modifiers & NSEventModifierFlagCommand)
 					view->process_char(DCH_CTRLEND);
 				else
 					view->process_char(DCH_DOWN);
 				return;
 			case NSLeftArrowFunctionKey:
-				if (modifiers & NSCommandKeyMask)
+				if (modifiers & NSEventModifierFlagCommand)
 					[self typeCharacterAndScrollToCursor:DCH_HOME];
-				else if (modifiers & NSAlternateKeyMask)
+				else if (modifiers & NSEventModifierFlagOption)
 					[self typeCharacterAndScrollToCursor:DCH_CTRLLEFT];
 				else
 					[self typeCharacterAndScrollToCursor:DCH_LEFT];
 				return;
 			case NSRightArrowFunctionKey:
-				if (modifiers & NSCommandKeyMask)
+				if (modifiers & NSEventModifierFlagCommand)
 					[self typeCharacterAndScrollToCursor:DCH_END];
-				else if (modifiers & NSAlternateKeyMask)
+				else if (modifiers & NSEventModifierFlagOption)
 					[self typeCharacterAndScrollToCursor:DCH_CTRLRIGHT];
 				else
 					[self typeCharacterAndScrollToCursor:DCH_RIGHT];
@@ -841,18 +841,18 @@ static void debugwin_view_update(debug_view &view, void *osdprivate)
 				return;
 			}
 		}
-		else if (modifiers & NSFunctionKeyMask)
+		else if (modifiers & NSEventModifierFlagFunction)
 		{
 			switch ([str characterAtIndex:0])
 			{
 				case NSPageUpFunctionKey:
-					if (modifiers & NSAlternateKeyMask)
+					if (modifiers & NSEventModifierFlagOption)
 					{
 						view->process_char(DCH_PUP);
 						return;
 					}
 				case NSPageDownFunctionKey:
-					if (modifiers & NSAlternateKeyMask)
+					if (modifiers & NSEventModifierFlagOption)
 					{
 						view->process_char(DCH_PDOWN);
 						return;
@@ -921,7 +921,7 @@ static void debugwin_view_update(debug_view &view, void *osdprivate)
 	if (action == @selector(paste:))
 	{
 		NSPasteboard *const board = [NSPasteboard generalPasteboard];
-		return [board availableTypeFromArray:[NSArray arrayWithObject:NSStringPboardType]] != nil;
+		return [board availableTypeFromArray:[NSArray arrayWithObject:NSPasteboardTypeString]] != nil;
 	}
 	else
 	{

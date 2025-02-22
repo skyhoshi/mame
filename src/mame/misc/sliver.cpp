@@ -95,18 +95,19 @@ public:
 		m_audiocpu(*this, "audiocpu"),
 		m_screen(*this, "screen"),
 		m_soundlatch(*this, "soundlatch"),
-		m_colorram(*this, "colorram") { }
+		m_palette(*this, "palette")
+	{ }
 
 	void sliver(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 	virtual void device_post_load() override;
 
 private:
-	uint16_t m_io_offset = 0;
-	uint16_t m_io_reg[IO_SIZE]{};
+	uint8_t m_io_offset = 0;
+	uint8_t m_io_reg[IO_SIZE]{};
 	uint16_t m_fifo[FIFO_SIZE]{};
 	uint16_t m_fptr = 0;
 
@@ -120,7 +121,7 @@ private:
 	required_device<i8051_device> m_audiocpu;
 	required_device<screen_device> m_screen;
 	required_device<generic_latch_8_device> m_soundlatch;
-	required_shared_ptr<uint8_t> m_colorram;
+	required_device<palette_device> m_palette;
 	bitmap_rgb32 m_bitmap_fg;
 	bitmap_rgb32 m_bitmap_bg;
 
@@ -131,8 +132,8 @@ private:
 	void fifo_flush_w(uint16_t data);
 	void jpeg1_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 	void jpeg2_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
-	void io_offset_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
-	void io_data_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
+	void io_offset_w(offs_t offset, uint8_t data);
+	void io_data_w(offs_t offset, uint8_t data);
 	void sound_w(uint16_t data);
 	void oki_setbank(uint8_t data);
 
@@ -140,15 +141,15 @@ private:
 
 	uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	void plot_pixel_rgb(int x, int y, uint32_t r, uint32_t g, uint32_t b);
-	void plot_pixel_pal(int x, int y, int addr);
+	void plot_pixel_pal(int x, int y, u8 addr);
 	void blit_gfx();
 	void render_jpeg();
 
-	void oki_map(address_map &map);
-	void ramdac_map(address_map &map);
-	void sliver_map(address_map &map);
-	void soundmem_io(address_map &map);
-	void soundmem_prg(address_map &map);
+	void oki_map(address_map &map) ATTR_COLD;
+	void ramdac_map(address_map &map) ATTR_COLD;
+	void sliver_map(address_map &map) ATTR_COLD;
+	void soundmem_io(address_map &map) ATTR_COLD;
+	void soundmem_prg(address_map &map) ATTR_COLD;
 };
 
 void sliver_state::machine_start()
@@ -173,16 +174,12 @@ void sliver_state::plot_pixel_rgb(int x, int y, uint32_t r, uint32_t g, uint32_t
 	m_bitmap_bg.pix(y, x) = r | (g<<8) | (b<<16);
 }
 
-void sliver_state::plot_pixel_pal(int x, int y, int addr)
+void sliver_state::plot_pixel_pal(int x, int y, u8 addr)
 {
 	if (y < 0 || x < 0 || x > 383 || y > 255)
 		return;
 
-	uint32_t b=(m_colorram[addr] << 2) | (m_colorram[addr] & 0x3);
-	uint32_t g=(m_colorram[addr+0x100] << 2) | (m_colorram[addr+0x100] & 3);
-	uint32_t r=(m_colorram[addr+0x200] << 2) | (m_colorram[addr+0x200] & 3);
-
-	m_bitmap_fg.pix(y, x) = r | (g<<8) | (b<<16);
+	m_bitmap_fg.pix(y, x) = m_palette->pen(addr);
 }
 
 void sliver_state::fifo_data_w(offs_t offset, uint16_t data, uint16_t mem_mask)
@@ -213,7 +210,8 @@ void sliver_state::blit_gfx()
 
 	while (tmpptr < m_fptr)
 	{
-		int x,y,romdata;
+		int x,y;
+		u8 romdata;
 		int w,h;
 		int romoffs=m_fifo[tmpptr+0]+(m_fifo[tmpptr+1] << 8)+(m_fifo[tmpptr+2] << 16);
 
@@ -299,15 +297,11 @@ void sliver_state::render_jpeg()
 				uint8_t g = buffer[0][(x*3)+1];
 				uint8_t r = buffer[0][(x*3)+2];
 				plot_pixel_rgb(x - x_offset + m_jpeg_x, y - y_offset - m_jpeg_y, r, g, b);
-
 			}
-
 		}
 
 		jpeg_finish_decompress(&cinfo);
 		jpeg_destroy_decompress(&cinfo);
-
-
 	}
 
 }
@@ -320,18 +314,20 @@ void sliver_state::jpeg2_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 
 }
 
-void sliver_state::io_offset_w(offs_t offset, uint16_t data, uint16_t mem_mask)
+void sliver_state::io_offset_w(offs_t offset, uint8_t data)
 {
-	COMBINE_DATA(&m_io_offset);
+	m_io_offset = data;
 }
 
-void sliver_state::io_data_w(offs_t offset, uint16_t data, uint16_t mem_mask)
+void sliver_state::io_data_w(offs_t offset, uint8_t data)
 {
 	if (m_io_offset < IO_SIZE)
 	{
 		int tmpx, tmpy;
-		COMBINE_DATA(&m_io_reg[m_io_offset]);
+		m_io_reg[m_io_offset] = data;
 
+		// TODO: this doesn't match ZR36050 control registers
+		// is it really accessing FPGA instead, simplifying Zoran access?
 		tmpy = m_io_reg[0x1a] + (m_io_reg[0x1b] << 8) - m_io_reg[0x20]; //0x20  ???
 		tmpx = m_io_reg[0x1e] + (m_io_reg[0x1f] << 8);
 
@@ -362,10 +358,11 @@ void sliver_state::sliver_map(address_map &map)
 	map(0x100003, 0x100003).w("ramdac", FUNC(ramdac_device::pal_w));
 	map(0x100005, 0x100005).w("ramdac", FUNC(ramdac_device::mask_w));
 
-	map(0x300002, 0x300003).noprw(); // bit 0 tested, writes 0xe0 and 0xc0 - both r and w at the end of interrupt code
+//  map(0x200000, 0x20001f) // memory controller?
 
-	map(0x300004, 0x300005).w(FUNC(sliver_state::io_offset_w)); //unknown i/o device
-	map(0x300006, 0x300007).w(FUNC(sliver_state::io_data_w));
+//  map(0x300003, 0x300003) Zoran access lines? Read in irq 2 service
+	map(0x300005, 0x300005).w(FUNC(sliver_state::io_offset_w)); //unknown i/o device
+	map(0x300007, 0x300007).w(FUNC(sliver_state::io_data_w));
 
 	map(0x400000, 0x400001).portr("P1_P2");
 	map(0x400002, 0x400003).portr("SYSTEM");
@@ -376,7 +373,7 @@ void sliver_state::sliver_map(address_map &map)
 	map(0x40000c, 0x40000d).w(FUNC(sliver_state::jpeg1_w));
 	map(0x40000e, 0x40000f).w(FUNC(sliver_state::jpeg2_w));
 
-	map(0x400010, 0x400015).nopw(); //unknown
+	map(0x400010, 0x400015).nopw(); //unknown, $400012 write at end of irq 3 service
 	map(0x400016, 0x400017).w(FUNC(sliver_state::sound_w));
 	map(0x400018, 0x400019).nopw(); //unknown
 
@@ -460,7 +457,7 @@ static INPUT_PORTS_START( sliver )
 	PORT_BIT( 0x0002, IP_ACTIVE_LOW, IPT_START1 )
 	PORT_BIT( 0x0008, IP_ACTIVE_LOW, IPT_COIN2 )
 	PORT_BIT( 0x0010, IP_ACTIVE_LOW, IPT_START2 )
-	PORT_BIT( 0x0040, IP_ACTIVE_HIGH, IPT_UNKNOWN ) //jpeg ready flag
+	PORT_BIT( 0x0040, IP_ACTIVE_HIGH, IPT_UNKNOWN ) // jpeg ready flag, ZR36050 /STOP?
 	PORT_BIT( 0xffa4, IP_ACTIVE_LOW, IPT_UNKNOWN )
 
 	PORT_START("DSW")
@@ -510,7 +507,7 @@ INPUT_PORTS_END
 
 void sliver_state::ramdac_map(address_map &map)
 {
-	map(0x000, 0x3ff).ram().share("colorram");
+	map(0x000, 0x3ff).rw("ramdac", FUNC(ramdac_device::ramdac_pal_r), FUNC(ramdac_device::ramdac_rgb666_w));
 }
 
 TIMER_DEVICE_CALLBACK_MEMBER ( sliver_state::obj_irq_cb )
@@ -540,6 +537,7 @@ void sliver_state::sliver(machine_config &config)
 	m_screen->set_screen_update(FUNC(sliver_state::screen_update));
 
 	PALETTE(config, "palette").set_entries(0x100);
+	// AT76C176
 	ramdac_device &ramdac(RAMDAC(config, "ramdac", 0, "palette"));
 	ramdac.set_addrmap(0, &sliver_state::ramdac_map);
 

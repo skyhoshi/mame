@@ -15,15 +15,15 @@ public:
 
 	auto out_data_handler() { return m_out_data.bind(); }
 
-	DECLARE_WRITE_LINE_MEMBER(clock_w);
-	DECLARE_WRITE_LINE_MEMBER(data_w);
+	void clock_w(int state);
+	void data_w(int state);
 
 protected:
-	virtual void device_start() override;
-	virtual void device_reset() override;
-	virtual const tiny_rom_entry *device_rom_region() const override;
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual ioport_constructor device_input_ports() const override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
+	virtual const tiny_rom_entry *device_rom_region() const override ATTR_COLD;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual ioport_constructor device_input_ports() const override ATTR_COLD;
 
 	TIMER_CALLBACK_MEMBER(reset_mcu);
 
@@ -40,8 +40,8 @@ private:
 	uint8_t p1_r();
 	void p1_w(uint8_t data);
 	uint8_t p2_r();
-	DECLARE_READ_LINE_MEMBER(t0_r);
-	DECLARE_READ_LINE_MEMBER(t1_r);
+	int t0_r();
+	int t1_r();
 };
 
 DECLARE_DEVICE_TYPE(M24_KEYBOARD, m24_keyboard_device)

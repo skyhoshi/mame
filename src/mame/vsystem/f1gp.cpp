@@ -122,20 +122,21 @@ protected:
 	required_device<acia6850_device> m_acia;
 
 	void sh_bankswitch_w(uint8_t data);
-	uint8_t command_pending_r();
+	uint8_t soundlatch_pending_r();
+	void soundlatch_pending_w(int state);
 	void rozvideoram_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 	void fgvideoram_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 	void fgscroll_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 	void gfxctrl_w(uint8_t data);
 	TILE_GET_INFO_MEMBER(get_fg_tile_info);
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
-	void f1gp_cpu2_map(address_map &map);
-	void sound_io_map(address_map &map);
-	void sound_map(address_map &map);
+	void f1gp_cpu2_map(address_map &map) ATTR_COLD;
+	void sound_io_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
 
 private:
 	// memory pointers
@@ -151,9 +152,9 @@ private:
 	uint32_t screen_update_f1gp(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	uint32_t screen_update_f1gpbl(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	void f1gpbl_draw_sprites(screen_device &screen, bitmap_ind16 &bitmap,const rectangle &cliprect);
-	void f1gp_cpu1_map(address_map &map);
-	void f1gpbl_cpu1_map(address_map &map);
-	void f1gpbl_cpu2_map(address_map &map);
+	void f1gp_cpu1_map(address_map &map) ATTR_COLD;
+	void f1gpbl_cpu1_map(address_map &map) ATTR_COLD;
+	void f1gpbl_cpu2_map(address_map &map) ATTR_COLD;
 };
 
 class f1gp2_state : public f1gp_state
@@ -167,8 +168,8 @@ public:
 	void f1gp2(machine_config &config);
 
 protected:
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	// video-related
@@ -182,11 +183,9 @@ private:
 	TILE_GET_INFO_MEMBER(get_roz_tile_info);
 
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	void f1gp2_cpu1_map(address_map &map);
+	void f1gp2_cpu1_map(address_map &map) ATTR_COLD;
 };
 
-
-// video
 
 /***************************************************************************
 
@@ -205,14 +204,14 @@ TILE_GET_INFO_MEMBER(f1gp_state::get_roz_tile_info)
 {
 	int const code = m_rozvideoram[tile_index];
 
-	tileinfo.set(3, code & 0x7ff, code >> 12, 0);
+	tileinfo.set(1, code & 0x7ff, code >> 12, 0);
 }
 
 TILE_GET_INFO_MEMBER(f1gp2_state::get_roz_tile_info)
 {
 	int const code = m_rozvideoram[tile_index];
 
-	tileinfo.set(2, (code & 0x7ff) + (m_roz_bank << 11), code >> 12, 0);
+	tileinfo.set(1, (code & 0x7ff) + (m_roz_bank << 11), code >> 12, 0);
 }
 
 
@@ -221,7 +220,6 @@ TILE_GET_INFO_MEMBER(f1gp2_state::get_roz_tile_info)
   Start the video hardware emulation.
 
 ***************************************************************************/
-
 
 void f1gp_state::video_start()
 {
@@ -263,7 +261,7 @@ void f1gp2_state::video_start()
 void f1gp_state::rozgfxram_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 {
 	COMBINE_DATA(&m_rozgfxram[offset]);
-	m_gfxdecode->gfx(3)->mark_dirty(offset / 64);
+	m_gfxdecode->gfx(1)->mark_dirty(offset / 64);
 }
 
 void f1gp_state::rozvideoram_w(offs_t offset, uint16_t data, uint16_t mem_mask)
@@ -320,13 +318,13 @@ uint32_t f1gp_state::screen_update_f1gp(screen_device &screen, bitmap_ind16 &bit
 	// quick kludge for "continue" screen priority
 	if (m_gfxctrl == 0x00)
 	{
-		m_spr_old[0]->turbofrc_draw_sprites(m_sprvram[0], m_sprvram[0].bytes(), 0, bitmap, cliprect, screen.priority(), 0x02);
-		m_spr_old[1]->turbofrc_draw_sprites(m_sprvram[1], m_sprvram[1].bytes(), 0, bitmap, cliprect, screen.priority(), 0x02);
+		m_spr_old[0]->draw_sprites(m_sprvram[0], m_sprvram[0].bytes(), 0, bitmap, cliprect, screen.priority(), 0x02);
+		m_spr_old[1]->draw_sprites(m_sprvram[1], m_sprvram[1].bytes(), 0, bitmap, cliprect, screen.priority(), 0x02);
 	}
 	else
 	{
-		m_spr_old[0]->turbofrc_draw_sprites(m_sprvram[0], m_sprvram[0].bytes(), 0, bitmap, cliprect, screen.priority(), 0x00);
-		m_spr_old[1]->turbofrc_draw_sprites(m_sprvram[1], m_sprvram[1].bytes(), 0, bitmap, cliprect, screen.priority(), 0x02);
+		m_spr_old[0]->draw_sprites(m_sprvram[0], m_sprvram[0].bytes(), 0, bitmap, cliprect, screen.priority(), 0x00);
+		m_spr_old[1]->draw_sprites(m_sprvram[1], m_sprvram[1].bytes(), 0, bitmap, cliprect, screen.priority(), 0x02);
 	}
 	return 0;
 }
@@ -362,6 +360,7 @@ uint32_t f1gp2_state::screen_update(screen_device &screen, bitmap_ind16 &bitmap,
 	return 0;
 }
 
+
 /***************************************************************************
 
   BOOTLEG SUPPORT
@@ -387,8 +386,8 @@ void f1gp_state::f1gpbl_draw_sprites(screen_device &screen,bitmap_ind16 &bitmap,
 	{
 		int const x = (m_spriteram[attr_start + 2] & 0x03ff) - 48;
 		int const y = (256 - (m_spriteram[attr_start + 3 - 4] & 0x03ff)) - 15;
-		int const flipx = m_spriteram[attr_start + 1] & 0x0800;
-		int const flipy = m_spriteram[attr_start + 1] & 0x8000;
+		bool const flipx = BIT(m_spriteram[attr_start + 1], 11);
+		bool const flipy = BIT(m_spriteram[attr_start + 1], 15);
 		int const color = m_spriteram[attr_start + 1] & 0x000f;
 		int code = m_spriteram[attr_start + 0] & 0x3fff;
 		int const pri = 0; //?
@@ -414,7 +413,7 @@ void f1gp_state::f1gpbl_draw_sprites(screen_device &screen,bitmap_ind16 &bitmap,
 			gfx = 0;
 		}
 
-		m_gfxdecode->gfx(1 + gfx)->prio_transpen(bitmap, cliprect,
+		m_gfxdecode->gfx(2 + gfx)->prio_transpen(bitmap, cliprect,
 			code,
 			color,
 			flipx, flipy,
@@ -423,7 +422,7 @@ void f1gp_state::f1gpbl_draw_sprites(screen_device &screen,bitmap_ind16 &bitmap,
 			pri ? 0 : 0x2, 15);
 
 		// wrap around x
-		m_gfxdecode->gfx(1 + gfx)->prio_transpen(bitmap, cliprect,
+		m_gfxdecode->gfx(2 + gfx)->prio_transpen(bitmap, cliprect,
 			code,
 			color,
 			flipx, flipy,
@@ -460,17 +459,24 @@ uint32_t f1gp_state::screen_update_f1gpbl(screen_device &screen, bitmap_ind16 &b
 }
 
 
-// machine
-
 void f1gp_state::sh_bankswitch_w(uint8_t data)
 {
 	m_z80bank->set_entry(data & 0x01);
 }
 
-
-uint8_t f1gp_state::command_pending_r()
+uint8_t f1gp_state::soundlatch_pending_r()
 {
 	return (m_soundlatch->pending_r() ? 0xff : 0);
+}
+
+void f1gp_state::soundlatch_pending_w(int state)
+{
+	m_audiocpu->set_input_line(INPUT_LINE_NMI, state ? ASSERT_LINE : CLEAR_LINE);
+
+	// sound comms is 2-way (see soundlatch_pending_r),
+	// NMI routine is very short, so briefly set perfect_quantum to make sure that the timing is right
+	if (state)
+		machine().scheduler().perfect_quantum(attotime::from_usec(100));
 }
 
 
@@ -495,7 +501,7 @@ void f1gp_state::f1gp_cpu1_map(address_map &map)
 	map(0xfff004, 0xfff005).portr("DSW1");
 	map(0xfff002, 0xfff005).w(FUNC(f1gp_state::fgscroll_w));
 	map(0xfff006, 0xfff007).portr("DSW2");
-	map(0xfff009, 0xfff009).r(FUNC(f1gp_state::command_pending_r)).w(m_soundlatch, FUNC(generic_latch_8_device::write)).umask16(0x00ff);
+	map(0xfff009, 0xfff009).r(FUNC(f1gp_state::soundlatch_pending_r)).w(m_soundlatch, FUNC(generic_latch_8_device::write)).umask16(0x00ff);
 	map(0xfff020, 0xfff023).w("gga", FUNC(vsystem_gga_device::write)).umask16(0x00ff);
 	map(0xfff040, 0xfff05f).w(m_k053936, FUNC(k053936_device::ctrl_w));
 	map(0xfff050, 0xfff051).portr("DSW3");
@@ -518,7 +524,7 @@ void f1gp2_state::f1gp2_cpu1_map(address_map &map)
 	map(0xfff002, 0xfff003).portr("WHEEL");
 	map(0xfff004, 0xfff005).portr("DSW1");
 	map(0xfff006, 0xfff007).portr("DSW2");
-	map(0xfff009, 0xfff009).r(FUNC(f1gp2_state::command_pending_r)).w(m_soundlatch, FUNC(generic_latch_8_device::write)).umask16(0x00ff);
+	map(0xfff009, 0xfff009).r(FUNC(f1gp2_state::soundlatch_pending_r)).w(m_soundlatch, FUNC(generic_latch_8_device::write)).umask16(0x00ff);
 	map(0xfff00a, 0xfff00b).portr("DSW3");
 	map(0xfff020, 0xfff03f).w(m_k053936, FUNC(k053936_device::ctrl_w));
 	map(0xfff044, 0xfff047).w(FUNC(f1gp2_state::fgscroll_w));
@@ -740,15 +746,31 @@ INPUT_PORTS_END
 
 static GFXDECODE_START( gfx_f1gp )
 	GFXDECODE_ENTRY( "fgtiles",  0, gfx_8x8x8_raw,          0x000,  1 )
+	GFXDECODE_RAM( "rozgfxram",  0, gfx_16x16x4_packed_msb, 0x300, 16 )
+GFXDECODE_END
+
+static GFXDECODE_START( gfx_f1gp_spr1 )
+	GFXDECODE_ENTRY( "sprites1", 0, gfx_16x16x4_packed_lsb, 0x100, 16 )
+GFXDECODE_END
+
+static GFXDECODE_START( gfx_f1gp_spr2 )
+	GFXDECODE_ENTRY( "sprites2", 0, gfx_16x16x4_packed_lsb, 0x200, 16 )
+GFXDECODE_END
+
+static GFXDECODE_START( gfx_f1gpbl )
+	GFXDECODE_ENTRY( "fgtiles",  0, gfx_8x8x8_raw,          0x000,  1 )
+	GFXDECODE_RAM( "rozgfxram",  0, gfx_16x16x4_packed_msb, 0x300, 16 )
 	GFXDECODE_ENTRY( "sprites1", 0, gfx_16x16x4_packed_lsb, 0x100, 16 )
 	GFXDECODE_ENTRY( "sprites2", 0, gfx_16x16x4_packed_lsb, 0x200, 16 )
-	GFXDECODE_RAM( "rozgfxram",  0, gfx_16x16x4_packed_msb, 0x300, 16 )
 GFXDECODE_END
 
 static GFXDECODE_START( gfx_f1gp2 )
 	GFXDECODE_ENTRY( "fgtiles",  0, gfx_8x8x8_raw,          0x000,  1 )
+	GFXDECODE_ENTRY( "roztiles", 0, gfx_16x16x4_packed_msb, 0x100, 16 )
+GFXDECODE_END
+
+static GFXDECODE_START( gfx_f1gp2_spr )
 	GFXDECODE_ENTRY( "sprites1", 0, gfx_16x16x4_packed_lsb, 0x200, 32 )
-	GFXDECODE_ENTRY( "sprites2", 0, gfx_16x16x4_packed_msb, 0x100, 16 )
 GFXDECODE_END
 
 
@@ -823,17 +845,13 @@ void f1gp_state::f1gp(machine_config &config)
 
 	VSYSTEM_GGA(config, "gga", XTAL(14'318'181) / 2); // divider not verified
 
-	VSYSTEM_SPR2(config, m_spr_old[0], 0);
+	VSYSTEM_SPR2(config, m_spr_old[0], 0, m_palette, gfx_f1gp_spr1);
 	m_spr_old[0]->set_tile_indirect_cb(FUNC(f1gp2_state::tile_callback<0>));
-	m_spr_old[0]->set_gfx_region(1);
 	m_spr_old[0]->set_pritype(2);
-	m_spr_old[0]->set_gfxdecode_tag(m_gfxdecode);
 
-	VSYSTEM_SPR2(config, m_spr_old[1], 0);
+	VSYSTEM_SPR2(config, m_spr_old[1], 0, m_palette, gfx_f1gp_spr2);
 	m_spr_old[1]->set_tile_indirect_cb(FUNC(f1gp2_state::tile_callback<1>));
-	m_spr_old[1]->set_gfx_region(2);
 	m_spr_old[1]->set_pritype(2);
-	m_spr_old[1]->set_gfxdecode_tag(m_gfxdecode);
 
 	K053936(config, m_k053936, 0);
 	m_k053936->set_wrap(1);
@@ -844,7 +862,7 @@ void f1gp_state::f1gp(machine_config &config)
 	SPEAKER(config, "rspeaker").front_right();
 
 	GENERIC_LATCH_8(config, m_soundlatch);
-	m_soundlatch->data_pending_callback().set_inputline(m_audiocpu, INPUT_LINE_NMI);
+	m_soundlatch->data_pending_callback().set(FUNC(f1gp_state::soundlatch_pending_w));
 	m_soundlatch->set_separate_acknowledge(true);
 
 	ym2610_device &ymsnd(YM2610(config, "ymsnd", XTAL(8'000'000)));
@@ -885,7 +903,7 @@ void f1gp_state::f1gpbl(machine_config &config)
 	screen.set_screen_update(FUNC(f1gp_state::screen_update_f1gpbl));
 	screen.set_palette(m_palette);
 
-	GFXDECODE(config, m_gfxdecode, m_palette, gfx_f1gp);
+	GFXDECODE(config, m_gfxdecode, m_palette, gfx_f1gpbl);
 	PALETTE(config, m_palette).set_format(palette_device::xRGB_555, 2048);
 
 	//VSYSTEM_GGA(config, "gga", 0);
@@ -914,10 +932,8 @@ void f1gp2_state::f1gp2(machine_config &config)
 	config.device_remove("vsystem_spr_old1");
 	config.device_remove("vsystem_spr_old2");
 
-	VSYSTEM_SPR(config, m_spr, 0);
+	VSYSTEM_SPR(config, m_spr, 0, m_palette, gfx_f1gp2_spr);
 	m_spr->set_tile_indirect_cb(FUNC(f1gp2_state::tile_callback<0>));
-	m_spr->set_gfx_region(1);
-	m_spr->set_gfxdecode_tag(m_gfxdecode);
 
 	m_k053936->set_offsets(-48, -21);
 }
@@ -987,7 +1003,7 @@ ROM_START( f1gpa )
 	ROM_REGION( 0x20000, "sub", 0 ) // 68000 code
 	ROM_LOAD16_WORD_SWAP( "rom4-a.4", 0x00000, 0x20000, CRC(8e811d36) SHA1(2b806b50a3a307a21894687f16485ace287a7c4c) )
 
-	ROM_REGION( 0x20000, "audiocpu", 0 )    /* 64k for the audio CPU + banks */
+	ROM_REGION( 0x20000, "audiocpu", 0 )    // 64k for the audio CPU + banks
 	ROM_LOAD( "rom5-a.8", 0x00000, 0x20000, CRC(9ea36e35) SHA1(9254dea8362318d8cfbd5e36e476e0e235e6326a) )
 
 	ROM_REGION( 0x200000, "fgtiles", 0 )
@@ -1030,7 +1046,7 @@ ROM_START( f1gpb ) // 0F17-A-04 PCB
 	ROM_REGION( 0x20000, "sub", 0 ) // 68000 code
 	ROM_LOAD16_WORD_SWAP( "rom4.4", 0x00000, 0x20000, CRC(8e811d36) SHA1(2b806b50a3a307a21894687f16485ace287a7c4c) )
 
-	ROM_REGION( 0x20000, "audiocpu", 0 )    /* 64k for the audio CPU + banks */
+	ROM_REGION( 0x20000, "audiocpu", 0 )    // 64k for the audio CPU + banks
 	ROM_LOAD( "rom5.8", 0x00000, 0x20000, CRC(9ea36e35) SHA1(9254dea8362318d8cfbd5e36e476e0e235e6326a) )
 
 	ROM_REGION( 0x200000, "fgtiles", 0 )
@@ -1131,7 +1147,7 @@ ROM_START( f1gp2 )
 	ROM_REGION( 0x200000, "sprites1", 0 )
 	ROM_LOAD( "rom15", 0x000000, 0x200000, CRC(1ac03e2e) SHA1(9073d0ae24364229a993046bd71e403988692993) )
 
-	ROM_REGION( 0x400000, "sprites2", 0 )
+	ROM_REGION( 0x400000, "roztiles", 0 )
 	ROM_LOAD16_WORD_SWAP( "rom11", 0x000000, 0x100000, CRC(b22a2c1f) SHA1(b5e67726be5a8561cd04c3c07895b8518b73b89c) )
 	ROM_LOAD16_WORD_SWAP( "rom10", 0x100000, 0x100000, CRC(43fcbe23) SHA1(54ab58d904890a0b907e674f855092e974c45edc) )
 	ROM_LOAD16_WORD_SWAP( "rom9",  0x200000, 0x100000, CRC(1bede8a1) SHA1(325ecc3afb30d281c2c8a56719e83e4dc20545bb) )

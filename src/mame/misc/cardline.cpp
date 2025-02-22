@@ -52,7 +52,7 @@ public:
 	void cardline(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	void vram_w(offs_t offset, uint8_t data);
@@ -67,13 +67,13 @@ private:
 
 	void cardline_palette(palette_device &palette) const;
 
-	DECLARE_WRITE_LINE_MEMBER(hsync_changed);
-	DECLARE_WRITE_LINE_MEMBER(vsync_changed);
+	void hsync_changed(int state);
+	void vsync_changed(int state);
 	MC6845_BEGIN_UPDATE(crtc_begin_update);
 	MC6845_UPDATE_ROW(crtc_update_row);
 
-	void mem_io(address_map &map);
-	void mem_prg(address_map &map);
+	void mem_io(address_map &map) ATTR_COLD;
+	void mem_prg(address_map &map) ATTR_COLD;
 
 	required_shared_ptr<uint8_t> m_videoram;
 	required_shared_ptr<uint8_t> m_colorram;
@@ -149,7 +149,7 @@ MC6845_UPDATE_ROW( cardline_state::crtc_update_row )
 }
 
 
-WRITE_LINE_MEMBER(cardline_state::hsync_changed)
+void cardline_state::hsync_changed(int state)
 {
 	/* update any video up to the current scanline */
 	m_hsync_q = (state ? 0x00 : 0x10);
@@ -157,7 +157,7 @@ WRITE_LINE_MEMBER(cardline_state::hsync_changed)
 	m_screen->update_partial(m_screen->vpos());
 }
 
-WRITE_LINE_MEMBER(cardline_state::vsync_changed)
+void cardline_state::vsync_changed(int state)
 {
 	//m_maincpu->set_input_line(0, state ? ASSERT_LINE : CLEAR_LINE);
 }
@@ -277,7 +277,7 @@ static INPUT_PORTS_START( cardline )
 	PORT_BIT( 0xf5, IP_ACTIVE_HIGH, IPT_CUSTOM ) // h/w status bits
 
 	PORT_START("VBLANK")
-	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_VBLANK("screen") // VBLANK_Q
+	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("screen", FUNC(screen_device::vblank)) // VBLANK_Q
 	PORT_BIT( 0xef, IP_ACTIVE_LOW, IPT_UNKNOWN )
 
 INPUT_PORTS_END

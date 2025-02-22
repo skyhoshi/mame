@@ -14,7 +14,7 @@ part of a series is (or will be) in its own driver, see:
 - ti/snspellc.cpp: TI Speak & Spell Compact / Touch & Tell
 - ti/spellb.cpp: TI Spelling B series gen. 1
 - tiger/bingobear.cpp: Hasbro/Tiger Bingo Bear / Monkgomery Monkey
-- tiger/k28m2.cpp: Tiger K-2-8: Talking Learning Computer (model 7-232)
+- tiger/k28.cpp: Tiger K-2-8: Talking Learning Computer (model 7-232)
 
 About the approximated MCU frequency everywhere: The RC osc. is not that
 stable on most of these handhelds. When comparing multiple video recordings
@@ -75,11 +75,14 @@ on Joerg Woerner's datamath.org: http://www.datamath.org/IC_List.htm
  *MP0121   TMS1000   1979, Waddingtons Compute-A-Tune
  @MP0154   TMS1000   1979, Fonas 2 Player Baseball
  @MP0158   TMS1000   1979, Entex Soccer (6003)
+ @MP0159   TMS1000   1979, Tomy Volleyball
  @MP0163   TMS1000   1979, A-One LSI Match Number/LJN Electronic Concentration
  @MP0166   TMS1000   1980, A-One Arrange Ball/LJN Computer Impulse/Tandy Zingo (model 60-2123)
  @MP0168   TMS1000   1979, Conic Multisport/Tandy Sports Arena (model 60-2158)
+ *MP0169   TMS1000   1979, Conic Electronic Baseball
  @MP0170   TMS1000   1979, Conic Football
  *MP0171   TMS1000   1979, Tomy Soccer
+ *MP0186   TMS1000   1979, Hornby Railways Zero 1: R944 Master Control Unit
  *MP0220   TMS1000   1980, Tomy Teacher
  @MP0230   TMS1000   1980, Entex Blast It (6015)
  @MP0271   TMS1000   1982, Tandy (Radio Shack) Monkey See
@@ -110,6 +113,7 @@ on Joerg Woerner's datamath.org: http://www.datamath.org/IC_List.htm
  @MP1228   TMS1100   1980, Entex Musical Marvin (6014)
  @MP1231   TMS1100   1984, Tandy 3 in 1 Sports Arena (model 60-2178)
  *MP1272   TMS1100   1981, Tandy Computerized Arcade (assumed same as CD7282, not confirmed)
+ @MP1288   TMS1100   1981, Tiger Finger Bowl
  @MP1296   TMS1100   1982, Entex Black Knight Pinball (6081)
  @MP1311   TMS1100   1981, Bandai TC7: Air Traffic Control
  @MP1312   TMS1100   1981, Gakken FX-Micom R-165/Radio Shack Science Fair Microcomputer Trainer
@@ -125,6 +129,7 @@ on Joerg Woerner's datamath.org: http://www.datamath.org/IC_List.htm
  @MP2105   TMS1370   1979, Gakken/Entex Poker (6005)
  @MP2110   TMS1370   1980, Gakken Invader/Tandy Fire Away
  @MP2139   TMS1370   1981, Gakken Galaxy Invader 1000/Tandy Cosmic 1000 Fire Away
+ *MP2721   TMS1070   1978, Sanyo VTC 9300 Beta VCR timer unit
  @MP2726   TMS1040   1979, Tomy Break Up
  @MP2787   TMS1070   1980, Bandai Race Time
  *MP2788   TMS1070   1980, Bandai Flight Time
@@ -139,10 +144,11 @@ on Joerg Woerner's datamath.org: http://www.datamath.org/IC_List.htm
  *MP3228   TMS1000   1979, Texas Instruments OEM melody chip
  *MP3232   TMS1000   1979, Fonas 2 Player Baseball (no "MP" on chip label)
  @MP3260   TMS1000   1979, Electroplay Quickfire
+ *MP3261   TMS1000   1979, Hornby Railways Zero 1: R947 Locomotive Module
  @MP3300   TMS1000   1979, Milton Bradley Simon (Rev F)
  @MP3301A  TMS1000   1979, Milton Bradley Big Trak
  *MP3310   TMS1000   1979, Texas Instruments OEM melody chip
- *MP3312   TMS1000   1980, Nathan Mega 10000
+ @MP3312   TMS1000   1980, Nathan Mega 10000
  *MP3318   TMS1000   1979, Texas Instruments OEM melody chip
  @MP3320A  TMS1000   1979, Coleco Head to Head: Electronic Basketball
  @MP3321A  TMS1000   1979, Coleco Head to Head: Electronic Hockey
@@ -168,12 +174,14 @@ on Joerg Woerner's datamath.org: http://www.datamath.org/IC_List.htm
  @MP3476   TMS1100   1979, Milton Bradley Super Simon
   MP3479   TMS1100   1980, Microvision cartridge: Baseball
   MP3481   TMS1100   1979, Microvision cartridge: Connect Four
+ @MP3487   TMS1100   1980, Lakeside Strobe
  @MP3489   TMS1100   1980, Kenner Live Action Football
  @MP3491   TMS1100   1979, Mattel Thoroughbred Horse Race Analyzer
  *MP3493   TMS1100   1980, Milton Bradley OMNI Entertainment System (1/2)
  *MP3494   TMS1100   1980, Milton Bradley OMNI Entertainment System (2/2)
   MP3496   TMS1100   1980, Microvision cartridge: Sea Duel
-  M34009   TMS1100   1981, Microvision cartridge: Alien Raiders (note: MP3498, MP3499, M3400x..)
+ @M34004A  TMS1100   1981, Ideal Sky-Writer (note: MP3498, MP3499, M3400x..)
+  M34009   TMS1100   1981, Microvision cartridge: Alien Raiders
  @M34012   TMS1100   1980, Mattel Dungeons & Dragons: Computer Labyrinth Game
  *M34014   TMS1100   1981, Coleco Bowlatronic
   M34017   TMS1100   1981, Microvision cartridge: Cosmic Hunter
@@ -187,13 +195,15 @@ on Joerg Woerner's datamath.org: http://www.datamath.org/IC_List.htm
  *MP6061   TMS0970   1979, Texas Instruments Electronic Digital Thermostat (from patent, the one in MAME didn't have a label)
  @MP6100A  TMS0980   1979, Ideal Electronic Detective
  @MP6101B  TMS0980   1979, Parker Brothers Stop Thief
+ *MP6262A  TMS1170   1981, Bearcat BC-210XL
  @MP6354   TMS1475   1982, Tsukuda The Dracula
- *MP6361   TMS1475?  1983, <unknown> Defender Strikes
+ @MP6358   TMS1475   1982, Bandai U-Boat
+ *MP6361   TMS1475   1983, <unknown> Defender Strikes
  @MP7302   TMS1400   1980, Tiger Deluxe Football with Instant Replay
  @MP7304   TMS1400   1982, Tiger 7 in 1 Sports Stadium (model 7-555)
  @MP7313   TMS1400   1980, Parker Brothers Bank Shot
  @MP7314   TMS1400   1980, Parker Brothers Split Second
-  MP7324   TMS1400   1985, Tiger K-2-8/Coleco Talking Teacher -> tiger/k28m2.cpp
+  MP7324   TMS1400   1985, Tiger K-2-8/Coleco Talking Teacher -> tiger/k28.cpp
  @MP7332   TMS1400   1981, Milton Bradley Dark Tower
  @MP7334   TMS1400   1981, Coleco Total Control 4
  @MP7351   TMS1400   1982, Parker Brothers Master Merlin
@@ -224,7 +234,6 @@ on Joerg Woerner's datamath.org: http://www.datamath.org/IC_List.htm
 #include "cpu/tms1000/tms0970.h"
 #include "cpu/tms1000/tms0980.h"
 #include "machine/clock.h"
-#include "machine/ds8874.h"
 #include "machine/netlist.h"
 #include "machine/nvram.h"
 #include "machine/timer.h"
@@ -237,6 +246,7 @@ on Joerg Woerner's datamath.org: http://www.datamath.org/IC_List.htm
 #include "sound/sn76477.h"
 #include "sound/spkrdev.h"
 #include "sound/tms5110.h"
+#include "video/ds8874.h"
 #include "video/hlcd0515.h"
 #include "video/pwm.h"
 
@@ -250,28 +260,28 @@ on Joerg Woerner's datamath.org: http://www.datamath.org/IC_List.htm
 // internal artwork
 #include "t7in1ss.lh"
 #include "alphie.lh"
-#include "amaztron.lh" // clickable
-#include "arcmania.lh" // clickable
+#include "amaztron.lh"
+#include "arcmania.lh"
 #include "arrball.lh"
 #include "astro.lh"
 #include "bankshot.lh"
 #include "bcheetah.lh"
 #include "bigtrak.lh"
 #include "blastit.lh"
-#include "bship.lh" // clickable
+#include "bship.lh"
 #include "cmsport.lh"
 #include "cnbaskb.lh"
 #include "cnfball.lh"
 #include "cnfball2.lh"
-#include "cnsector.lh" // clickable
-#include "comp4.lh" // clickable
-#include "comparc.lh" // clickable
-#include "copycat.lh" // clickable
-#include "copycata.lh" // clickable
-#include "dataman.lh"
-#include "ditto.lh" // clickable
-#include "dxfootb.lh"
+#include "cnsector.lh"
+#include "comp4.lh"
+#include "comparc.lh"
+#include "copycat.lh"
+#include "copycata.lh"
 #include "cqback.lh"
+#include "dataman.lh"
+#include "ditto.lh"
+#include "dxfootb.lh"
 #include "ebball.lh"
 #include "ebball2.lh"
 #include "ebball3.lh"
@@ -281,12 +291,13 @@ on Joerg Woerner's datamath.org: http://www.datamath.org/IC_List.htm
 #include "einvader.lh"
 #include "elecbowl.lh"
 #include "elecdet.lh"
-#include "eleciq.lh" // clickable
+#include "eleciq.lh"
 #include "esbattle.lh"
 #include "esoccer.lh"
 #include "f2pbball.lh"
 #include "f3in1.lh"
-#include "fxmcr165.lh" // clickable
+#include "fingbowl.lh"
+#include "fxmcr165.lh"
 #include "gjackpot.lh"
 #include "gpoker.lh"
 #include "h2hbaseb.lh"
@@ -294,18 +305,19 @@ on Joerg Woerner's datamath.org: http://www.datamath.org/IC_List.htm
 #include "h2hboxing.lh"
 #include "h2hfootb.lh"
 #include "h2hhockey.lh"
-#include "horseran.lh"
-#include "litelrn.lh" // clickable
+#include "lilprof.lh"
+#include "litelrn.lh"
 #include "liveafb.lh"
-#include "lostreas.lh" // clickable
-#include "matchnum.lh" // clickable
+#include "lostreas.lh"
+#include "matchnum.lh"
 #include "mathmagi.lh"
 #include "mathmarv.lh"
-#include "mbdtower.lh" // clickable
-#include "mdndclab.lh" // clickable
-#include "merlin.lh" // clickable
-#include "mmarvin.lh" // clickable
-#include "mmerlin.lh" // clickable
+#include "mbdtower.lh"
+#include "mdndclab.lh"
+#include "mega10k.lh"
+#include "merlin.lh"
+#include "mmarvin.lh"
+#include "mmerlin.lh"
 #include "monkeysee.lh"
 #include "mrmusical.lh"
 #include "palmf31.lh"
@@ -313,18 +325,19 @@ on Joerg Woerner's datamath.org: http://www.datamath.org/IC_List.htm
 #include "pbmastm.lh"
 #include "phpball.lh"
 #include "playmaker.lh"
-#include "qfire.lh" // clickable
+#include "qfire.lh"
 #include "quizwizc.lh"
 #include "raisedvl.lh"
 #include "scruiser.lh"
-#include "simon.lh" // clickable
+#include "simon.lh"
 #include "speechp.lh"
 #include "splitsec.lh"
-#include "ssimon.lh" // clickable
+#include "ssimon.lh"
 #include "ssports4.lh"
-#include "starwbc.lh" // clickable
-#include "starwlb.lh" // clickable
-#include "stopthief.lh" // clickable
+#include "starwbc.lh"
+#include "starwlb.lh"
+#include "stopthief.lh"
+#include "strobe.lh"
 #include "subwars.lh"
 #include "t3in1sa.lh"
 #include "tbreakup.lh"
@@ -343,10 +356,11 @@ on Joerg Woerner's datamath.org: http://www.datamath.org/IC_List.htm
 #include "timaze.lh"
 #include "tisr16.lh"
 #include "tithermos.lh"
+#include "tmvolleyb.lh"
+#include "uboat.lh"
 #include "vclock3.lh"
-#include "wizatron.lh"
-#include "xl25.lh" // clickable
-#include "zodiac.lh" // clickable
+#include "xl25.lh"
+#include "zodiac.lh"
 
 //#include "hh_tms1k_test.lh" // common test-layout - use external artwork
 
@@ -372,8 +386,8 @@ public:
 	template<int Sel> DECLARE_INPUT_CHANGED_MEMBER(switch_prev) { if (newval) switch_change(Sel, param, false); }
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	// devices
 	required_device<tms1k_base_device> m_maincpu;
@@ -393,7 +407,7 @@ protected:
 
 	u8 read_inputs(int columns);
 	u8 read_rotated_inputs(int columns, u8 rowmask = 0xf);
-	virtual DECLARE_WRITE_LINE_MEMBER(auto_power_off);
+	virtual void auto_power_off(int state);
 	virtual void power_off();
 	virtual void set_power(bool state);
 	void switch_change(int sel, u32 mask, bool next);
@@ -404,7 +418,7 @@ protected:
 
 void hh_tms1k_state::machine_start()
 {
-	// resolve handlers
+	// resolve outputs
 	m_out_power.resolve();
 
 	// register for savestates
@@ -475,10 +489,11 @@ INPUT_CHANGED_MEMBER(hh_tms1k_state::reset_button)
 
 INPUT_CHANGED_MEMBER(hh_tms1k_state::power_button)
 {
-	set_power((bool)param);
+	if (newval != field.defvalue())
+		set_power((bool)param);
 }
 
-WRITE_LINE_MEMBER(hh_tms1k_state::auto_power_off)
+void hh_tms1k_state::auto_power_off(int state)
 {
 	// devices with a TMS0980 can auto power-off
 	if (state)
@@ -944,15 +959,17 @@ ROM_END
   * TMS1000NLL MP0915 (die label: 1000B, MP0915)
   * 2 motors (one for back axis, one for steering), no sound
 
-  It's a programmable buggy, like Big Track but much simpler. To add a command
-  step in program-mode, press a direction key and one of the time delay number
-  keys at the same time. To run the program(max 24 steps), switch to run-mode
-  and press the go-key.
+  It's a programmable buggy modeled after the Lamborghini Cheetah, it's like
+  Big Trak but much simpler. To add a command step in program-mode, press a
+  direction key and one of the time delay number keys at the same time. To run
+  the program(max 24 steps), switch to run-mode and press the go key.
 
   known releases:
   - Japan: System Control Car: Cheetah, published by Bandai
   - USA: The Incredible Brain Buggy, published by Fundimensions
   - UK: The Incredible Brain Buggy, published by Palitoy (same as USA version)
+
+  Bandai also made an RC car version of the Cheetah with the same mould.
 
 *******************************************************************************/
 
@@ -969,21 +986,23 @@ public:
 	void bcheetah(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
-	void write_r(u32 data);
-	void write_o(u16 data);
-	u8 read_k();
-
 	output_finder<> m_motor1;
 	output_finder<> m_motor2_left;
 	output_finder<> m_motor2_right;
+
+	void write_r(u32 data);
+	void write_o(u16 data);
+	u8 read_k();
 };
 
 void bcheetah_state::machine_start()
 {
 	hh_tms1k_state::machine_start();
+
+	// resolve outputs
 	m_motor1.resolve();
 	m_motor2_left.resolve();
 	m_motor2_right.resolve();
@@ -994,8 +1013,8 @@ void bcheetah_state::machine_start()
 void bcheetah_state::write_r(u32 data)
 {
 	// R0-R4: input mux
-	// R5,R6: tied to K4??
 	m_inp_mux = data & 0x1f;
+	m_r = data;
 }
 
 void bcheetah_state::write_o(u16 data)
@@ -1004,15 +1023,15 @@ void bcheetah_state::write_o(u16 data)
 	// O0: front motor steer left
 	// O2: front motor steer right
 	// O3: GND, other: N/C
-	m_motor1 = data >> 1 & 1;
-	m_motor2_left = data & 1;
-	m_motor2_right = data >> 2 & 1;
+	m_motor1 = BIT(data, 1);
+	m_motor2_left = BIT(data, 0);
+	m_motor2_right = BIT(data, 2);
 }
 
 u8 bcheetah_state::read_k()
 {
-	// K: multiplexed inputs
-	return read_inputs(5);
+	// K: multiplexed inputs, K4 is also tied to R5+R6
+	return read_inputs(5) | ((m_r & 0x60) ? 4 : 0);
 }
 
 // inputs
@@ -1050,7 +1069,7 @@ INPUT_PORTS_END
 void bcheetah_state::bcheetah(machine_config &config)
 {
 	// basic machine hardware
-	TMS1000(config, m_maincpu, 100000); // approximation - RC osc. R=47K, C=47pF
+	TMS1000(config, m_maincpu, 350000); // approximation - RC osc. R=47K, C=47pF
 	m_maincpu->read_k().set(FUNC(bcheetah_state::read_k));
 	m_maincpu->write_r().set(FUNC(bcheetah_state::write_r));
 	m_maincpu->write_o().set(FUNC(bcheetah_state::write_o));
@@ -1323,6 +1342,163 @@ ROM_END
 
 /*******************************************************************************
 
+  Bandai U-Boat (model 16300)
+  * TMS1475 MP6358 (die label: TMS1175 /TMS1475, MP6358, 40H-PASS-0900-R300-0)
+  * cyan/red VFD NEC FIP10DM24AT no. 2-8 21 (2-sided), 1-bit sound
+  * color overlay: red/yellow/blue, and black
+
+  The VFD is 2-sided, the destroyer side views it from the back and basically
+  sees a mirror image. Each side has its own color overlay, and a black panel
+  that obscures part of the screen.
+
+*******************************************************************************/
+
+class uboat_state : public hh_tms1k_state
+{
+public:
+	uboat_state(const machine_config &mconfig, device_type type, const char *tag) :
+		hh_tms1k_state(mconfig, type, tag)
+	{ }
+
+	void uboat(machine_config &config);
+
+private:
+	void update_display();
+	void write_r(u32 data);
+	void write_o(u16 data);
+	u8 read_k();
+};
+
+// handlers
+
+void uboat_state::update_display()
+{
+	m_display->matrix(m_grid, m_plate);
+}
+
+void uboat_state::write_r(u32 data)
+{
+	// R14: speaker out
+	m_speaker->level_w(BIT(data, 14));
+
+	// R15,R19-R21: input mux
+	m_inp_mux = (data >> 15 & 1) | (data >> 18 & 0xe);
+
+	// R0-R9: VFD grid
+	// R10-R13, R16-R18: VFD plate
+	m_grid = data & 0x3ff;
+	m_plate = (m_plate & 0xff) | (data >> 2 & 0xf00) | (data >> 4 & 0x7000);
+	update_display();
+}
+
+void uboat_state::write_o(u16 data)
+{
+	// O0-O7: VFD plate
+	m_plate = (m_plate & ~0xff) | data;
+	update_display();
+}
+
+u8 uboat_state::read_k()
+{
+	// K: multiplexed inputs
+	return read_inputs(4);
+}
+
+// inputs
+
+/* physical button layout and labels are like this:
+
+    player 1 side:                                     player 2 side (opposite):
+
+    OFF ON  OFF ON     ---- SELECT ----           s
+    [---o]  [---o]  [    ]  [    ]  [    ]        c
+    POWER   SOUND   COMvsD  MANUAL  COMvsS        r
+                                                  e                SUBMARINE SIDE
+     [  ]                                         e      \     |     /
+     FIRE  DISTROYER SIDE (sic)     [joystick]    n    [  ]  [  ]  [  ]    [joystick]
+     [  ]                             ACTION             --- FIRE ---        ACTION
+*/
+
+static INPUT_PORTS_START( uboat )
+	PORT_START("IN.0") // R15
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_NAME("P1 Fire Shallow")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_COCKTAIL PORT_NAME("P2 Fire Left")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_JOYSTICK_LEFT )
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_JOYSTICK_LEFT ) PORT_COCKTAIL
+
+	PORT_START("IN.1") // R19
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_START2 )
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_START3 ) PORT_NAME("1 Player Start (Submarine)")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_JOYSTICK_DOWN )
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_JOYSTICK_DOWN ) PORT_COCKTAIL
+
+	PORT_START("IN.2") // R20
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_START1 ) PORT_NAME("1 Player Start (Destroyer)")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_BUTTON3 ) PORT_COCKTAIL PORT_NAME("P2 Fire Right")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_JOYSTICK_RIGHT )
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_JOYSTICK_RIGHT ) PORT_COCKTAIL
+
+	PORT_START("IN.3") // R21
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON2 ) PORT_NAME("P1 Fire Deep")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_BUTTON2 ) PORT_COCKTAIL PORT_NAME("P2 Fire Middle")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_JOYSTICK_UP )
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_JOYSTICK_UP ) PORT_COCKTAIL
+INPUT_PORTS_END
+
+// config
+
+void uboat_state::uboat(machine_config &config)
+{
+	// basic machine hardware
+	TMS1475(config, m_maincpu, 425000); // approximation - RC osc. R=43K, C=47pF
+	m_maincpu->read_k().set(FUNC(uboat_state::read_k));
+	m_maincpu->write_r().set(FUNC(uboat_state::write_r));
+	m_maincpu->write_o().set(FUNC(uboat_state::write_o));
+
+	// video hardware
+	screen_device &screen1(SCREEN(config, "screen1", SCREEN_TYPE_SVG));
+	screen1.set_refresh_hz(60);
+	screen1.set_size(372, 1080);
+	screen1.set_visarea_full();
+
+	screen_device &screen2(SCREEN(config, "screen2", SCREEN_TYPE_SVG));
+	screen2.set_refresh_hz(60);
+	screen2.set_size(372, 1080);
+	screen2.set_visarea_full();
+
+	PWM_DISPLAY(config, m_display).set_size(10, 15);
+	config.set_default_layout(layout_uboat);
+
+	// sound hardware
+	SPEAKER(config, "mono").front_center();
+	SPEAKER_SOUND(config, m_speaker);
+	m_speaker->add_route(ALL_OUTPUTS, "mono", 0.25);
+}
+
+// roms
+
+ROM_START( uboat )
+	ROM_REGION( 0x1000, "maincpu", 0 )
+	ROM_LOAD( "mp6358", 0x0000, 0x1000, CRC(2e238df8) SHA1(e60f061b1f449946e1a68fb8789a381961b088ad) )
+
+	ROM_REGION( 867, "maincpu:mpla", 0 )
+	ROM_LOAD( "tms1100_common2_micro.pla", 0, 867, CRC(7cc90264) SHA1(c6e1cf1ffb178061da9e31858514f7cd94e86990) )
+	ROM_REGION( 557, "maincpu:opla", 0 )
+	ROM_LOAD( "tms1400_uboat_output.pla", 0, 557, CRC(fdb07ac9) SHA1(beb2d8f8de39b795cb95aef2b0f02abc5e4d79dc) )
+
+	ROM_REGION( 305576, "screen1", 0) // destroyer side
+	ROM_LOAD( "uboat1.svg", 0, 305576, CRC(5d51fa01) SHA1(a42ccbc821050f5719232130f115eeb4888ed452) )
+
+	ROM_REGION( 310743, "screen2", 0) // submarine side
+	ROM_LOAD( "uboat2.svg", 0, 310743, CRC(72c44272) SHA1(a43a57b8038b00f9d63c6e5d1a43c4a45a6c6075) )
+ROM_END
+
+
+
+
+
+/*******************************************************************************
+
   Canon Palmtronic F-31, Canon Canola L813, Toshiba BC-8111B, Toshiba BC-8018B,
   Triumph-Adler 81 SN, Silver-Reed 8J, more
   * TMS1040 MCU label TMS1045NL (die label: 1040A, 1045)
@@ -1417,12 +1593,12 @@ static INPUT_PORTS_START( palmf31 )
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_CLOSEBRACE) PORT_NAME(")")
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_4) PORT_CODE(KEYCODE_4_PAD) PORT_NAME("4")
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_STOP) PORT_CODE(KEYCODE_DEL_PAD) PORT_NAME(".")
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_R) PORT_NAME(u8"\u221a" /* √ */)
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_R) PORT_NAME(u8"\u221a") // U+221A = √
 
 	PORT_START("IN.5") // R5
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_ENTER) PORT_CODE(KEYCODE_ENTER_PAD) PORT_NAME("=")
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_5) PORT_CODE(KEYCODE_5_PAD) PORT_NAME("5")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_I) PORT_NAME(u8"π")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_P) PORT_NAME(u8"π")
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_Q) PORT_NAME(u8"x²")
 
 	PORT_START("IN.6") // R6
@@ -1439,7 +1615,7 @@ static INPUT_PORTS_START( palmf31 )
 
 	PORT_START("IN.8") // R8
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_V) PORT_NAME("C") // clear (all)
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_BACKSPACE) PORT_NAME(u8"\u2190" /* ← */)
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_BACKSPACE) PORT_NAME(u8"\u2190") // U+2190 = ←
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_B) PORT_NAME("CI") // clear indicator
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_DEL) PORT_NAME("CI/C") // combined function (press twice)
 
@@ -1582,7 +1758,7 @@ static INPUT_PORTS_START( palmmd8 )
 	PORT_START("IN.4") // R4
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_UNUSED )
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_PLUS_PAD) PORT_NAME("+")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_R) PORT_NAME(u8"\u221a" /* √ */)
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_R) PORT_NAME(u8"\u221a") // U+221A = √
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_4) PORT_CODE(KEYCODE_4_PAD) PORT_NAME("4")
 
 	PORT_START("IN.5") // R5
@@ -1693,18 +1869,19 @@ public:
 	void cchime(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	required_device<filter_volume_device> m_volume;
 	required_device<timer_device> m_tempo_timer;
+
+	double m_speaker_volume = 0.0;
 
 	void write_o(u16 data);
 	void write_r(u32 data);
 	u8 read_k();
 
 	TIMER_DEVICE_CALLBACK_MEMBER(speaker_decay_sim);
-	double m_speaker_volume = 0.0;
 };
 
 void cchime_state::machine_start()
@@ -1717,7 +1894,7 @@ void cchime_state::machine_start()
 
 TIMER_DEVICE_CALLBACK_MEMBER(cchime_state::speaker_decay_sim)
 {
-	m_volume->flt_volume_set_volume(m_speaker_volume);
+	m_volume->set_gain(m_speaker_volume);
 
 	// volume decays when speaker is off, decay scale is determined by tone knob
 	const double step = (1.005 - 1.0005) / 100.0; // approximation
@@ -1747,7 +1924,7 @@ void cchime_state::write_o(u16 data)
 
 	// O2: trigger speaker on
 	if (~m_o & data & 4)
-		m_volume->flt_volume_set_volume(m_speaker_volume = 1.0);
+		m_volume->set_gain(m_speaker_volume = 1.0);
 
 	m_o = data;
 }
@@ -1792,8 +1969,8 @@ static INPUT_PORTS_START( cchime )
 	PORT_CONFSETTING(    0x04, "3" )
 
 	PORT_START("IN.2")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_NAME("Front Doorbell") PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, true)
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_BUTTON2 ) PORT_NAME("Rear Doorbell") PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, true)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_NAME("Front Doorbell") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), true)
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_BUTTON2 ) PORT_NAME("Rear Doorbell") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), true)
 
 	PORT_START("IN.3")
 	PORT_ADJUSTER(50, "Tempo Knob")
@@ -2051,7 +2228,7 @@ u8 zodiac_state::read_k()
 
 // inputs
 
-/* The physical button layout and labels are like this:
+/* physical button layout and labels are like this:
 
       [P]                                [A]
                 [ 1 ] [ 2 ] [ 3 ]
@@ -2061,45 +2238,38 @@ u8 zodiac_state::read_k()
 
                   [.__.__.__.]
                   OFF H  P  A
-
-Despite that this layout features a typical digital keypad and distances
-the letter buttons from it, the 8-character encoding for date input uses
-letters and digits in combination. This fact and the use of the P key are
-why the digit buttons are mapped here as keyboard inputs rather than as a
-keypad.
-
 */
 
 static INPUT_PORTS_START( zodiac )
 	PORT_START("IN.0") // R0
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_3) PORT_CODE(KEYCODE_3_PAD) PORT_CHAR('3')
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_2) PORT_CODE(KEYCODE_2_PAD) PORT_CHAR('2')
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_1) PORT_CODE(KEYCODE_1_PAD) PORT_CHAR('1')
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_0) PORT_CODE(KEYCODE_0_PAD) PORT_CHAR('0')
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_3) PORT_CODE(KEYCODE_3_PAD) PORT_NAME("3")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_2) PORT_CODE(KEYCODE_2_PAD) PORT_NAME("2")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_1) PORT_CODE(KEYCODE_1_PAD) PORT_NAME("1")
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_0) PORT_CODE(KEYCODE_0_PAD) PORT_NAME("0")
 
 	PORT_START("IN.1") // R1
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_7) PORT_CODE(KEYCODE_7_PAD) PORT_CHAR('7')
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_6) PORT_CODE(KEYCODE_6_PAD) PORT_CHAR('6')
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_5) PORT_CODE(KEYCODE_5_PAD) PORT_CHAR('5')
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_4) PORT_CODE(KEYCODE_4_PAD) PORT_CHAR('4')
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_7) PORT_CODE(KEYCODE_7_PAD) PORT_NAME("7")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_6) PORT_CODE(KEYCODE_6_PAD) PORT_NAME("6")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_5) PORT_CODE(KEYCODE_5_PAD) PORT_NAME("5")
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_4) PORT_CODE(KEYCODE_4_PAD) PORT_NAME("4")
 
 	PORT_START("IN.2") // R2
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_D) PORT_CHAR('D')
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_A) PORT_CHAR('A')
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_9) PORT_CODE(KEYCODE_9_PAD) PORT_CHAR('9')
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_8) PORT_CODE(KEYCODE_8_PAD) PORT_CHAR('8')
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_D) PORT_NAME("D")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_A) PORT_NAME("A")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_9) PORT_CODE(KEYCODE_9_PAD) PORT_NAME("9")
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_8) PORT_CODE(KEYCODE_8_PAD) PORT_NAME("8")
 
 	PORT_START("IN.3") // R3
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_P) PORT_CHAR('P')
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_L) PORT_CHAR('L')
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_J) PORT_CHAR('J')
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_E) PORT_CHAR('E')
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_P) PORT_NAME("P")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_L) PORT_NAME("L")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_J) PORT_NAME("J")
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_E) PORT_NAME("E")
 
 	PORT_START("IN.4") // R4
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_ENTER) PORT_CODE(KEYCODE_ENTER_PAD) PORT_NAME("Enter") PORT_CHAR(13)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_ENTER) PORT_CODE(KEYCODE_ENTER_PAD) PORT_NAME("Enter")
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_UNUSED )
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_UNUSED )
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_BACKSPACE) PORT_CODE(KEYCODE_DEL) PORT_CODE(KEYCODE_DEL_PAD) PORT_NAME("Clear") PORT_CHAR(8)
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_BACKSPACE) PORT_CODE(KEYCODE_DEL) PORT_CODE(KEYCODE_DEL_PAD) PORT_NAME("Clear")
 
 	PORT_START("IN.5") // R8
 	PORT_CONFNAME( 0x03, 0x01, "Mode")
@@ -2437,7 +2607,7 @@ public:
 	void h2hhockey(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	required_device<timer_device> m_cap_discharge;
@@ -2627,32 +2797,22 @@ public:
 
 	void h2hbaseb(machine_config &config);
 
-	DECLARE_INPUT_CHANGED_MEMBER(skill_switch) { set_clock(); }
-
-protected:
-	virtual void machine_reset() override;
+	DECLARE_INPUT_CHANGED_MEMBER(skill_switch);
 
 private:
-	void set_clock();
 	void update_display();
 	void write_r(u32 data);
 	void write_o(u16 data);
 	u8 read_k();
 };
 
-void h2hbaseb_state::machine_reset()
-{
-	hh_tms1k_state::machine_reset();
-	set_clock();
-}
-
 // handlers
 
-void h2hbaseb_state::set_clock()
+INPUT_CHANGED_MEMBER(h2hbaseb_state::skill_switch)
 {
 	// MCU clock is from an RC circuit with C=47pF, and R value is depending on
 	// skill switch: R=51K(1) or 43K(2)
-	m_maincpu->set_unscaled_clock((m_inputs[5]->read() & 1) ? 400000 : 350000);
+	m_maincpu->set_unscaled_clock((newval & 1) ? 400000 : 350000);
 }
 
 void h2hbaseb_state::update_display()
@@ -2709,12 +2869,12 @@ static INPUT_PORTS_START( h2hbaseb )
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_BUTTON6 ) PORT_NAME("Fast Pitch") // "
 	PORT_BIT( 0x0c, IP_ACTIVE_HIGH, IPT_UNUSED )
 
-	PORT_START("IN.4") // Vss!
+	PORT_START("IN.4") // Vss
 	PORT_BIT( 0x07, IP_ACTIVE_HIGH, IPT_UNUSED )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_NAME("Swing")
 
-	PORT_START("IN.5") // fake
-	PORT_CONFNAME( 0x01, 0x00, DEF_STR( Difficulty ) ) PORT_CHANGED_MEMBER(DEVICE_SELF, h2hbaseb_state, skill_switch, 0)
+	PORT_START("CPU") // fake
+	PORT_CONFNAME( 0x01, 0x00, DEF_STR( Difficulty ) ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(h2hbaseb_state::skill_switch), 0)
 	PORT_CONFSETTING(    0x00, "1" )
 	PORT_CONFSETTING(    0x01, "2" )
 INPUT_PORTS_END
@@ -2724,7 +2884,7 @@ INPUT_PORTS_END
 void h2hbaseb_state::h2hbaseb(machine_config &config)
 {
 	// basic machine hardware
-	TMS1170(config, m_maincpu, 350000); // see set_clock
+	TMS1170(config, m_maincpu, 350000); // see skill_switch
 	m_maincpu->read_k().set(FUNC(h2hbaseb_state::read_k));
 	m_maincpu->write_r().set(FUNC(h2hbaseb_state::write_r));
 	m_maincpu->write_o().set(FUNC(h2hbaseb_state::write_o));
@@ -2920,11 +3080,11 @@ public:
 	void quizwizc(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
-	DECLARE_DEVICE_IMAGE_LOAD_MEMBER(cart_load);
 	u16 m_pinout = 0x07; // cartridge R pins
+	DECLARE_DEVICE_IMAGE_LOAD_MEMBER(cart_load);
 
 	void update_display();
 	void write_r(u32 data);
@@ -3111,11 +3271,11 @@ public:
 	void tc4(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
-	DECLARE_DEVICE_IMAGE_LOAD_MEMBER(cart_load);
 	u8 m_pinout = 0xf; // cartridge K pins
+	DECLARE_DEVICE_IMAGE_LOAD_MEMBER(cart_load);
 
 	void update_display();
 	void write_r(u32 data);
@@ -3292,17 +3452,18 @@ public:
 	void litelrn(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	required_device<filter_volume_device> m_volume;
+
+	double m_speaker_volume = 0.0;
 
 	void write_o(u16 data);
 	void write_r(u32 data);
 	u8 read_k();
 
 	TIMER_DEVICE_CALLBACK_MEMBER(speaker_decay_sim);
-	double m_speaker_volume = 0.0;
 };
 
 void litelrn_state::machine_start()
@@ -3315,7 +3476,7 @@ void litelrn_state::machine_start()
 
 TIMER_DEVICE_CALLBACK_MEMBER(litelrn_state::speaker_decay_sim)
 {
-	m_volume->flt_volume_set_volume(m_speaker_volume);
+	m_volume->set_gain(m_speaker_volume);
 
 	// volume decays when speaker is off, rate is determined by tone knob
 	const double div[3] = { 1.002, 1.004, 1.008 }; // approximation
@@ -3336,7 +3497,7 @@ void litelrn_state::write_o(u16 data)
 {
 	// O0: trigger speaker on
 	if (~data & m_o & 1)
-		m_volume->flt_volume_set_volume(m_speaker_volume = 1.0);
+		m_volume->set_gain(m_speaker_volume = 1.0);
 
 	// O2: select mode switch
 	// other: N/C
@@ -3852,6 +4013,7 @@ public:
 
 private:
 	required_device<ds8874_device> m_ds8874;
+
 	void ds8874_output_w(u16 data);
 
 	void update_display();
@@ -3977,7 +4139,7 @@ ROM_END
 
   known releases:
   - Hong Kong: Electronic Football II, published by Conic
-  - USA: Electronic Football II, published by Tandy
+  - USA: Electronic Football II (model 60-2169), published by Tandy
 
 *******************************************************************************/
 
@@ -4104,8 +4266,8 @@ ROM_END
 /*******************************************************************************
 
   Conic Electronic I.Q.
-  * PCB labels: main: CONIC 101-037 (other side: HG-15, 11*00198*00), button PCB:
-    CONIC 102-001, led PCB: CONIC 100-003 REV A itac
+  * PCB labels: main: CONIC 101-037 (other side: HG-15, 11*00198*00),
+    button PCB: CONIC 102-001, led PCB: CONIC 100-003 REV A itac
   * TMS1000NLL MP0908 (die label: 1000B, MP0908)
   * 2 7seg LEDs, 30 other LEDs, 1-bit sound
 
@@ -4211,7 +4373,7 @@ static INPUT_PORTS_START( eleciq )
 	PORT_BIT( 0x0e, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("RESET")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_R) PORT_NAME("Reset") PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, reset_button, 0)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_R) PORT_NAME("Reset") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::reset_button), 0)
 INPUT_PORTS_END
 
 // config
@@ -4602,7 +4764,7 @@ static INPUT_PORTS_START( ebball )
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON4 ) PORT_PLAYER(2) PORT_NAME("P2 Slider")
 	PORT_BIT( 0x0e, IP_ACTIVE_HIGH, IPT_UNUSED )
 
-	PORT_START("IN.5") // Vss!
+	PORT_START("IN.5") // Vss
 	PORT_BIT( 0x07, IP_ACTIVE_HIGH, IPT_UNUSED )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_NAME("P1 Batter")
 INPUT_PORTS_END
@@ -4825,33 +4987,23 @@ public:
 
 	void ebball3(machine_config &config);
 
-	DECLARE_INPUT_CHANGED_MEMBER(skill_switch) { set_clock(); }
-
-protected:
-	virtual void machine_reset() override;
+	DECLARE_INPUT_CHANGED_MEMBER(skill_switch);
 
 private:
-	void set_clock();
 	void update_display();
 	void write_r(u32 data);
 	void write_o(u16 data);
 	u8 read_k();
 };
 
-void ebball3_state::machine_reset()
-{
-	hh_tms1k_state::machine_reset();
-	set_clock();
-}
-
 // handlers
 
-void ebball3_state::set_clock()
+INPUT_CHANGED_MEMBER(ebball3_state::skill_switch)
 {
 	// MCU clock is from an RC circuit(R=47K, C=33pF) oscillating by default at ~340kHz,
 	// but on PRO, the difficulty switch adds an extra 150K resistor to Vdd to speed
 	// it up to around ~440kHz.
-	m_maincpu->set_unscaled_clock((m_inputs[3]->read() & 1) ? 440000 : 340000);
+	m_maincpu->set_unscaled_clock((newval & 1) ? 440000 : 340000);
 }
 
 void ebball3_state::update_display()
@@ -4927,8 +5079,8 @@ static INPUT_PORTS_START( ebball3 )
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_BUTTON2 ) PORT_NAME("P1 Bunt")
 	PORT_BIT( 0x0c, IP_ACTIVE_HIGH, IPT_UNUSED )
 
-	PORT_START("IN.3") // fake
-	PORT_CONFNAME( 0x01, 0x00, DEF_STR( Difficulty ) ) PORT_CHANGED_MEMBER(DEVICE_SELF, ebball3_state, skill_switch, 0)
+	PORT_START("CPU") // fake
+	PORT_CONFNAME( 0x01, 0x00, DEF_STR( Difficulty ) ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(ebball3_state::skill_switch), 0)
 	PORT_CONFSETTING(    0x00, "1" ) // AM
 	PORT_CONFSETTING(    0x01, "2" ) // PRO
 INPUT_PORTS_END
@@ -4938,7 +5090,7 @@ INPUT_PORTS_END
 void ebball3_state::ebball3(machine_config &config)
 {
 	// basic machine hardware
-	TMS1100(config, m_maincpu, 340000); // see set_clock
+	TMS1100(config, m_maincpu, 340000); // see skill_switch
 	m_maincpu->read_k().set(FUNC(ebball3_state::read_k));
 	m_maincpu->write_r().set(FUNC(ebball3_state::write_r));
 	m_maincpu->write_o().set(FUNC(ebball3_state::write_o));
@@ -5226,33 +5378,23 @@ public:
 		hh_tms1k_state(mconfig, type, tag)
 	{ }
 
-	DECLARE_INPUT_CHANGED_MEMBER(skill_switch) { set_clock(); }
+	DECLARE_INPUT_CHANGED_MEMBER(skill_switch);
 	void einvader(machine_config &config);
 
-protected:
-	virtual void machine_reset() override;
-
 private:
-	void set_clock();
 	void update_display();
 	void write_r(u32 data);
 	void write_o(u16 data);
 };
 
-void einvader_state::machine_reset()
-{
-	hh_tms1k_state::machine_reset();
-	set_clock();
-}
-
 // handlers
 
-void einvader_state::set_clock()
+INPUT_CHANGED_MEMBER(einvader_state::skill_switch)
 {
 	// MCU clock is from an RC circuit(R=47K, C=56pF) oscillating by default at ~320kHz,
 	// but on PRO, the difficulty switch adds an extra 180K resistor to Vdd to speed
 	// it up to around ~400kHz.
-	m_maincpu->set_unscaled_clock((m_inputs[0]->read() & 8) ? 400000 : 320000);
+	m_maincpu->set_unscaled_clock((newval & 1) ? 400000 : 320000);
 }
 
 void einvader_state::update_display()
@@ -5285,7 +5427,7 @@ static INPUT_PORTS_START( einvader )
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON1 )
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_JOYSTICK_LEFT ) PORT_16WAY
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_JOYSTICK_RIGHT ) PORT_16WAY
-	PORT_CONFNAME( 0x08, 0x00, DEF_STR( Difficulty ) ) PORT_CHANGED_MEMBER(DEVICE_SELF, einvader_state, skill_switch, 0)
+	PORT_CONFNAME( 0x08, 0x00, DEF_STR( Difficulty ) ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(einvader_state::skill_switch), 0)
 	PORT_CONFSETTING(    0x00, "1" ) // amateur
 	PORT_CONFSETTING(    0x08, "2" ) // professional
 INPUT_PORTS_END
@@ -5295,7 +5437,7 @@ INPUT_PORTS_END
 void einvader_state::einvader(machine_config &config)
 {
 	// basic machine hardware
-	TMS1100(config, m_maincpu, 320000); // see set_clock
+	TMS1100(config, m_maincpu, 320000); // see skill_switch
 	m_maincpu->read_k().set_ioport("IN.0");
 	m_maincpu->write_r().set(FUNC(einvader_state::write_r));
 	m_maincpu->write_o().set(FUNC(einvader_state::write_o));
@@ -5655,36 +5797,26 @@ public:
 	void raisedvl(machine_config &config);
 	void ebknight(machine_config &config);
 
-	DECLARE_INPUT_CHANGED_MEMBER(skill_switch) { set_clock(); }
-
-protected:
-	virtual void machine_reset() override;
+	DECLARE_INPUT_CHANGED_MEMBER(skill_switch);
 
 private:
-	void set_clock();
 	void update_display();
 	void write_r(u32 data);
 	void write_o(u16 data);
 	u8 read_k();
 };
 
-void raisedvl_state::machine_reset()
-{
-	hh_tms1k_state::machine_reset();
-	set_clock();
-}
-
 // handlers
 
-void raisedvl_state::set_clock()
+INPUT_CHANGED_MEMBER(raisedvl_state::skill_switch)
 {
 	// MCU clock is from an RC circuit with C=47pF, R=47K by default. Skills
 	// 2 and 3 add a 150K resistor in parallel, and skill 4 adds a 100K one.
 	// 0:   R=47K  -> ~350kHz
 	// 2,3: R=35K8 -> ~425kHz (combined)
 	// 4:   R=32K  -> ~465kHz (combined)
-	u8 inp = m_inputs[1]->read();
-	m_maincpu->set_unscaled_clock((inp & 0x20) ? 465000 : ((inp & 0x10) ? 425000 : 350000));
+	static const u32 freq[3] = { 350000, 425000, 465000 };
+	m_maincpu->set_unscaled_clock(freq[(newval >> 4) % 3]);
 }
 
 void raisedvl_state::update_display()
@@ -5730,7 +5862,7 @@ static INPUT_PORTS_START( raisedvl )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("IN.1") // R1 (only bit 0)
-	PORT_CONFNAME( 0x31, 0x00, DEF_STR( Difficulty ) ) PORT_CHANGED_MEMBER(DEVICE_SELF, raisedvl_state, skill_switch, 0)
+	PORT_CONFNAME( 0x31, 0x00, DEF_STR( Difficulty ) ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(raisedvl_state::skill_switch), 0)
 	PORT_CONFSETTING(    0x00, "1" )
 	PORT_CONFSETTING(    0x10, "2" )
 	PORT_CONFSETTING(    0x11, "3" )
@@ -5742,7 +5874,7 @@ INPUT_PORTS_END
 void raisedvl_state::raisedvl(machine_config &config)
 {
 	// basic machine hardware
-	TMS1100(config, m_maincpu, 350000); // see set_clock
+	TMS1100(config, m_maincpu, 350000); // see skill_switch
 	m_maincpu->read_k().set(FUNC(raisedvl_state::read_k));
 	m_maincpu->write_r().set(FUNC(raisedvl_state::write_r));
 	m_maincpu->write_o().set(FUNC(raisedvl_state::write_o));
@@ -5814,11 +5946,13 @@ public:
 	void mmarvin(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	required_device<filter_volume_device> m_volume;
 	required_device<timer_device> m_speed_timer;
+
+	double m_speaker_volume = 0.0;
 
 	void update_display();
 	void write_r(u32 data);
@@ -5826,7 +5960,6 @@ private:
 	u8 read_k();
 
 	TIMER_DEVICE_CALLBACK_MEMBER(speaker_decay_sim);
-	double m_speaker_volume = 0.0;
 };
 
 void mmarvin_state::machine_start()
@@ -5839,7 +5972,7 @@ void mmarvin_state::machine_start()
 
 TIMER_DEVICE_CALLBACK_MEMBER(mmarvin_state::speaker_decay_sim)
 {
-	m_volume->flt_volume_set_volume(m_speaker_volume);
+	m_volume->set_gain(m_speaker_volume);
 
 	// volume decays when speaker is off, decay scale is determined by tone knob
 	const double step = (1.01 - 1.003) / 100.0; // approximation
@@ -5869,7 +6002,7 @@ void mmarvin_state::write_r(u32 data)
 
 	// R9: trigger speaker on
 	if (m_r & ~data & 0x200)
-		m_volume->flt_volume_set_volume(m_speaker_volume = 1.0);
+		m_volume->set_gain(m_speaker_volume = 1.0);
 
 	// R0,R1: digit/led select
 	// R7: digit DP
@@ -6069,7 +6202,7 @@ static INPUT_PORTS_START( f2pbball )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_BUTTON4 ) PORT_COCKTAIL PORT_NAME("P2 Fast")
 
 	PORT_START("RESET")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON5 ) PORT_NAME("P1 Reset") PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, reset_button, 0)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON5 ) PORT_NAME("P1 Reset") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::reset_button), 0)
 INPUT_PORTS_END
 
 // config
@@ -6135,31 +6268,21 @@ public:
 
 	void f3in1(machine_config &config);
 
-	DECLARE_INPUT_CHANGED_MEMBER(skill_switch) { set_clock(); }
-
-protected:
-	virtual void machine_reset() override;
+	DECLARE_INPUT_CHANGED_MEMBER(skill_switch);
 
 private:
-	void set_clock();
 	void update_display();
 	void write_r(u32 data);
 	void write_o(u16 data);
 	u8 read_k();
 };
 
-void f3in1_state::machine_reset()
-{
-	hh_tms1k_state::machine_reset();
-	set_clock();
-}
-
 // handlers
 
-void f3in1_state::set_clock()
+INPUT_CHANGED_MEMBER(f3in1_state::skill_switch)
 {
 	// MCU clock is from an RC circuit where C=47pF, R=39K(PROF) or 56K(REG)
-	m_maincpu->set_unscaled_clock((m_inputs[4]->read() & 1) ? 400000 : 300000);
+	m_maincpu->set_unscaled_clock((newval & 1) ? 400000 : 300000);
 }
 
 void f3in1_state::update_display()
@@ -6220,8 +6343,8 @@ static INPUT_PORTS_START( f3in1 )
 	PORT_CONFSETTING(    0x04, "Basketball" )
 	PORT_CONFSETTING(    0x08, "Soccer" )
 
-	PORT_START("IN.4") // fake
-	PORT_CONFNAME( 0x01, 0x00, DEF_STR( Difficulty ) ) PORT_CHANGED_MEMBER(DEVICE_SELF, f3in1_state, skill_switch, 0)
+	PORT_START("CPU") // fake
+	PORT_CONFNAME( 0x01, 0x00, DEF_STR( Difficulty ) ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(f3in1_state::skill_switch), 0)
 	PORT_CONFSETTING(    0x00, "1" ) // REG
 	PORT_CONFSETTING(    0x01, "2" ) // PROF
 INPUT_PORTS_END
@@ -6231,7 +6354,7 @@ INPUT_PORTS_END
 void f3in1_state::f3in1(machine_config &config)
 {
 	// basic machine hardware
-	TMS1100(config, m_maincpu, 300000); // see set_clock
+	TMS1100(config, m_maincpu, 300000); // see skill_switch
 	m_maincpu->read_k().set(FUNC(f3in1_state::read_k));
 	m_maincpu->write_r().set(FUNC(f3in1_state::write_r));
 	m_maincpu->write_o().set(FUNC(f3in1_state::write_o));
@@ -6831,6 +6954,7 @@ public:
 
 private:
 	required_device<tms1024_device> m_expander;
+
 	void expander_w(offs_t offset, u8 data);
 
 	void update_display();
@@ -7108,7 +7232,7 @@ ROM_END
 
   Ideal Electronic Detective
   * TMS0980NLL MP6100A (die label: 0980B-00)
-  * 10-digit 7seg LED display, 2-level sound
+  * 9-digit 7seg LED display (2 unused), 2-level sound
 
   hardware (and concept) is very similar to Parker Brothers Stop Thief
 
@@ -7202,12 +7326,12 @@ static INPUT_PORTS_START( elecdet )
 	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_2) PORT_CODE(KEYCODE_2_PAD) PORT_NAME("2")
 
 	// note: even though power buttons are on the matrix, they are not CPU-controlled
-	PORT_START("IN.4") // Vss!
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_POWER_ON ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, true)
+	PORT_START("IN.4") // Vss
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_POWER_ON ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), true)
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_UNUSED )
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_UNUSED )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_E) PORT_NAME("End Turn")
-	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_POWER_OFF ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, false)
+	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_POWER_OFF ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), false)
 INPUT_PORTS_END
 
 // config
@@ -7215,7 +7339,7 @@ INPUT_PORTS_END
 void elecdet_state::elecdet(machine_config &config)
 {
 	// basic machine hardware
-	TMS0980(config, m_maincpu, 425000); // approximation
+	TMS0980(config, m_maincpu, 450000); // approximation
 	m_maincpu->read_k().set(FUNC(elecdet_state::read_k));
 	m_maincpu->write_r().set(FUNC(elecdet_state::write_r));
 	m_maincpu->write_o().set(FUNC(elecdet_state::write_o));
@@ -7256,7 +7380,249 @@ ROM_END
 
 /*******************************************************************************
 
-  Star Wars: Electronic Laser Battle Game (model 40090)
+  Ideal Sky-Writer (model 6070-7)
+  * PCB label: ITC 5A-3917-02, 201101
+  * TMS1100 M34004A (die label: 1100E, M34004A)
+  * 7 LEDs, no sound
+
+  It's a toy wand that the user waves around to display a message in the air,
+  relying on human persistence of vision. A keyboard is included, making the
+  whole thing quite tiring to wave around for a kid.
+
+  The display is simulated in MAME with a screen and slowly fading pixels.
+
+*******************************************************************************/
+
+static constexpr u32 SKYWRITER_WIDTH = 0x300; // screen width (wave range)
+
+class skywriter_state : public hh_tms1k_state
+{
+public:
+	skywriter_state(const machine_config &mconfig, device_type type, const char *tag) :
+		hh_tms1k_state(mconfig, type, tag)
+	{ }
+
+	void skywriter(machine_config &config);
+
+protected:
+	virtual void machine_start() override ATTR_COLD;
+
+private:
+	std::unique_ptr<u16[]> m_pixbuf;
+	u8 m_led_data[2] = { };
+	u16 m_wand_pos[2] = { };
+	attotime m_shake;
+
+	void write_r(u32 data);
+	void write_o(u16 data);
+	u8 read_k();
+
+	u32 screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
+	TIMER_DEVICE_CALLBACK_MEMBER(check_pos);
+};
+
+void skywriter_state::machine_start()
+{
+	hh_tms1k_state::machine_start();
+
+	m_pixbuf = make_unique_clear<u16[]>(7 * SKYWRITER_WIDTH);
+	save_pointer(NAME(m_pixbuf), 7 * SKYWRITER_WIDTH);
+
+	save_item(NAME(m_led_data));
+	save_item(NAME(m_wand_pos));
+	save_item(NAME(m_shake));
+}
+
+// handlers
+
+u32 skywriter_state::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)
+{
+	for (int i = 0; i < 7 * SKYWRITER_WIDTH; i++)
+	{
+		int dx = i % SKYWRITER_WIDTH;
+		int dy = (i / SKYWRITER_WIDTH) * 4 + 1;
+
+		// write current led state to pixels
+		u8 red = std::clamp<u16>(m_pixbuf[i], 0, 0xff);
+		u8 green = red / 16;
+		u8 blue = red / 12;
+
+		for (int j = 0; j < 3; j++)
+		{
+			if (cliprect.contains(dx, dy + j))
+				bitmap.pix(dy + j, dx) = red << 16 | green << 8 | blue;
+		}
+
+		// decay led brightness
+		const double rate = 1.15;
+		m_pixbuf[i] /= rate;
+	}
+
+	return 0;
+}
+
+TIMER_DEVICE_CALLBACK_MEMBER(skywriter_state::check_pos)
+{
+	u16 pos = m_inputs[11]->read() % SKYWRITER_WIDTH;
+
+	if (pos != m_wand_pos[0])
+	{
+		// set shake sensor if wand changed direction from left to right
+		if (pos > m_wand_pos[0] && m_wand_pos[0] < m_wand_pos[1])
+			m_shake = machine().time() + attotime::from_msec(10);
+
+		m_wand_pos[1] = m_wand_pos[0];
+		m_wand_pos[0] = pos;
+	}
+
+	// write lit leds to pixel buffer
+	for (int i = 0; i < 7; i++)
+	{
+		if (BIT(m_led_data[0] | m_led_data[1], i))
+			m_pixbuf[i * SKYWRITER_WIDTH + pos] = 0x180;
+	}
+
+	m_led_data[1] = m_led_data[0];
+}
+
+void skywriter_state::write_r(u32 data)
+{
+	// R0-R10: input mux
+	m_inp_mux = data;
+}
+
+void skywriter_state::write_o(u16 data)
+{
+	// O0-O3, O5-O7: leds
+	m_led_data[0] = bitswap<7>(data,1,5,6,7,3,2,0);
+
+	// O4: enable shake sensor
+	m_o = data;
+}
+
+u8 skywriter_state::read_k()
+{
+	// K: multiplexed inputs + shake sensor
+	u8 shake = (m_o & 0x10 && m_shake > machine().time()) ? 4 : 0;
+	return read_inputs(11) | shake;
+}
+
+// inputs
+
+static INPUT_PORTS_START( skywriter )
+	PORT_START("IN.0") // R0
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_DEL) PORT_CHAR(127) PORT_NAME("CL")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_ENTER) PORT_CODE(KEYCODE_ENTER_PAD) PORT_CHAR(13) PORT_NAME("Start")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_UNUSED ) // factory test?
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_BACKSPACE) PORT_CHAR(8) PORT_NAME("BS")
+
+	PORT_START("IN.1") // R1
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_J) PORT_CHAR('J')
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_T) PORT_CHAR('T')
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_QUOTE) PORT_CHAR('\'')
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_SPACE) PORT_CHAR(' ') PORT_NAME("SP")
+
+	PORT_START("IN.2") // R2
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_9) PORT_CODE(KEYCODE_9_PAD) PORT_CHAR('9')
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_STOP) PORT_CHAR('.')
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_S) PORT_CHAR('S')
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_I) PORT_CHAR('I')
+
+	PORT_START("IN.3") // R3
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_H) PORT_CHAR('H')
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_R) PORT_CHAR('R')
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_SLASH) PORT_CHAR('?')
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_8) PORT_CODE(KEYCODE_8_PAD) PORT_CHAR('8')
+
+	PORT_START("IN.4") // R4
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_7) PORT_CODE(KEYCODE_7_PAD) PORT_CHAR('7')
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_MINUS) PORT_CHAR('-')
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_Q) PORT_CHAR('Q')
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_G) PORT_CHAR('G')
+
+	PORT_START("IN.5") // R5
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_F) PORT_CHAR('F')
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_P) PORT_CHAR('P')
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_Z) PORT_CHAR('Z')
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_6) PORT_CODE(KEYCODE_6_PAD) PORT_CHAR('6')
+
+	PORT_START("IN.6") // R6
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_5) PORT_CODE(KEYCODE_5_PAD) PORT_CHAR('5')
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_Y) PORT_CHAR('Y')
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_O) PORT_CHAR('O')
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_E) PORT_CHAR('E')
+
+	PORT_START("IN.7") // R7
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_D) PORT_CHAR('D')
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_N) PORT_CHAR('N')
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_X) PORT_CHAR('X')
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_4) PORT_CODE(KEYCODE_4_PAD) PORT_CHAR('4')
+
+	PORT_START("IN.8") // R8
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_3) PORT_CODE(KEYCODE_3_PAD) PORT_CHAR('3')
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_W) PORT_CHAR('W')
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_M) PORT_CHAR('M')
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_C) PORT_CHAR('C')
+
+	PORT_START("IN.9") // R9
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_B) PORT_CHAR('B')
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_L) PORT_CHAR('L')
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_V) PORT_CHAR('V')
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_2) PORT_CODE(KEYCODE_2_PAD) PORT_CHAR('2')
+
+	PORT_START("IN.10") // R10
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_1) PORT_CODE(KEYCODE_1_PAD) PORT_CHAR('1')
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_U) PORT_CHAR('U')
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_K) PORT_CHAR('K')
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_A) PORT_CHAR('A')
+
+	PORT_START("IN.11") // fake
+	PORT_BIT( 0xfff, SKYWRITER_WIDTH / 2, IPT_PADDLE ) PORT_MINMAX(0, SKYWRITER_WIDTH - 1) PORT_SENSITIVITY(25) PORT_KEYDELTA(300) PORT_CENTERDELTA(0) PORT_NAME("Wave Wand")
+INPUT_PORTS_END
+
+// config
+
+void skywriter_state::skywriter(machine_config &config)
+{
+	// basic machine hardware
+	TMS1100(config, m_maincpu, 475000); // approximation - RC osc. R=27K, C=100pF
+	m_maincpu->read_k().set(FUNC(skywriter_state::read_k));
+	m_maincpu->write_r().set(FUNC(skywriter_state::write_r));
+	m_maincpu->write_o().set(FUNC(skywriter_state::write_o));
+
+	TIMER(config, "check_pos").configure_periodic(FUNC(skywriter_state::check_pos), attotime::from_usec(1));
+
+	// video hardware
+	screen_device &screen(SCREEN(config, "screen", SCREEN_TYPE_RASTER));
+	screen.set_video_attributes(VIDEO_ALWAYS_UPDATE); // for led decay
+	screen.set_physical_aspect(16, 1);
+	screen.set_refresh_hz(60);
+	screen.set_size(SKYWRITER_WIDTH, 4 * 7 + 1);
+	screen.set_visarea_full();
+	screen.set_screen_update(FUNC(skywriter_state::screen_update));
+
+	// no sound!
+}
+
+// roms
+
+ROM_START( skywriter )
+	ROM_REGION( 0x0800, "maincpu", 0 )
+	ROM_LOAD( "m34004a.ic1", 0x0000, 0x0800, CRC(8e218dcc) SHA1(d3d5e0fa02c947d49d5bba1297edb7cecc0356da) )
+
+	ROM_REGION( 867, "maincpu:mpla", 0 )
+	ROM_LOAD( "tms1100_common1_micro.pla", 0, 867, CRC(62445fc9) SHA1(d6297f2a4bc7a870b76cc498d19dbb0ce7d69fec) )
+	ROM_REGION( 365, "maincpu:opla", 0 )
+	ROM_LOAD( "tms1100_skywriter_output.pla", 0, 365, CRC(407cb3b5) SHA1(f5830d25ec0ff8682993a2d03001606f1f30b46f) )
+ROM_END
+
+
+
+
+
+/*******************************************************************************
+
+  Kenner Star Wars: Electronic Laser Battle Game (model 40090)
   * TMS1000NLL MP3209 (die label: 1000C, MP3209)
   * 12 LEDs, 1 lamp, 1-bit sound
 
@@ -7447,7 +7813,7 @@ static INPUT_PORTS_START( starwbc )
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_1) PORT_NAME("Basic Game")
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_2) PORT_NAME("Intermediate Game")
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_3) PORT_NAME("Advanced Game")
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_N) PORT_NAME("Player Number")
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_P) PORT_NAME("Player Number")
 
 	PORT_START("IN.1") // R1
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_ENTER) PORT_NAME("Start Turn")
@@ -7673,12 +8039,148 @@ ROM_END
 
 /*******************************************************************************
 
+  Jeux Nathan Mega 10000
+  * PCB label: MADE IN FRANCE, OD 1112A
+  * TMS1000ENLL MP3312 (die label: 1000E, MP3312)
+  * 9-digit 7seg LED display, 1-bit sound
+
+  It's a quiz game/scorekeeper, it needs question books to play. It's a bit
+  cumbersome to play. To start, enter the book code, press R, then enter number
+  of players (0 or 1-4). Press Q and manually input a question number, press N
+  and enter the player number that will answer, press R, followed by the answer.
+
+*******************************************************************************/
+
+class mega10k_state : public hh_tms1k_state
+{
+public:
+	mega10k_state(const machine_config &mconfig, device_type type, const char *tag) :
+		hh_tms1k_state(mconfig, type, tag)
+	{ }
+
+	void mega10k(machine_config &config);
+
+private:
+	void write_r(u32 data);
+	void write_o(u16 data);
+	u8 read_k();
+};
+
+// handlers
+
+void mega10k_state::write_r(u32 data)
+{
+	// R0-R6: digit segments
+	m_display->write_mx(data);
+
+	// R7-R10: input mux
+	m_inp_mux = data >> 7 & 0xf;
+}
+
+void mega10k_state::write_o(u16 data)
+{
+	// O0-O3: digit select
+	m_display->write_my(~data);
+
+	// O5: speaker out
+	m_speaker->level_w(BIT(data, 5));
+
+	// O6: power off on falling edge
+	if (~data & m_o & 0x40)
+		power_off();
+	m_o = data;
+}
+
+u8 mega10k_state::read_k()
+{
+	// K: multiplexed inputs (note: the Vdd row is always on)
+	return m_inputs[4]->read() | read_inputs(4);
+}
+
+// inputs
+
+static INPUT_PORTS_START( mega10k )
+	PORT_START("IN.0") // R7
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_0) PORT_CODE(KEYCODE_0_PAD) PORT_NAME("0")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_1) PORT_CODE(KEYCODE_1_PAD) PORT_NAME("1")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_UNUSED )
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_S) PORT_NAME("S") // score
+
+	PORT_START("IN.1") // R8
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_2) PORT_CODE(KEYCODE_2_PAD) PORT_NAME("2")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_3) PORT_CODE(KEYCODE_3_PAD) PORT_NAME("3")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_UNUSED )
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_R) PORT_NAME("R") // reponse (answer)
+
+	PORT_START("IN.2") // R9
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_4) PORT_CODE(KEYCODE_4_PAD) PORT_NAME("4")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_5) PORT_CODE(KEYCODE_5_PAD) PORT_NAME("5")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_UNUSED )
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_Q) PORT_NAME("Q") // question
+
+	PORT_START("IN.3") // R10
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_6) PORT_CODE(KEYCODE_6_PAD) PORT_NAME("6")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_7) PORT_CODE(KEYCODE_7_PAD) PORT_NAME("7")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_UNUSED )
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_N) PORT_NAME("N") // nombre (player#)
+
+	PORT_START("IN.4") // Vdd
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_8) PORT_CODE(KEYCODE_8_PAD) PORT_NAME("8")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_9) PORT_CODE(KEYCODE_9_PAD) PORT_NAME("9")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_POWER_OFF )
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_POWER_ON ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), true)
+INPUT_PORTS_END
+
+// config
+
+void mega10k_state::mega10k(machine_config &config)
+{
+	// basic machine hardware
+	TMS1000(config, m_maincpu, 375000); // approximation - RC osc. R=33K, C=100pF
+	m_maincpu->read_k().set(FUNC(mega10k_state::read_k));
+	m_maincpu->write_r().set(FUNC(mega10k_state::write_r));
+	m_maincpu->write_o().set(FUNC(mega10k_state::write_o));
+
+	// video hardware
+	PWM_DISPLAY(config, m_display).set_size(4, 7);
+	m_display->set_segmask(0xf, 0x7f);
+	config.set_default_layout(layout_mega10k);
+
+	// sound hardware
+	SPEAKER(config, "mono").front_center();
+	SPEAKER_SOUND(config, m_speaker);
+	m_speaker->add_route(ALL_OUTPUTS, "mono", 0.25);
+}
+
+// roms
+
+ROM_START( mega10k )
+	ROM_REGION( 0x0400, "maincpu", 0 )
+	ROM_LOAD( "mp3312", 0x0000, 0x0400, CRC(2949f6a7) SHA1(0ac5560213ed681150b8f198be09a8d4ec3a41c4) )
+
+	ROM_REGION( 867, "maincpu:mpla", 0 )
+	ROM_LOAD( "tms1000_common2_micro.pla", 0, 867, CRC(d33da3cf) SHA1(13c4ebbca227818db75e6db0d45b66ba5e207776) )
+	ROM_REGION( 365, "maincpu:opla", 0 )
+	ROM_LOAD( "tms1000_mega10k_output.pla", 0, 365, CRC(dbacff74) SHA1(30ba16c0ea955f1d1264157a26c3a7cf169a6983) )
+ROM_END
+
+
+
+
+
+/*******************************************************************************
+
   Kosmos Astro
   * TMS1470NLHL MP1133 (die label: TMS1400, MP1133, 28H 01D D000 R000)
   * 9-digit 7seg VFD + 8 LEDs(4 green, 4 yellow), no sound
 
-  This is an astrological calculator, and also supports 4-function
-  calculations. Refer to the official manual on how to use this device.
+  This is an astrological calculator, and also supports 4-function calculations.
+  Refer to the official manual on how to use this device.
+
+  known releases:
+  - World: Astro, published by Kosmos
+  - USA: Astro (model EC-312), published by Tandy (Radio Shack)
+  - Japan: Astrostar, published by Bandai
 
 *******************************************************************************/
 
@@ -7806,6 +8308,154 @@ ROM_START( astro )
 	ROM_LOAD( "tms1100_common2_micro.pla", 0, 867, CRC(7cc90264) SHA1(c6e1cf1ffb178061da9e31858514f7cd94e86990) )
 	ROM_REGION( 557, "maincpu:opla", 0 )
 	ROM_LOAD( "tms1400_astro_output.pla", 0, 557, CRC(eb08957e) SHA1(62ae0d13a1eaafb34f1b27d7df51441b400ccd56) )
+ROM_END
+
+
+
+
+
+/*******************************************************************************
+
+  Lakeside Strobe
+  * PCB label: Lakeside, REVN 3, MODEL 9020-1099, PART 9504-3007, TCI-A4H 94HB
+  * TMS1100NLLE MCU, label MP3487-N1 (die label: 1100E, MP3487)
+  * SN75492, 4 lamps, 1-bit sound
+
+  If patent US4309030 does not just describe a prototype, there should be an
+  older version on a Matsushita MN1400.
+
+  known releases:
+  - USA: Strobe, published by Lakeside
+  - UK: Strobe, published by Action GT
+
+*******************************************************************************/
+
+class strobe_state : public hh_tms1k_state
+{
+public:
+	strobe_state(const machine_config &mconfig, device_type type, const char *tag) :
+		hh_tms1k_state(mconfig, type, tag)
+	{ }
+
+	void strobe(machine_config &config);
+
+private:
+	void write_r(u32 data);
+	void write_o(u16 data);
+	u8 read_k();
+};
+
+// handlers
+
+void strobe_state::write_r(u32 data)
+{
+	// R1-R7,R9: input mux
+	m_inp_mux = (data >> 1 & 0x7f) | (data >> 2 & 0x80);
+
+	// R8: speaker out
+	m_speaker->level_w(BIT(data, 8));
+}
+
+void strobe_state::write_o(u16 data)
+{
+	// O0-O3: lamps
+	// O4-O7: N/C
+	m_display->matrix(1, data & 0xf);
+}
+
+u8 strobe_state::read_k()
+{
+	// K: multiplexed inputs
+	return read_inputs(8) | (m_inputs[8]->read() & 8);
+}
+
+// inputs
+
+static INPUT_PORTS_START( strobe )
+	PORT_START("IN.0") // R1
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_JOYSTICK_RIGHT ) PORT_PLAYER(1) PORT_16WAY
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_JOYSTICK_UP ) PORT_PLAYER(1) PORT_16WAY
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_JOYSTICK_LEFT ) PORT_PLAYER(1) PORT_16WAY
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
+
+	PORT_START("IN.1") // R2
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_JOYSTICK_RIGHT ) PORT_PLAYER(2) PORT_16WAY
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_JOYSTICK_UP ) PORT_PLAYER(2) PORT_16WAY
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_JOYSTICK_LEFT ) PORT_PLAYER(2) PORT_16WAY
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
+
+	PORT_START("IN.2") // R3
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_JOYSTICK_RIGHT ) PORT_PLAYER(3) PORT_16WAY
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_JOYSTICK_UP ) PORT_PLAYER(3) PORT_16WAY
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_JOYSTICK_LEFT ) PORT_PLAYER(3) PORT_16WAY
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
+
+	PORT_START("IN.3") // R4
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_JOYSTICK_RIGHT ) PORT_PLAYER(4) PORT_16WAY
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_JOYSTICK_UP ) PORT_PLAYER(4) PORT_16WAY
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_JOYSTICK_LEFT ) PORT_PLAYER(4) PORT_16WAY
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
+
+	PORT_START("IN.4") // R5
+	PORT_CONFNAME( 0x05, 0x00, "Game" )
+	PORT_CONFSETTING(    0x00, "1" )
+	PORT_CONFSETTING(    0x01, "2" )
+	PORT_CONFSETTING(    0x04, "3" )
+	PORT_BIT( 0x0a, IP_ACTIVE_HIGH, IPT_UNUSED )
+
+	PORT_START("IN.5") // R6
+	PORT_CONFNAME( 0x07, 0x00, DEF_STR( Players ) )
+	PORT_CONFSETTING(    0x00, "1" )
+	PORT_CONFSETTING(    0x01, "2" )
+	PORT_CONFSETTING(    0x02, "3" )
+	PORT_CONFSETTING(    0x04, "4" )
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
+
+	PORT_START("IN.6") // R7
+	PORT_CONFNAME( 0x06, 0x00, "Speed" )
+	PORT_CONFSETTING(    0x00, "1" )
+	PORT_CONFSETTING(    0x02, "2" )
+	PORT_CONFSETTING(    0x04, "3" )
+	PORT_BIT( 0x09, IP_ACTIVE_HIGH, IPT_UNUSED )
+
+	PORT_START("IN.7") // R9
+	PORT_BIT( 0x07, IP_ACTIVE_HIGH, IPT_UNUSED )
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_SERVICE ) // beneath a small hole between "S" and "T" on the faceplate
+
+	PORT_START("IN.8") // Vss
+	PORT_BIT( 0x07, IP_ACTIVE_HIGH, IPT_UNUSED )
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_START ) PORT_NAME("Set")
+INPUT_PORTS_END
+
+// config
+
+void strobe_state::strobe(machine_config &config)
+{
+	// basic machine hardware
+	TMS1100(config, m_maincpu, 500000); // approximation - RC osc. R=39K, C=47pF
+	m_maincpu->read_k().set(FUNC(strobe_state::read_k));
+	m_maincpu->write_r().set(FUNC(strobe_state::write_r));
+	m_maincpu->write_o().set(FUNC(strobe_state::write_o));
+
+	PWM_DISPLAY(config, m_display).set_size(1, 4);
+	config.set_default_layout(layout_strobe);
+
+	// sound hardware
+	SPEAKER(config, "mono").front_center();
+	SPEAKER_SOUND(config, m_speaker);
+	m_speaker->add_route(ALL_OUTPUTS, "mono", 0.25);
+}
+
+// roms
+
+ROM_START( strobe )
+	ROM_REGION( 0x0800, "maincpu", 0 )
+	ROM_LOAD( "mp3487", 0x0000, 0x0800, CRC(aaa999d3) SHA1(69bba74bafc60573ed29451c3939c479851fe867) )
+
+	ROM_REGION( 867, "maincpu:mpla", 0 )
+	ROM_LOAD( "tms1100_common1_micro.pla", 0, 867, CRC(62445fc9) SHA1(d6297f2a4bc7a870b76cc498d19dbb0ce7d69fec) )
+	ROM_REGION( 365, "maincpu:opla", 0 )
+	ROM_LOAD( "tms1100_strobe_output.pla", 0, 365, CRC(021bc65b) SHA1(1360e9f05bac922a27379058de16c92aca3df663) )
 ROM_END
 
 
@@ -7989,11 +8639,12 @@ ROM_END
   * TMS1100NLL MP3491-N2 (die label: 1100E, MP3491)
   * HLCD0569, 67-segment LCD panel, no sound
 
-  This handheld is not a toy, read the manual for more information. In short,
-  it is a device for predicting the winning chance of a gambling horserace.
+  This handheld is not a toy, read the manual for more information, and patent
+  US4382280 for more in-depth information. In short, it is a device for predicting
+  the winning chance of a gambling horserace.
 
-  It was rereleased in 1994 in China/Canada by AHTI(Advanced Handicapping
-  Technologies, Inc.), on a Hitachi HD613901.
+  It was rereleased in 1994 in China/Canada by AHTI (Advanced Handicapping
+  Technologies, Inc.), on a Hitachi HD613901 (LCD-IV).
 
 *******************************************************************************/
 
@@ -8020,15 +8671,7 @@ private:
 void horseran_state::lcd_output_w(offs_t offset, u32 data)
 {
 	// only 3 rows used
-	if (offset > 2)
-		return;
-
-	// update lcd segments
-	m_display->matrix_partial(0, 3, 1 << offset, data);
-
-	// col5-11 and col13-19 are 7segs
-	for (int i = 0; i < 2; i++)
-		m_display->write_row(3 + (offset << 1 | i), bitswap<8>(data >> (4+8*i),7,3,5,2,0,1,4,6) & 0x7f);
+	m_display->matrix(1 << offset, data);
 }
 
 void horseran_state::write_r(u32 data)
@@ -8123,12 +8766,15 @@ void horseran_state::horseran(machine_config &config)
 	m_maincpu->write_r().set(FUNC(horseran_state::write_r));
 
 	// video hardware
+	screen_device &screen(SCREEN(config, "screen", SCREEN_TYPE_SVG));
+	screen.set_refresh_hz(60);
+	screen.set_size(1920, 978);
+	screen.set_visarea_full();
+
 	HLCD0569(config, m_lcd, 1100); // C=0.022uF
 	m_lcd->write_cols().set(FUNC(horseran_state::lcd_output_w));
 
-	PWM_DISPLAY(config, m_display).set_size(3+6, 24);
-	m_display->set_segmask(0x3f<<3, 0x7f);
-	config.set_default_layout(layout_horseran);
+	PWM_DISPLAY(config, m_display).set_size(3, 24);
 
 	// no sound!
 }
@@ -8143,6 +8789,9 @@ ROM_START( horseran )
 	ROM_LOAD( "tms1100_common1_micro.pla", 0, 867, CRC(62445fc9) SHA1(d6297f2a4bc7a870b76cc498d19dbb0ce7d69fec) )
 	ROM_REGION( 365, "maincpu:opla", 0 ) // unused
 	ROM_LOAD( "tms1100_horseran_output.pla", 0, 365, CRC(0fea09b0) SHA1(27a56fcf2b490e9a7dbbc6ad48cc8aaca4cada94) )
+
+	ROM_REGION( 285857, "screen", 0)
+	ROM_LOAD( "horseran.svg", 0, 285857, CRC(2835acc5) SHA1(4fe19b4f902249ea9fb3e3baea704d4a7b9c897a) )
 ROM_END
 
 
@@ -8598,7 +9247,7 @@ static INPUT_PORTS_START( bship )
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("P2 Fire")
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_TOGGLE PORT_CODE(KEYCODE_F1) PORT_NAME("Load/Go") // switch
 
-	PORT_START("IN.11") // Vss!
+	PORT_START("IN.11") // Vss
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_DEL) PORT_NAME("P1 Clear Memory") // CM
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_BACKSPACE) PORT_NAME("P1 Clear Last Entry") // CLE
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("P2 Clear Memory")
@@ -8859,10 +9508,10 @@ static INPUT_PORTS_START( simon )
 	PORT_CONFSETTING(    0x01, "4" )
 
 	PORT_START("SWITCH") // fake
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, switch_prev<0>, 0x07)
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, switch_next<0>, 0x07)
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, switch_prev<3>, 0x0f)
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, switch_next<3>, 0x0f)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::switch_prev<0>), 0x07)
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::switch_next<0>), 0x07)
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::switch_prev<3>), 0x0f)
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::switch_next<3>), 0x0f)
 INPUT_PORTS_END
 
 // config
@@ -8930,33 +9579,23 @@ public:
 
 	void ssimon(machine_config &config);
 
-	DECLARE_INPUT_CHANGED_MEMBER(speed_switch) { set_clock(); }
-
-protected:
-	virtual void machine_reset() override;
+	DECLARE_INPUT_CHANGED_MEMBER(speed_switch);
 
 private:
-	void set_clock();
 	void write_r(u32 data);
 	u8 read_k();
 };
 
-void ssimon_state::machine_reset()
-{
-	hh_tms1k_state::machine_reset();
-	set_clock();
-}
-
 // handlers
 
-void ssimon_state::set_clock()
+INPUT_CHANGED_MEMBER(ssimon_state::speed_switch)
 {
 	// MCU clock is from an RC circuit with C=100pF, R=x depending on speed switch:
 	// 0 Simple: R=51K -> ~200kHz
 	// 1 Normal: R=37K -> ~275kHz
 	// 2 Super:  R=22K -> ~400kHz
-	u8 inp = m_inputs[6]->read();
-	m_maincpu->set_unscaled_clock((inp & 2) ? 400000 : ((inp & 1) ? 275000 : 200000));
+	static const u32 freq[3] = { 200000, 275000, 400000 };
+	m_maincpu->set_unscaled_clock(freq[newval % 3]);
 }
 
 void ssimon_state::write_r(u32 data)
@@ -9022,18 +9661,18 @@ static INPUT_PORTS_START( ssimon )
 	PORT_BIT( 0x0d, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("IN.6") // fake
-	PORT_CONFNAME( 0x03, 0x01, "Speed" ) PORT_CHANGED_MEMBER(DEVICE_SELF, ssimon_state, speed_switch, 0)
+	PORT_CONFNAME( 0x03, 0x01, "Speed" ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(ssimon_state::speed_switch), 0)
 	PORT_CONFSETTING(    0x00, "Simple" )
 	PORT_CONFSETTING(    0x01, "Normal" )
 	PORT_CONFSETTING(    0x02, "Super" )
 
 	PORT_START("SWITCH") // fake
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, switch_prev<0>, 0x0f)
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, switch_next<0>, 0x0f)
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, switch_prev<4>, 0x0f)
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, switch_next<4>, 0x0f)
-	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, switch_prev<6>, 0x03)
-	PORT_BIT( 0x20, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, switch_next<6>, 0x03)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::switch_prev<0>), 0x0f)
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::switch_next<0>), 0x0f)
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::switch_prev<4>), 0x0f)
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::switch_next<4>), 0x0f)
+	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::switch_prev<6>), 0x03)
+	PORT_BIT( 0x20, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::switch_next<6>), 0x03)
 INPUT_PORTS_END
 
 // config
@@ -9041,7 +9680,7 @@ INPUT_PORTS_END
 void ssimon_state::ssimon(machine_config &config)
 {
 	// basic machine hardware
-	TMS1100(config, m_maincpu, 275000); // see set_clock
+	TMS1100(config, m_maincpu, 275000); // see speed_switch
 	m_maincpu->read_k().set(FUNC(ssimon_state::read_k));
 	m_maincpu->write_r().set(FUNC(ssimon_state::write_r));
 
@@ -9086,6 +9725,10 @@ ROM_END
   The In command was canceled midst production, it is basically a nop. Newer
   releases and the European version removed the button completely.
 
+  There's also an unofficial Soviet Version: Elektronika IM-11 (УУ-1 MCU and
+  КМ1010КТ1), Lunokhod and later Planetokhod. The software is presumed to be
+  identical to Big Trak, УУ-1 is very likely a TMS1000 clone.
+
 *******************************************************************************/
 
 class bigtrak_state : public hh_tms1k_state
@@ -9103,30 +9746,31 @@ public:
 	void bigtrak(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
-	void update_speaker();
-	void write_r(u32 data);
-	void write_o(u16 data);
-	u8 read_k();
-
-	TIMER_DEVICE_CALLBACK_MEMBER(gearbox_sim_tick);
-	bool sensor_state() { return m_gearbox_pos < 0 && m_display->element_on(0, 0); }
-	int m_gearbox_pos = 0;
-
 	output_finder<> m_left_motor_forward;
 	output_finder<> m_left_motor_reverse;
 	output_finder<> m_right_motor_forward;
 	output_finder<> m_right_motor_reverse;
 	output_finder<> m_ext_out;
+
+	int m_gearbox_pos = 0;
+
+	TIMER_DEVICE_CALLBACK_MEMBER(gearbox_sim_tick);
+	bool sensor_state() { return m_gearbox_pos < 0 && m_display->element_on(0, 0); }
+
+	void update_speaker();
+	void write_r(u32 data);
+	void write_o(u16 data);
+	u8 read_k();
 };
 
 void bigtrak_state::machine_start()
 {
 	hh_tms1k_state::machine_start();
 
-	// resolve handlers
+	// resolve outputs
 	m_left_motor_forward.resolve();
 	m_left_motor_reverse.resolve();
 	m_right_motor_forward.resolve();
@@ -9298,7 +9942,7 @@ ROM_END
 /*******************************************************************************
 
   Milton Bradley Dark Tower
-  * TMS1400NLL MP7332-N1.U1(Rev. B) or MP7332-N2LL(Rev. C) (die label:
+  * TMS1400NLL MP7332-N1.U1(rev. B) or MP7332-N2LL(rev. C) (die label:
     TMS1400, MP7332, 28L 01D D100 R100) (assume same ROM between revisions)
   * SN75494N MOS-to-LED digit driver
   * motorized rotating reel + lightsensor, 1bit-sound
@@ -9327,12 +9971,9 @@ public:
 	void mbdtower(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
-	void update_display();
-	bool sensor_led_on() { return m_display->element_on(0, 0); }
-
 	output_finder<> m_motor_pos_out;
 	output_finder<> m_card_pos_out;
 	output_finder<> m_motor_on_out;
@@ -9342,6 +9983,9 @@ private:
 	int m_motor_decay = 0;
 	bool m_motor_on = false;
 	bool m_sensor_blind = false;
+
+	void update_display();
+	bool sensor_led_on() { return m_display->element_on(0, 0); }
 
 	TIMER_DEVICE_CALLBACK_MEMBER(motor_sim_tick);
 
@@ -9354,6 +9998,7 @@ void mbdtower_state::machine_start()
 {
 	hh_tms1k_state::machine_start();
 
+	// resolve outputs
 	m_motor_pos_out.resolve();
 	m_card_pos_out.resolve();
 	m_motor_on_out.resolve();
@@ -9626,9 +10271,9 @@ static INPUT_PORTS_START( arcmania )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("IN.2") // O6 (also O5 to power)
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_1) PORT_NAME("Orange Button 1") PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, true)
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_2) PORT_NAME("Orange Button 2") PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, true)
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_3) PORT_NAME("Orange Button 3") PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, true)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_1) PORT_NAME("Orange Button 1") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), true)
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_2) PORT_NAME("Orange Button 2") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), true)
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_3) PORT_NAME("Orange Button 3") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), true)
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
 INPUT_PORTS_END
 
@@ -9751,7 +10396,7 @@ static INPUT_PORTS_START( cnsector )
 
 	PORT_START("IN.2") // O2
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_E) PORT_NAME("Recall")
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_J) PORT_NAME("Evasive Sub") // expert button
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_D) PORT_NAME("Evasive Sub") // expert button
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_UNUSED )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_C) PORT_NAME("Fire")
 
@@ -9759,7 +10404,7 @@ static INPUT_PORTS_START( cnsector )
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_UNUSED )
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_F) PORT_NAME("Slower")
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_UNUSED )
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_M) PORT_NAME("Sub Finder") // expert button
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_V) PORT_NAME("Sub Finder") // expert button
 
 	PORT_START("IN.4") // O4
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_T) PORT_NAME("Move Ship")
@@ -9795,7 +10440,7 @@ ROM_START( cnsector )
 	ROM_REGION( 782, "maincpu:ipla", 0 )
 	ROM_LOAD( "tms0970_common2_instr.pla", 0, 782, CRC(e038fc44) SHA1(dfc280f6d0a5828d1bb14fcd59ac29caf2c2d981) )
 	ROM_REGION( 860, "maincpu:mpla", 0 )
-	ROM_LOAD( "tms0970_cnsector_micro.pla", 0, 860, CRC(059f5bb4) SHA1(2653766f9fd74d41d44013bb6f54c0973a6080c9) )
+	ROM_LOAD( "tms0970_common3_micro.pla", 0, 860, CRC(059f5bb4) SHA1(2653766f9fd74d41d44013bb6f54c0973a6080c9) )
 	ROM_REGION( 352, "maincpu:opla", 0 )
 	ROM_LOAD( "tms0980_cnsector_output.pla", 0, 352, CRC(c8bfb9d2) SHA1(30c3c73cec194debdcb1dd01b4adfefaeddf9516) )
 	ROM_REGION( 157, "maincpu:spla", 0 )
@@ -10216,12 +10861,12 @@ static INPUT_PORTS_START( stopthief )
 	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_1) PORT_CODE(KEYCODE_1_PAD) PORT_NAME("1")
 
 	// note: even though power buttons are on the matrix, they are not CPU-controlled
-	PORT_START("IN.2") // Vss!
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_POWER_ON ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, true)
+	PORT_START("IN.2") // Vss
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_POWER_ON ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), true)
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_T) PORT_NAME("Tip")
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_A) PORT_NAME("Arrest")
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_C) PORT_NAME("Clue")
-	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_POWER_OFF ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, false)
+	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_POWER_OFF ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), false)
 INPUT_PORTS_END
 
 // config
@@ -10750,7 +11395,7 @@ u8 alphie_state::read_k()
 
 static INPUT_PORTS_START( alphie )
 	PORT_START("IN.0") // K1
-	PORT_BIT( 0x20, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, true)
+	PORT_BIT( 0x20, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), true)
 
 	PORT_START("IN.1") // K2
 	PORT_CONFNAME( 0x1f, 0x01, "Question" )
@@ -10776,12 +11421,12 @@ static INPUT_PORTS_START( alphie )
 	PORT_CONFSETTING(    0x08, "Tunes" )
 
 	PORT_START("SWITCH") // fake
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_JOYSTICKLEFT_UP ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, switch_prev<1>, 0x1f) PORT_NAME("Question Arm Up")
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_JOYSTICKLEFT_DOWN ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, switch_next<1>, 0x1f) PORT_NAME("Question Arm Down")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_JOYSTICKRIGHT_UP ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, switch_prev<2>, 0x1f) PORT_NAME("Answer Arm Up")
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_JOYSTICKRIGHT_DOWN ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, switch_next<2>, 0x1f) PORT_NAME("Answer Arm Down")
-	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_JOYSTICK_LEFT ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, switch_prev<3>, 0x0f) PORT_NAME("Activity Selector Left")
-	PORT_BIT( 0x20, IP_ACTIVE_HIGH, IPT_JOYSTICK_RIGHT ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, switch_next<3>, 0x0f) PORT_NAME("Activity Selector Right")
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_JOYSTICKLEFT_UP ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::switch_prev<1>), 0x1f) PORT_NAME("Question Arm Up")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_JOYSTICKLEFT_DOWN ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::switch_next<1>), 0x1f) PORT_NAME("Question Arm Down")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_JOYSTICKRIGHT_UP ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::switch_prev<2>), 0x1f) PORT_NAME("Answer Arm Up")
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_JOYSTICKRIGHT_DOWN ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::switch_next<2>), 0x1f) PORT_NAME("Answer Arm Down")
+	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_JOYSTICK_LEFT ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::switch_prev<3>), 0x0f) PORT_NAME("Activity Selector Left")
+	PORT_BIT( 0x20, IP_ACTIVE_HIGH, IPT_JOYSTICK_RIGHT ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::switch_next<3>), 0x0f) PORT_NAME("Activity Selector Right")
 INPUT_PORTS_END
 
 // config
@@ -11035,8 +11680,10 @@ ROM_END
   - World: Computerized Arcade, Radio Shack brand, also model 60-2159 and same
     hardware as above. "Tandy-12" on the side of the handheld was changed to
     "Radio Shack-12", but there's no title prefix on the box.
-  - World: Computerized Arcade, Radio Shack brand, model 60-2159A, COP421 MCU.
-  - World: Computerized Arcade, Radio Shack brand, model 60-2495, hardware unknown.
+  - World: Computerized Arcade, Radio Shack brand, model 60-2159A, COP421 MCU,
+    see hh_cop400.cpp driver
+  - World: Computerized Arcade, Radio Shack brand, model 60-2495, 28-pin Motorola
+    LSC417570DW, should be 68HC05 family
   - Mexico: Fabuloso Fred, published by Ensueño Toys (also released as
     9-button version, a clone of Mego Fabulous Fred)
 
@@ -11139,9 +11786,7 @@ static INPUT_PORTS_START( comparc )
 
 	PORT_START("IN.2") // R7
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_R) PORT_NAME("Repeat-2")
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_UNUSED )
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_UNUSED )
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
+	PORT_BIT( 0x0e, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("IN.3") // R8
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_4) PORT_CODE(KEYCODE_4_PAD) PORT_NAME("Button 4")
@@ -11174,7 +11819,7 @@ static const u16 comparc_output_pla[0x20] =
 void comparc_state::comparc(machine_config &config)
 {
 	// basic machine hardware
-	TMS1100(config, m_maincpu, 400000); // approximation - RC osc. R=39K, C=47pF
+	TMS1100(config, m_maincpu, 375000); // approximation - RC osc. R=39K, C=47pF
 	m_maincpu->set_output_pla(comparc_output_pla);
 	m_maincpu->read_k().set(FUNC(comparc_state::read_k));
 	m_maincpu->write_r().set(FUNC(comparc_state::write_r));
@@ -11510,7 +12155,8 @@ ROM_END
 
   Even though it has a 60 Hz inputline, it doesn't use it to sync the clock.
   Instead, it relies on the MCU frequency, which is not very accurate when
-  using a simple R/C osc.
+  using a simple R/C osc. In 60 Hz mode, it expects a CPU clock of around
+  375 kHz, and in 50 Hz mode around 369 kHz.
 
   Micronta is not a company, but one of the Radio Shack house brands.
   Schematics are included in the manual, they also mention a CM72005 VSM.
@@ -11633,7 +12279,7 @@ static INPUT_PORTS_START( vclock3 )
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_S) PORT_NAME("Set Time")
 
 	PORT_START("IN.4") // R4 (factory-set jumpers)
-	PORT_CONFNAME( 0x01, 0x00, "AC Frequency") PORT_CHANGED_MEMBER(DEVICE_SELF, vclock3_state, switch_hz, 0)
+	PORT_CONFNAME( 0x01, 0x00, "AC Frequency") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(vclock3_state::switch_hz), 0)
 	PORT_CONFSETTING(    0x01, "50 Hz" )
 	PORT_CONFSETTING(    0x00, "60 Hz" )
 	PORT_CONFNAME( 0x02, 0x00, "Chime / Announce" )
@@ -11662,7 +12308,7 @@ INPUT_PORTS_END
 void vclock3_state::vclock3(machine_config &config)
 {
 	// basic machine hardware
-	TMS1100(config, m_maincpu, 320000); // approximation - RC osc. R=47K, C=47pF
+	TMS1100(config, m_maincpu, 375000); // approximation - RC osc. R=47K, C=47pF
 	m_maincpu->read_k().set(FUNC(vclock3_state::read_k));
 	m_maincpu->write_r().set(FUNC(vclock3_state::write_r));
 	m_maincpu->write_o().set(FUNC(vclock3_state::write_o));
@@ -11740,32 +12386,33 @@ public:
 
 	void wtalker(machine_config &config);
 
-	DECLARE_CUSTOM_INPUT_MEMBER(sensor_r) { return m_dial & 1; }
-	DECLARE_CUSTOM_INPUT_MEMBER(pulse_r) { return (m_pulse > machine().time()) ? 1 : 0; }
+	ioport_value sensor_r() { return m_dial & 1; }
+	ioport_value pulse_r() { return (m_pulse > machine().time()) ? 1 : 0; }
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	memory_share_creator<u8> m_nvram;
 	required_device<tms5110_device> m_tms5100;
 	required_device<tms6100_device> m_tms6100;
 
+	attotime m_pulse;
+	u8 m_dial = 0;
+	u8 m_ram_address = 0;
+
 	void write_r(u32 data);
 	void write_o(u16 data);
 	u8 read_k();
 
 	TIMER_DEVICE_CALLBACK_MEMBER(sense_weight);
-
-	attotime m_pulse;
-	u8 m_dial = 0;
-	u8 m_ram_address = 0;
 };
 
 void wtalker_state::machine_start()
 {
 	hh_tms1k_state::machine_start();
 
+	// register for savestates
 	save_item(NAME(m_pulse));
 	save_item(NAME(m_dial));
 	save_item(NAME(m_ram_address));
@@ -11865,8 +12512,8 @@ static INPUT_PORTS_START( wtalker )
 
 	PORT_START("IN.3") // R2
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_UNUSED )
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(wtalker_state, sensor_r)
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(wtalker_state, pulse_r)
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(wtalker_state::sensor_r))
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(wtalker_state::pulse_r))
 
 	PORT_START("IN.4") // R3
 	PORT_CONFNAME( 0x01, 0x00, "Battery Status" )
@@ -11883,7 +12530,7 @@ static INPUT_PORTS_START( wtalker )
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("IN.6")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_POWER_ON ) PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, true)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_POWER_ON ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), true)
 
 	PORT_START("IN.7")
 	PORT_BIT( 0x03, 0x00, IPT_DIAL ) PORT_SENSITIVITY(25) PORT_KEYDELTA(10)
@@ -12054,7 +12701,7 @@ static INPUT_PORTS_START( speechp )
 
 	PORT_START("IN.8") // R8
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_8) PORT_CODE(KEYCODE_8_PAD) PORT_NAME("8")
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_R) PORT_NAME(u8"\u221a" /* √ */)
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_R) PORT_NAME(u8"\u221a") // U+221A = √
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("IN.9") // R9
@@ -12229,7 +12876,7 @@ static INPUT_PORTS_START( tisr16 )
 
 	PORT_START("IN.9") // R9
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_UNUSED )
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_R) PORT_NAME(u8"\u221ax" /* √ */)
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_R) PORT_NAME(u8"\u221ax") // U+221A = √
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_UNUSED )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_9) PORT_CODE(KEYCODE_9_PAD) PORT_NAME("9")
 
@@ -12278,7 +12925,7 @@ static INPUT_PORTS_START( tisr16ii )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_4) PORT_CODE(KEYCODE_4_PAD) PORT_NAME("4")
 
 	PORT_START("IN.6") // R6
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_R) PORT_NAME(u8"\u221ax" /* √ */)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_R) PORT_NAME(u8"\u221ax") // U+221A = √
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_PLUS_PAD) PORT_NAME("+")
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_STOP) PORT_CODE(KEYCODE_DEL_PAD) PORT_NAME(".")
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_5) PORT_CODE(KEYCODE_5_PAD) PORT_NAME("5")
@@ -12469,7 +13116,7 @@ static INPUT_PORTS_START( ti1270 )
 	PORT_MODIFY("IN.5")
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_X) PORT_NAME("1/x")
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_Q) PORT_NAME(u8"x²")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_R) PORT_NAME(u8"\u221ax" /* √ */)
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_R) PORT_NAME(u8"\u221ax") // U+221A = √
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_MINUS) PORT_NAME("+/-")
 INPUT_PORTS_END
 
@@ -12649,7 +13296,7 @@ static INPUT_PORTS_START( ti25502 )
 
 	PORT_START("IN.6") // R6
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_MINUS) PORT_NAME("+/-") // N/A on TI-2550 II
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_R) PORT_NAME(u8"\u221ax" /* √ */)
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_R) PORT_NAME(u8"\u221ax") // U+221A = √
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_Q) PORT_NAME(u8"x²")
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_X) PORT_NAME("1/x")
 
@@ -12791,7 +13438,7 @@ static INPUT_PORTS_START( ti25503 )
 
 	PORT_START("IN.6") // R6
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_V) PORT_NAME("RV")
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_R) PORT_NAME(u8"\u221ax" /* √ */)
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_R) PORT_NAME(u8"\u221ax") // U+221A = √
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_Q) PORT_NAME(u8"x²")
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_X) PORT_NAME("1/x")
 INPUT_PORTS_END
@@ -13137,11 +13784,7 @@ ROM_END
   refreshable Braille cells. The TI-30 itself is slightly modified to wire
   the original LED display to a 25-pin D-Sub connector.
 
-  TI Business Analyst, TI Business Analyst-I, TI Money Manager, TI-31, TI-41
-  * TMS0980 MCU label TMC0982NL (die label: 0980B-82F)
-
-  TI Programmer
-  * TMS0980 MCU label ZA0675NL, JP0983AT (die label: 0980B-83)
+  See further below for TI Business Analyst and TI Programmer.
 
 *******************************************************************************/
 
@@ -13189,7 +13832,7 @@ static INPUT_PORTS_START( ti30 )
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_Y) PORT_NAME(u8"yˣ")
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_K) PORT_NAME("K")
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_O) PORT_NAME("log")
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_TILDE) PORT_NAME(u8"EE\u2193" /* ↓ */)
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_TILDE) PORT_NAME(u8"EE\u2193") // U+2193 = ↓
 	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_L) PORT_NAME("ln(x)")
 
 	PORT_START("IN.1") // O1
@@ -13235,13 +13878,161 @@ static INPUT_PORTS_START( ti30 )
 	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_MINUS) PORT_NAME("+/-")
 
 	// note: even though power buttons are on the matrix, they are not CPU-controlled
-	PORT_START("IN.7") // Vss!
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_F1) PORT_CODE(KEYCODE_DEL) PORT_NAME("On/C") PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, true)
+	PORT_START("IN.7") // Vss
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_F1) PORT_CODE(KEYCODE_DEL) PORT_NAME("On/C") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), true)
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_X) PORT_NAME("1/x")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_R) PORT_NAME(u8"\u221ax" /* √ */)
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_R) PORT_NAME(u8"\u221ax") // U+221A = √
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_Q) PORT_NAME(u8"x²")
-	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_F2) PORT_NAME("Off") PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, false)
+	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_F2) PORT_NAME("Off") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), false)
 INPUT_PORTS_END
+
+// config
+
+void ti30_state::ti30(machine_config &config)
+{
+	// basic machine hardware
+	TMS0980(config, m_maincpu, 400000); // guessed
+	m_maincpu->read_k().set(FUNC(ti30_state::read_k));
+	m_maincpu->write_o().set(FUNC(ti30_state::write_o));
+	m_maincpu->write_r().set(FUNC(ti30_state::write_r));
+	m_maincpu->power_off().set(FUNC(ti30_state::auto_power_off));
+
+	// video hardware
+	PWM_DISPLAY(config, m_display).set_size(9, 8);
+	m_display->set_segmask(0x1fe, 0xff);
+	m_display->set_segmask(0x001, 0xe2); // 1st digit only has segments B,F,G,DP
+	config.set_default_layout(layout_ti30);
+
+	// no sound!
+}
+
+// roms
+
+ROM_START( ti30 )
+	ROM_REGION( 0x1000, "maincpu", 0 )
+	ROM_LOAD16_WORD( "tmc0981nl", 0x0000, 0x1000, CRC(41298a14) SHA1(06f654c70add4044a612d3a38b0c2831c188fd0c) )
+
+	ROM_REGION( 1246, "maincpu:ipla", 0 )
+	ROM_LOAD( "tms0980_common1_instr.pla", 0, 1246, CRC(42db9a38) SHA1(2d127d98028ec8ec6ea10c179c25e447b14ba4d0) )
+	ROM_REGION( 1982, "maincpu:mpla", 0 )
+	ROM_LOAD( "tms0980_common1_micro.pla", 0, 1982, CRC(3709014f) SHA1(d28ee59ded7f3b9dc3f0594a32a98391b6e9c961) )
+	ROM_REGION( 352, "maincpu:opla", 0 )
+	ROM_LOAD( "tms0980_ti30_output.pla", 0, 352, CRC(00475f99) SHA1(70e04c1472639bd35d4adaab0b9f1ae4a0e394be) )
+	ROM_REGION( 157, "maincpu:spla", 0 )
+	ROM_LOAD( "tms0980_common1_segment.pla", 0, 157, CRC(399aa481) SHA1(72c56c58fde3fbb657d69647a9543b5f8fc74279) )
+ROM_END
+
+
+
+
+
+/*******************************************************************************
+
+  TI Business Analyst, TI Business Analyst-I, TI Money Manager, TI-31, TI-41
+  * TMS0980 MCU label TMC0982NL (die label: 0980B-82F)
+  * 9-digit 7seg LED display
+
+  It's on the same hardware as TI-30.
+
+*******************************************************************************/
+
+// class/handlers: uses the ones in ti30_state
+
+// inputs
+
+static INPUT_PORTS_START( tibusan )
+	// PORT_NAME lists functions under [2nd] as secondaries.
+	PORT_START("IN.0") // O0
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_Y) PORT_NAME(u8"yˣ  ˣ\u221ay") // U+221A = √ - 2nd one implies xth root of y
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_SLASH) PORT_NAME(u8"%  Δ%")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_S) PORT_NAME("SEL")
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_C) PORT_NAME("CST")
+	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_M) PORT_NAME("MAR")
+
+	PORT_START("IN.1") // O1
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_ASTERISK) PORT_NAME(u8"×")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_HOME) PORT_NAME("STO  m")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_8) PORT_CODE(KEYCODE_8_PAD) PORT_NAME("8")
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_7) PORT_CODE(KEYCODE_7_PAD) PORT_NAME("7")
+	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_9) PORT_CODE(KEYCODE_9_PAD) PORT_NAME("9")
+
+	PORT_START("IN.2") // O2
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_MINUS_PAD) PORT_NAME("-")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_END) PORT_NAME("RCL  b")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_5) PORT_CODE(KEYCODE_5_PAD) PORT_NAME("5")
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_4) PORT_CODE(KEYCODE_4_PAD) PORT_NAME("4")
+	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_6) PORT_CODE(KEYCODE_6_PAD) PORT_NAME("6")
+
+	PORT_START("IN.3") // O4
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_SLASH_PAD) PORT_NAME(u8"÷")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_EQUALS) PORT_NAME(u8"Σ+  Σ-")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_OPENBRACE) PORT_NAME("(  AN-CI\"")
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_COMMA) PORT_NAME(u8"x\u2194y  L.R.") // U+2194 = ↔
+	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_CLOSEBRACE) PORT_NAME(")  1/x")
+
+	PORT_START("IN.4") // O5
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_PLUS_PAD) PORT_NAME("+")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_X) PORT_NAME(u8"SUM  xʹ")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_2) PORT_CODE(KEYCODE_2_PAD) PORT_NAME("2")
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_1) PORT_CODE(KEYCODE_1_PAD) PORT_NAME("1")
+	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_3) PORT_CODE(KEYCODE_3_PAD) PORT_NAME("3")
+
+	PORT_START("IN.5") // O6
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_F) PORT_NAME("FV")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_N) PORT_NAME("N")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_P) PORT_NAME("PMT")
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_I) PORT_NAME("%i")
+	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_V) PORT_NAME("PV")
+
+	PORT_START("IN.6") // O7
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_ENTER) PORT_CODE(KEYCODE_ENTER_PAD) PORT_NAME("=")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_E) PORT_NAME(u8"EXC  xʹ")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_STOP) PORT_CODE(KEYCODE_DEL_PAD) PORT_NAME(".")
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_0) PORT_CODE(KEYCODE_0_PAD) PORT_NAME("0")
+	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_MINUS) PORT_NAME("+/-")
+
+	// note: even though power buttons are on the matrix, they are not CPU-controlled
+	PORT_START("IN.7") // Vss
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_F1) PORT_CODE(KEYCODE_DEL) PORT_NAME("On/C") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), true)
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_LSHIFT) PORT_CODE(KEYCODE_RSHIFT) PORT_NAME("2nd")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_Q) PORT_NAME(u8"x²  \u221ax") // U+221A = √
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_L) PORT_NAME(u8"ln(x)  eˣ")
+	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_F2) PORT_NAME("Off") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), false)
+INPUT_PORTS_END
+
+// roms
+
+ROM_START( tibusan )
+	ROM_REGION( 0x1000, "maincpu", 0 )
+	ROM_LOAD16_WORD( "tmc0982nl", 0x0000, 0x1000, CRC(6954560a) SHA1(6c153a0c9239a811e3514a43d809964c06f8f88e) )
+
+	ROM_REGION( 1246, "maincpu:ipla", 0 )
+	ROM_LOAD( "tms0980_common1_instr.pla", 0, 1246, CRC(42db9a38) SHA1(2d127d98028ec8ec6ea10c179c25e447b14ba4d0) )
+	ROM_REGION( 1982, "maincpu:mpla", 0 )
+	ROM_LOAD( "tms0980_common1_micro.pla", 0, 1982, CRC(3709014f) SHA1(d28ee59ded7f3b9dc3f0594a32a98391b6e9c961) )
+	ROM_REGION( 352, "maincpu:opla", 0 )
+	ROM_LOAD( "tms0980_ti30_output.pla", 0, 352, CRC(00475f99) SHA1(70e04c1472639bd35d4adaab0b9f1ae4a0e394be) )
+	ROM_REGION( 157, "maincpu:spla", 0 )
+	ROM_LOAD( "tms0980_common1_segment.pla", 0, 157, CRC(399aa481) SHA1(72c56c58fde3fbb657d69647a9543b5f8fc74279) )
+ROM_END
+
+
+
+
+
+/*******************************************************************************
+
+  TI Programmer
+  * TMS0980 MCU label ZA0675NL, JP0983AT (die label: 0980B-83)
+  * 9-digit 7seg LED display
+
+  Like TI Business Analyst, it's on the same hardware as TI-30.
+
+*******************************************************************************/
+
+// class/handlers: uses the ones in ti30_state
+
+// inputs
 
 static INPUT_PORTS_START( tiprog )
 	PORT_START("IN.0") // O0
@@ -13294,134 +14085,26 @@ static INPUT_PORTS_START( tiprog )
 	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_MINUS) PORT_NAME("+/-")
 
 	// note: even though power buttons are on the matrix, they are not CPU-controlled
-	PORT_START("IN.7") // Vss!
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_F1) PORT_CODE(KEYCODE_DEL) PORT_NAME("C/ON") PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, true)
+	PORT_START("IN.7") // Vss
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_F1) PORT_CODE(KEYCODE_DEL) PORT_NAME("C/ON") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), true)
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_G) PORT_NAME("DEC")
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_J) PORT_NAME("OCT")
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_H) PORT_NAME("HEX")
-	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_F2) PORT_NAME("Off") PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, false)
+	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_F2) PORT_NAME("Off") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), false)
 INPUT_PORTS_END
-
-static INPUT_PORTS_START( tibusan )
-	// PORT_NAME lists functions under [2nd] as secondaries.
-	PORT_START("IN.0") // O0
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_Y) PORT_NAME(u8"yˣ  ˣ\u221ay" /* √ */) // 2nd one implies xth root of y
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_SLASH) PORT_NAME(u8"%  Δ%")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_S) PORT_NAME("SEL")
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_C) PORT_NAME("CST")
-	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_M) PORT_NAME("MAR")
-
-	PORT_START("IN.1") // O1
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_ASTERISK) PORT_NAME(u8"×")
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_HOME) PORT_NAME("STO  m")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_8) PORT_CODE(KEYCODE_8_PAD) PORT_NAME("8")
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_7) PORT_CODE(KEYCODE_7_PAD) PORT_NAME("7")
-	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_9) PORT_CODE(KEYCODE_9_PAD) PORT_NAME("9")
-
-	PORT_START("IN.2") // O2
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_MINUS_PAD) PORT_NAME("-")
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_END) PORT_NAME("RCL  b")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_5) PORT_CODE(KEYCODE_5_PAD) PORT_NAME("5")
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_4) PORT_CODE(KEYCODE_4_PAD) PORT_NAME("4")
-	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_6) PORT_CODE(KEYCODE_6_PAD) PORT_NAME("6")
-
-	PORT_START("IN.3") // O4
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_SLASH_PAD) PORT_NAME(u8"÷")
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_EQUALS) PORT_NAME(u8"Σ+  Σ-")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_OPENBRACE) PORT_NAME("(  AN-CI\"")
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_COMMA) PORT_NAME(u8"x\u2194y  L.R." /* ↔ */)
-	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_CLOSEBRACE) PORT_NAME(")  1/x")
-
-	PORT_START("IN.4") // O5
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_PLUS_PAD) PORT_NAME("+")
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_X) PORT_NAME(u8"SUM  xʹ")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_2) PORT_CODE(KEYCODE_2_PAD) PORT_NAME("2")
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_1) PORT_CODE(KEYCODE_1_PAD) PORT_NAME("1")
-	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_3) PORT_CODE(KEYCODE_3_PAD) PORT_NAME("3")
-
-	PORT_START("IN.5") // O6
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_F) PORT_NAME("FV")
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_N) PORT_NAME("N")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_P) PORT_NAME("PMT")
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_I) PORT_NAME("%i")
-	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_V) PORT_NAME("PV")
-
-	PORT_START("IN.6") // O7
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_ENTER) PORT_CODE(KEYCODE_ENTER_PAD) PORT_NAME("=")
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_E) PORT_NAME(u8"EXC  xʹ")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_STOP) PORT_CODE(KEYCODE_DEL_PAD) PORT_NAME(".")
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_0) PORT_CODE(KEYCODE_0_PAD) PORT_NAME("0")
-	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_MINUS) PORT_NAME("+/-")
-
-	// note: even though power buttons are on the matrix, they are not CPU-controlled
-	PORT_START("IN.7") // Vss!
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_F1) PORT_CODE(KEYCODE_DEL) PORT_NAME("On/C") PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, true)
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_LSHIFT) PORT_CODE(KEYCODE_RSHIFT) PORT_NAME("2nd")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_Q) PORT_NAME(u8"x²  \u221ax" /* √ */)
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_L) PORT_NAME(u8"ln(x)  eˣ")
-	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_F2) PORT_NAME("Off") PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, false)
-INPUT_PORTS_END
-
-// config
-
-void ti30_state::ti30(machine_config &config)
-{
-	// basic machine hardware
-	TMS0980(config, m_maincpu, 400000); // guessed
-	m_maincpu->read_k().set(FUNC(ti30_state::read_k));
-	m_maincpu->write_o().set(FUNC(ti30_state::write_o));
-	m_maincpu->write_r().set(FUNC(ti30_state::write_r));
-	m_maincpu->power_off().set(FUNC(ti30_state::auto_power_off));
-
-	// video hardware
-	PWM_DISPLAY(config, m_display).set_size(9, 8);
-	m_display->set_segmask(0x1fe, 0xff);
-	m_display->set_segmask(0x001, 0xe2); // 1st digit only has segments B,F,G,DP
-	config.set_default_layout(layout_ti30);
-
-	// no sound!
-}
 
 // roms
 
-ROM_START( ti30 )
-	ROM_REGION( 0x1000, "maincpu", 0 )
-	ROM_LOAD16_WORD( "tmc0981nl", 0x0000, 0x1000, CRC(41298a14) SHA1(06f654c70add4044a612d3a38b0c2831c188fd0c) )
-
-	ROM_REGION( 1246, "maincpu:ipla", 0 )
-	ROM_LOAD( "tms0980_common1_instr.pla", 0, 1246, CRC(42db9a38) SHA1(2d127d98028ec8ec6ea10c179c25e447b14ba4d0) )
-	ROM_REGION( 1982, "maincpu:mpla", 0 )
-	ROM_LOAD( "tms0980_common1_micro.pla", 0, 1982, CRC(3709014f) SHA1(d28ee59ded7f3b9dc3f0594a32a98391b6e9c961) )
-	ROM_REGION( 352, "maincpu:opla", 0 )
-	ROM_LOAD( "tms0980_ti30_output.pla", 0, 352, CRC(00475f99) SHA1(70e04c1472639bd35d4adaab0b9f1ae4a0e394be) )
-	ROM_REGION( 157, "maincpu:spla", 0 )
-	ROM_LOAD( "tms0980_common1_segment.pla", 0, 157, CRC(399aa481) SHA1(72c56c58fde3fbb657d69647a9543b5f8fc74279) )
-ROM_END
-
-ROM_START( tibusan )
-	ROM_REGION( 0x1000, "maincpu", 0 )
-	ROM_LOAD16_WORD( "tmc0982nl", 0x0000, 0x1000, CRC(6954560a) SHA1(6c153a0c9239a811e3514a43d809964c06f8f88e) )
-
-	ROM_REGION( 1246, "maincpu:ipla", 0 )
-	ROM_LOAD( "tms0980_common1_instr.pla", 0, 1246, CRC(42db9a38) SHA1(2d127d98028ec8ec6ea10c179c25e447b14ba4d0) )
-	ROM_REGION( 1982, "maincpu:mpla", 0 )
-	ROM_LOAD( "tms0980_common1_micro.pla", 0, 1982, CRC(3709014f) SHA1(d28ee59ded7f3b9dc3f0594a32a98391b6e9c961) )
-	ROM_REGION( 352, "maincpu:opla", 0 )
-	ROM_LOAD( "tms0980_ti30_output.pla", 0, 352, CRC(00475f99) SHA1(70e04c1472639bd35d4adaab0b9f1ae4a0e394be) )
-	ROM_REGION( 157, "maincpu:spla", 0 )
-	ROM_LOAD( "tms0980_common1_segment.pla", 0, 157, CRC(399aa481) SHA1(72c56c58fde3fbb657d69647a9543b5f8fc74279) )
-ROM_END
-
 ROM_START( tiprog )
 	ROM_REGION( 0x1000, "maincpu", 0 )
-	ROM_LOAD16_WORD( "za0675nl", 0x0000, 0x1000, CRC(82355854) SHA1(03fab373bce04df8ea3fe25352525e8539213626) ) // tmc0983
+	ROM_LOAD16_WORD( "za0675nl", 0x0000, 0x1000, CRC(82355854) SHA1(03fab373bce04df8ea3fe25352525e8539213626) )
 
 	ROM_REGION( 1246, "maincpu:ipla", 0 )
 	ROM_LOAD( "tms0980_common1_instr.pla", 0, 1246, CRC(42db9a38) SHA1(2d127d98028ec8ec6ea10c179c25e447b14ba4d0) )
 	ROM_REGION( 1982, "maincpu:mpla", 0 )
 	ROM_LOAD( "tms0980_tiprog_micro.pla", 0, 1982, CRC(57043284) SHA1(0fa06d5865830ecdb3d870271cb92ac917bed3ca) )
 	ROM_REGION( 352, "maincpu:opla", 0 )
-	ROM_LOAD( "tms0980_tiprog_output.pla", 0, 352, BAD_DUMP CRC(125c4ee6) SHA1(b8d865c42fd37c3d9b92c5edbecfc831be558597) ) // corrected by hand
+	ROM_LOAD( "tms0980_tiprog_output.pla", 0, 352, CRC(125c4ee6) SHA1(b8d865c42fd37c3d9b92c5edbecfc831be558597) )
 	ROM_REGION( 157, "maincpu:spla", 0 )
 	ROM_LOAD( "tms0980_common1_segment.pla", 0, 157, CRC(399aa481) SHA1(72c56c58fde3fbb657d69647a9543b5f8fc74279) )
 ROM_END
@@ -13466,9 +14149,9 @@ void ti1000_state::write_r(u32 data)
 
 void ti1000_state::write_o(u16 data)
 {
-	// O0-O3,O5(?): input mux
+	// O0-O2,O4,O5: input mux
 	// O0-O7: digit segments
-	m_inp_mux = (data & 0xf) | (data >> 1 & 0x10);
+	m_inp_mux = (data & 7) | (data >> 1 & 0x18);
 	m_o = bitswap<8>(data,7,4,3,2,1,0,6,5);
 }
 
@@ -13500,14 +14183,14 @@ static INPUT_PORTS_START( ti1000 )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_ASTERISK) PORT_NAME(u8"×")
 
 	// note: even though power buttons are on the matrix, they are not CPU-controlled
-	PORT_START("IN.3") // O3 or O4?
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_F2) PORT_NAME("Off") PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, false)
+	PORT_START("IN.3") // O4
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_F2) PORT_NAME("Off") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), false)
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_MINUS) PORT_NAME("+/-")
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_SLASH) PORT_NAME("%")
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_SLASH_PAD) PORT_NAME(u8"÷")
 
 	PORT_START("IN.4") // O5
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_F1) PORT_CODE(KEYCODE_DEL) PORT_NAME("On/C") PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, true)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_F1) PORT_CODE(KEYCODE_DEL) PORT_NAME("On/C") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), true)
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_0) PORT_CODE(KEYCODE_0_PAD) PORT_NAME("0")
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_STOP) PORT_CODE(KEYCODE_DEL_PAD) PORT_NAME(".")
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_ENTER) PORT_CODE(KEYCODE_ENTER_PAD) PORT_NAME("=")
@@ -13553,35 +14236,43 @@ ROM_END
 
 /*******************************************************************************
 
-  Texas Instruments WIZ-A-TRON
-  * TMS0970 MCU label TMC0907NL ZA0379, DP0907BS (die label: 0970F-07B)
+  Texas Instruments Little Professor (1976 version, rev. A)
+  * TMS0970 MCU label TMS0975NL ZA0356, AP (die label: 0970D-75A)
   * 9-digit 7seg LED display(one custom digit)
+
+  Texas Instruments Little Professor (1976 version, rev. B)
+  * TMS0970 MCU label TMS0975NL ZA0356, BP (die label: 0970D-75B)
+
+  Texas Instruments Little Professor (1976 version, rev. C)
+  * TMS0970 MCU label TMS0975NL ZA0356, CSP/GP0975CS (die label: 0970D-75C)
 
 *******************************************************************************/
 
-class wizatron_state : public hh_tms1k_state
+class lilprofo_state : public hh_tms1k_state
 {
 public:
-	wizatron_state(const machine_config &mconfig, device_type type, const char *tag) :
+	lilprofo_state(const machine_config &mconfig, device_type type, const char *tag) :
 		hh_tms1k_state(mconfig, type, tag)
 	{ }
 
-	void wizatron(machine_config &config);
+	void lilprofo(machine_config &config);
+	void lilprofoc(machine_config &config);
 
 protected:
-	virtual void write_o(u16 data);
-	virtual void write_r(u32 data);
-	virtual u8 read_k();
+	void write_o(u16 data);
+	void write_o7(u16 data);
+	void write_r(u32 data);
+	u8 read_k();
 };
 
 // handlers
 
-void wizatron_state::write_r(u32 data)
+void lilprofo_state::write_r(u32 data)
 {
 	// R0-R8: select digit
 
 	// 3rd digit only has A and G for =, though some newer hardware revisions
-	// (goes for both wizatron and lilprof) use a custom equals-sign digit here
+	// (goes for both lilprof and wizatron) use a custom equals-sign digit here
 
 	// 6th digit is custom(not 7seg), for math symbols, like this:
 	//   \./    GAB
@@ -13590,28 +14281,34 @@ void wizatron_state::write_r(u32 data)
 	m_display->matrix(data, m_o);
 }
 
-void wizatron_state::write_o(u16 data)
+void lilprofo_state::write_o(u16 data)
 {
-	// O1-O4: input mux
+	// O1-O5: input mux
 	// O0-O6: digit segments A-G
-	// O7: N/C
-	m_inp_mux = data >> 1 & 0xf;
+	m_inp_mux = (data >> 1 & 0x1f);
 	m_o = data & 0x7f;
 }
 
-u8 wizatron_state::read_k()
+void lilprofo_state::write_o7(u16 data)
+{
+	// level switch is on O7
+	write_o(data);
+	m_inp_mux = (m_inp_mux & 0xf) | (data >> 3 & 0x10);
+}
+
+u8 lilprofo_state::read_k()
 {
 	// K: multiplexed inputs
-	return read_inputs(4);
+	return read_inputs(5);
 }
 
 // inputs
 
-static INPUT_PORTS_START( wizatron )
+static INPUT_PORTS_START( lilprofo )
 	PORT_START("IN.0") // O1
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_DEL) PORT_NAME("Clear")
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_S) PORT_CODE(KEYCODE_DEL) PORT_NAME("Set")
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_0) PORT_CODE(KEYCODE_0_PAD) PORT_NAME("0")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_ENTER) PORT_CODE(KEYCODE_ENTER_PAD) PORT_NAME("=")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_ENTER) PORT_CODE(KEYCODE_ENTER_PAD) PORT_NAME("Go")
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_PLUS_PAD) PORT_NAME("+")
 
 	PORT_START("IN.1") // O2
@@ -13631,39 +14328,80 @@ static INPUT_PORTS_START( wizatron )
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_8) PORT_CODE(KEYCODE_8_PAD) PORT_NAME("8")
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_9) PORT_CODE(KEYCODE_9_PAD) PORT_NAME("9")
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_SLASH_PAD) PORT_NAME(u8"÷")
+
+	PORT_START("IN.4") // O5/O7
+	PORT_CONFNAME( 0x0f, 0x01, "Level")
+	PORT_CONFSETTING(    0x01, "1" )
+	PORT_CONFSETTING(    0x02, "2" )
+	PORT_CONFSETTING(    0x04, "3" )
+	PORT_CONFSETTING(    0x08, "4" )
 INPUT_PORTS_END
 
 // config
 
-void wizatron_state::wizatron(machine_config &config)
+void lilprofo_state::lilprofo(machine_config &config)
 {
 	// basic machine hardware
 	TMS0970(config, m_maincpu, 250000); // approximation
-	m_maincpu->read_k().set(FUNC(wizatron_state::read_k));
-	m_maincpu->write_o().set(FUNC(wizatron_state::write_o));
-	m_maincpu->write_r().set(FUNC(wizatron_state::write_r));
+	m_maincpu->read_k().set(FUNC(lilprofo_state::read_k));
+	m_maincpu->write_o().set(FUNC(lilprofo_state::write_o));
+	m_maincpu->write_r().set(FUNC(lilprofo_state::write_r));
 
 	// video hardware
 	PWM_DISPLAY(config, m_display).set_size(9, 7);
-	m_display->set_segmask(0x1ff^8, 0x7f);
+	m_display->set_segmask(0x1f7, 0x7f);
 	m_display->set_segmask(8, 0x41); // equals sign
-	config.set_default_layout(layout_wizatron);
+	config.set_default_layout(layout_lilprof);
 
 	// no sound!
 }
 
+void lilprofo_state::lilprofoc(machine_config &config)
+{
+	lilprofo(config);
+	m_maincpu->write_o().set(FUNC(lilprofo_state::write_o7));
+}
+
 // roms
 
-ROM_START( wizatron )
+ROM_START( lilprofo )
 	ROM_REGION( 0x0400, "maincpu", 0 )
-	ROM_LOAD( "tmc0907nl_za0379", 0x0000, 0x0400, CRC(5a6af094) SHA1(b1f27e1f13f4db3b052dd50fb08dbf9c4d8db26e) )
+	ROM_LOAD( "tms0975nl_za0356_csp", 0x0000, 0x0400, CRC(fef9dd39) SHA1(5c9614c9c5092d55dabeee2d6e0387d50d6ad4d5) )
 
 	ROM_REGION( 782, "maincpu:ipla", 0 )
 	ROM_LOAD( "tms0970_common1_instr.pla", 0, 782, CRC(05306ef8) SHA1(60a0a3c49ce330bce0c27f15f81d61461d0432ce) )
 	ROM_REGION( 860, "maincpu:mpla", 0 )
-	ROM_LOAD( "tms0970_common2_micro.pla", 0, 860, CRC(7f50ab2e) SHA1(bff3be9af0e322986f6e545b567c97d70e135c93) )
+	ROM_LOAD( "tms0970_common1_micro.pla", 0, 860, CRC(6ff5d51d) SHA1(59d3e5de290ba57694068ddba78d21a0c1edf427) )
 	ROM_REGION( 352, "maincpu:opla", 0 )
-	ROM_LOAD( "tms0980_wizatron_output.pla", 0, 352, CRC(c0ee5c04) SHA1(e9fadcef688309adbe6c1c0545aac6883ce4a1ac) )
+	ROM_LOAD( "tms0980_lilprofo_output.pla", 0, 352, CRC(73f9ca93) SHA1(9d6c559e2c1886c62bcd57e3c3aa897e8829b4d2) )
+	ROM_REGION( 157, "maincpu:spla", 0 )
+	ROM_LOAD( "tms0980_common2_segment.pla", 0, 157, CRC(c03cccd8) SHA1(08bc4b597686a7aa8b2c9f43b85b62747ffd455b) )
+ROM_END
+
+ROM_START( lilprofob )
+	ROM_REGION( 0x0400, "maincpu", 0 )
+	ROM_LOAD( "tms0975nl_za0356_bp", 0x0000, 0x0400, CRC(00c8357f) SHA1(32ab47e979e117bda889ab1c72c1c239cfa0f386) )
+
+	ROM_REGION( 782, "maincpu:ipla", 0 )
+	ROM_LOAD( "tms0970_common1_instr.pla", 0, 782, CRC(05306ef8) SHA1(60a0a3c49ce330bce0c27f15f81d61461d0432ce) )
+	ROM_REGION( 860, "maincpu:mpla", 0 )
+	ROM_LOAD( "tms0970_common1_micro.pla", 0, 860, CRC(6ff5d51d) SHA1(59d3e5de290ba57694068ddba78d21a0c1edf427) )
+	ROM_REGION( 352, "maincpu:opla", 0 )
+	ROM_LOAD( "tms0980_lilprofo_output.pla", 0, 352, CRC(73f9ca93) SHA1(9d6c559e2c1886c62bcd57e3c3aa897e8829b4d2) )
+	ROM_REGION( 157, "maincpu:spla", 0 )
+	ROM_LOAD( "tms0980_common2_segment.pla", 0, 157, CRC(c03cccd8) SHA1(08bc4b597686a7aa8b2c9f43b85b62747ffd455b) )
+ROM_END
+
+ROM_START( lilprofoa )
+	ROM_REGION( 0x0400, "maincpu", 0 )
+	ROM_LOAD( "tms0975nl_za0356_ap", 0x0000, 0x0400, CRC(ab77b595) SHA1(8ec5a00d9eb0780b9bb2937c4c023efb2470b287) )
+
+	ROM_REGION( 782, "maincpu:ipla", 0 )
+	ROM_LOAD( "tms0970_common1_instr.pla", 0, 782, CRC(05306ef8) SHA1(60a0a3c49ce330bce0c27f15f81d61461d0432ce) )
+	ROM_REGION( 860, "maincpu:mpla", 0 )
+	ROM_LOAD( "tms0970_common1_micro.pla", 0, 860, CRC(6ff5d51d) SHA1(59d3e5de290ba57694068ddba78d21a0c1edf427) )
+	ROM_REGION( 352, "maincpu:opla", 0 )
+	ROM_LOAD( "tms0980_lilprofo_output.pla", 0, 352, CRC(73f9ca93) SHA1(9d6c559e2c1886c62bcd57e3c3aa897e8829b4d2) )
 	ROM_REGION( 157, "maincpu:spla", 0 )
 	ROM_LOAD( "tms0980_common2_segment.pla", 0, 157, CRC(c03cccd8) SHA1(08bc4b597686a7aa8b2c9f43b85b62747ffd455b) )
 ROM_END
@@ -13674,85 +14412,42 @@ ROM_END
 
 /*******************************************************************************
 
-  Texas Instruments Little Professor (1976 version)
-  * TMS0970 MCU label TMS0975NL ZA0356, GP0975CS (die label: 0970D-75C)
+  Texas Instruments WIZ-A-TRON
+  * TMS0970 MCU label TMC0907NL ZA0379 BSP, DP0907BS (die label: 0970F-07B)
   * 9-digit 7seg LED display(one custom digit)
 
-  The hardware is nearly identical to Wiz-A-Tron (or vice versa, since this
-  one is older).
+  The hardware is nearly identical to Little Professor (1976 version). The same
+  ZA0379 BSP MCU (should be same ROM) was also used in TI Math Magic.
 
 *******************************************************************************/
 
-class lilprof_state : public wizatron_state
-{
-public:
-	lilprof_state(const machine_config &mconfig, device_type type, const char *tag) :
-		wizatron_state(mconfig, type, tag)
-	{ }
-
-	void lilprof(machine_config &config);
-
-private:
-	virtual void write_o(u16 data) override;
-	virtual u8 read_k() override;
-};
-
-// handlers
-
-void lilprof_state::write_o(u16 data)
-{
-	// O1-O4,O7: input mux
-	// O0-O6: digit segments A-G
-	m_inp_mux = (data >> 1 & 0xf) | (data >> 3 & 0x10);
-	m_o = data;
-}
-
-u8 lilprof_state::read_k()
-{
-	// K: multiplexed inputs
-	return read_inputs(5);
-}
+// class/handlers: uses the ones in lilprofo_state
 
 // inputs
 
-static INPUT_PORTS_START( lilprof )
-	PORT_INCLUDE( wizatron )
+static INPUT_PORTS_START( wizatron )
+	PORT_INCLUDE( lilprofo )
 
 	PORT_MODIFY("IN.0")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_S) PORT_CODE(KEYCODE_DEL) PORT_NAME("Set")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_ENTER) PORT_CODE(KEYCODE_ENTER_PAD) PORT_NAME("Go")
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_DEL) PORT_NAME("Clear")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_ENTER) PORT_CODE(KEYCODE_ENTER_PAD) PORT_NAME("=")
 
-	PORT_START("IN.4") // O7
-	PORT_CONFNAME( 0x0f, 0x01, "Level")
-	PORT_CONFSETTING(    0x01, "1" )
-	PORT_CONFSETTING(    0x02, "2" )
-	PORT_CONFSETTING(    0x04, "3" )
-	PORT_CONFSETTING(    0x08, "4" )
+	PORT_MODIFY("IN.4")
+	PORT_BIT( 0x0f, IP_ACTIVE_HIGH, IPT_UNUSED )
 INPUT_PORTS_END
-
-// config
-
-void lilprof_state::lilprof(machine_config &config)
-{
-	wizatron(config);
-
-	// basic machine hardware
-	m_maincpu->read_k().set(FUNC(lilprof_state::read_k));
-	m_maincpu->write_o().set(FUNC(lilprof_state::write_o));
-}
 
 // roms
 
-ROM_START( lilprof )
+ROM_START( wizatron )
 	ROM_REGION( 0x0400, "maincpu", 0 )
-	ROM_LOAD( "tms0975nl_za0356", 0x0000, 0x0400, CRC(fef9dd39) SHA1(5c9614c9c5092d55dabeee2d6e0387d50d6ad4d5) )
+	ROM_LOAD( "tmc0907nl_za0379_bsp", 0x0000, 0x0400, CRC(5a6af094) SHA1(b1f27e1f13f4db3b052dd50fb08dbf9c4d8db26e) )
 
 	ROM_REGION( 782, "maincpu:ipla", 0 )
 	ROM_LOAD( "tms0970_common1_instr.pla", 0, 782, CRC(05306ef8) SHA1(60a0a3c49ce330bce0c27f15f81d61461d0432ce) )
 	ROM_REGION( 860, "maincpu:mpla", 0 )
-	ROM_LOAD( "tms0970_common1_micro.pla", 0, 860, CRC(6ff5d51d) SHA1(59d3e5de290ba57694068ddba78d21a0c1edf427) )
+	ROM_LOAD( "tms0970_common2_micro.pla", 0, 860, CRC(7f50ab2e) SHA1(bff3be9af0e322986f6e545b567c97d70e135c93) )
 	ROM_REGION( 352, "maincpu:opla", 0 )
-	ROM_LOAD( "tms0980_lilprof_output.pla", 0, 352, CRC(73f9ca93) SHA1(9d6c559e2c1886c62bcd57e3c3aa897e8829b4d2) )
+	ROM_LOAD( "tms0980_wizatron_output.pla", 0, 352, CRC(c0ee5c04) SHA1(e9fadcef688309adbe6c1c0545aac6883ce4a1ac) )
 	ROM_REGION( 157, "maincpu:spla", 0 )
 	ROM_LOAD( "tms0980_common2_segment.pla", 0, 157, CRC(c03cccd8) SHA1(08bc4b597686a7aa8b2c9f43b85b62747ffd455b) )
 ROM_END
@@ -13772,14 +14467,14 @@ ROM_END
 
 *******************************************************************************/
 
-class lilprofa_state : public hh_tms1k_state
+class lilprof_state : public hh_tms1k_state
 {
 public:
-	lilprofa_state(const machine_config &mconfig, device_type type, const char *tag) :
+	lilprof_state(const machine_config &mconfig, device_type type, const char *tag) :
 		hh_tms1k_state(mconfig, type, tag)
 	{ }
 
-	void lilprofa(machine_config &config);
+	void lilprof(machine_config &config);
 
 private:
 	void write_o(u16 data);
@@ -13789,7 +14484,7 @@ private:
 
 // handlers
 
-void lilprofa_state::write_r(u32 data)
+void lilprof_state::write_r(u32 data)
 {
 	// update leds state
 	u8 seg = bitswap<8>(m_o,7,4,3,2,1,0,6,5) & 0x7f;
@@ -13799,20 +14494,20 @@ void lilprofa_state::write_r(u32 data)
 	// 3rd digit A/G(equals sign) is from O7
 	m_display->write_row(3, (r != 0 && m_o & 0x80) ? 0x41 : 0);
 
-	// 6th digit is a custom 7seg for math symbols (see wizatron_state write_r)
+	// 6th digit is a custom 7seg for math symbols (see lilprofo_state write_r)
 	m_display->write_row(6, bitswap<8>(m_display->read_row(6),7,6,1,4,2,3,5,0));
 }
 
-void lilprofa_state::write_o(u16 data)
+void lilprof_state::write_o(u16 data)
 {
-	// O0-O3,O5(?): input mux
+	// O0-O2,O4,O5: input mux
 	// O0-O6: digit segments A-G
 	// O7: 6th digit
-	m_inp_mux = (data & 0xf) | (data >> 1 & 0x10);
+	m_inp_mux = (data & 7) | (data >> 1 & 0x18);
 	m_o = data;
 }
 
-u8 lilprofa_state::read_k()
+u8 lilprof_state::read_k()
 {
 	// K: multiplexed inputs
 	return read_inputs(5);
@@ -13820,7 +14515,7 @@ u8 lilprofa_state::read_k()
 
 // inputs
 
-static INPUT_PORTS_START( lilprofa )
+static INPUT_PORTS_START( lilprof )
 	PORT_START("IN.0") // O0
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_1) PORT_CODE(KEYCODE_1_PAD) PORT_NAME("1")
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_2) PORT_CODE(KEYCODE_2_PAD) PORT_NAME("2")
@@ -13840,14 +14535,14 @@ static INPUT_PORTS_START( lilprofa )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_SLASH_PAD) PORT_NAME(u8"÷")
 
 	// note: even though power buttons are on the matrix, they are not CPU-controlled
-	PORT_START("IN.3") // O3 or O4?
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_F2) PORT_NAME("Off") PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, false)
+	PORT_START("IN.3") // O4
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_F2) PORT_NAME("Off") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), false)
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_UNUSED )
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_S) PORT_NAME("Set")
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_L) PORT_NAME("Level")
 
 	PORT_START("IN.4") // O5
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_F1) PORT_CODE(KEYCODE_DEL) PORT_NAME("On") PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, true)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_F1) PORT_CODE(KEYCODE_DEL) PORT_NAME("On") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), true)
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_0) PORT_CODE(KEYCODE_0_PAD) PORT_NAME("0")
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_ENTER) PORT_CODE(KEYCODE_ENTER_PAD) PORT_NAME("Go")
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_PLUS_PAD) PORT_NAME("+")
@@ -13855,25 +14550,25 @@ INPUT_PORTS_END
 
 // config
 
-void lilprofa_state::lilprofa(machine_config &config)
+void lilprof_state::lilprof(machine_config &config)
 {
 	// basic machine hardware
 	TMS1990(config, m_maincpu, 250000); // approximation
-	m_maincpu->read_k().set(FUNC(lilprofa_state::read_k));
-	m_maincpu->write_o().set(FUNC(lilprofa_state::write_o));
-	m_maincpu->write_r().set(FUNC(lilprofa_state::write_r));
+	m_maincpu->read_k().set(FUNC(lilprof_state::read_k));
+	m_maincpu->write_o().set(FUNC(lilprof_state::write_o));
+	m_maincpu->write_r().set(FUNC(lilprof_state::write_r));
 
 	// video hardware
 	PWM_DISPLAY(config, m_display).set_size(9, 7);
 	m_display->set_segmask(0x1ff, 0x7f);
-	config.set_default_layout(layout_wizatron);
+	config.set_default_layout(layout_lilprof);
 
 	// no sound!
 }
 
 // roms
 
-ROM_START( lilprofa )
+ROM_START( lilprof )
 	ROM_REGION( 0x0400, "maincpu", 0 )
 	ROM_LOAD( "tmc1993nl", 0x0000, 0x0400, CRC(e941316b) SHA1(7e1542045d1e731cea81a639c9ac9e91bb233b15) )
 
@@ -13882,7 +14577,7 @@ ROM_START( lilprofa )
 	ROM_REGION( 860, "maincpu:mpla", 0 )
 	ROM_LOAD( "tms0970_common2_micro.pla", 0, 860, CRC(7f50ab2e) SHA1(bff3be9af0e322986f6e545b567c97d70e135c93) )
 	ROM_REGION( 352, "maincpu:opla", 0 )
-	ROM_LOAD( "tms0980_lilprofa_output.pla", 0, 352, CRC(b7416cc0) SHA1(57891ffeaf34aafe8a915086c6d2feb78f5113af) )
+	ROM_LOAD( "tms0980_lilprof_output.pla", 0, 352, CRC(b7416cc0) SHA1(57891ffeaf34aafe8a915086c6d2feb78f5113af) )
 	ROM_REGION( 157, "maincpu:spla", 0 )
 	ROM_LOAD( "tms0980_common3_segment.pla", 0, 157, CRC(b5b3153f) SHA1(e0145c729695a4f962970aee0571d42cee6f5a9e) )
 ROM_END
@@ -13971,7 +14666,7 @@ static INPUT_PORTS_START( ti1680 )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_PGDN) PORT_NAME("RPL")
 
 	PORT_START("IN.1") // R4
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_F1) PORT_CODE(KEYCODE_DEL) PORT_NAME("On/C") PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, true)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_F1) PORT_CODE(KEYCODE_DEL) PORT_NAME("On/C") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), true)
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_F2) PORT_NAME("Off") // -> auto_power_off
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_SLASH) PORT_NAME("%")
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_SLASH_PAD) PORT_NAME(u8"÷")
@@ -14058,10 +14753,10 @@ public:
 	void dataman(machine_config &config);
 
 protected:
-	virtual void update_display();
-	virtual void write_o(u16 data);
-	virtual void write_r(u32 data);
-	virtual u8 read_k();
+	void update_display();
+	void write_o(u16 data);
+	void write_r(u32 data);
+	u8 read_k();
 };
 
 // handlers
@@ -14128,9 +14823,9 @@ static INPUT_PORTS_START( dataman )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_W) PORT_NAME("Wipe Out")
 
 	// note: even though power buttons are on the matrix, they are not CPU-controlled
-	PORT_START("IN.5") // Vss!
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_F1) PORT_CODE(KEYCODE_U) PORT_NAME("On/User Entry") PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, true)
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_F2) PORT_NAME("Off") PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, false)
+	PORT_START("IN.5") // Vss
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_F1) PORT_CODE(KEYCODE_U) PORT_NAME("On/User Entry") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), true)
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_F2) PORT_NAME("Off") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), false)
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_SLASH) PORT_NAME("?")
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_E) PORT_NAME("Electro Flash")
 INPUT_PORTS_END
@@ -14190,21 +14885,9 @@ public:
 	{ }
 
 	void mathmarv(machine_config &config);
-
-private:
-	virtual void write_r(u32 data) override;
 };
 
-// handlers
-
-void mathmarv_state::write_r(u32 data)
-{
-	// R8: speaker out
-	m_speaker->level_w(data >> 8 & 1);
-
-	// rest is same as dataman
-	dataman_state::write_r(data);
-}
+// handlers: uses the ones in dataman_state
 
 // inputs
 
@@ -14216,8 +14899,8 @@ static INPUT_PORTS_START( mathmarv )
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_C) PORT_NAME("Checker")
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_R) PORT_NAME("Review")
 
-	PORT_MODIFY("IN.5") // Vss!
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_F1) PORT_CODE(KEYCODE_N) PORT_NAME("On/Numberific") PORT_CHANGED_MEMBER(DEVICE_SELF, hh_tms1k_state, power_button, true)
+	PORT_MODIFY("IN.5") // Vss
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_F1) PORT_CODE(KEYCODE_N) PORT_NAME("On/Numberific") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(hh_tms1k_state::power_button), true)
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_Z) PORT_NAME("Zap")
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_F) PORT_NAME("Flash")
 INPUT_PORTS_END
@@ -14229,7 +14912,7 @@ void mathmarv_state::mathmarv(machine_config &config)
 	dataman(config);
 
 	// basic machine hardware
-	m_maincpu->write_r().set(FUNC(mathmarv_state::write_r));
+	m_maincpu->write_r().append(m_speaker, FUNC(speaker_sound_device::level_w)).bit(8);
 
 	config.set_default_layout(layout_mathmarv);
 
@@ -14647,11 +15330,11 @@ public:
 	void playmaker(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
-	DECLARE_DEVICE_IMAGE_LOAD_MEMBER(cart_load);
 	u8 m_notch = 0; // cartridge K1/K2
+	DECLARE_DEVICE_IMAGE_LOAD_MEMBER(cart_load);
 
 	void update_display();
 	void write_r(u32 data);
@@ -15221,6 +15904,135 @@ ROM_END
 
 /*******************************************************************************
 
+  Tiger Finger Bowl (model 7-545)
+  * TMS1100 MP1288 (no decap)
+  * 3 7seg LEDs, 1-bit sound
+
+  It's a track & field electronic board game, played by sliding or tapping
+  your finger. Instructions on how to play the events are written on the
+  device itself. 5 hurdles were included, though they're not essential.
+
+*******************************************************************************/
+
+class fingbowl_state : public hh_tms1k_state
+{
+public:
+	fingbowl_state(const machine_config &mconfig, device_type type, const char *tag) :
+		hh_tms1k_state(mconfig, type, tag)
+	{ }
+
+	void fingbowl(machine_config &config);
+
+private:
+	void update_display();
+	void write_r(u32 data);
+	void write_o(u16 data);
+	u8 read_k();
+};
+
+// handlers
+
+void fingbowl_state::update_display()
+{
+	m_display->matrix(m_r, m_o);
+}
+
+void fingbowl_state::write_r(u32 data)
+{
+	// R8: speaker out
+	m_speaker->level_w(BIT(data, 8));
+
+	// R4-R7: input mux
+	m_inp_mux = data >> 4 & 0xf;
+
+	// R0-R2: digit select
+	m_r = data;
+	update_display();
+}
+
+void fingbowl_state::write_o(u16 data)
+{
+	// O0-O6: led data
+	m_o = data;
+	update_display();
+}
+
+u8 fingbowl_state::read_k()
+{
+	// K: multiplexed inputs
+	return read_inputs(4);
+}
+
+// inputs
+
+static INPUT_PORTS_START( fingbowl )
+	PORT_START("IN.0") // R4
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON4 )
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_BUTTON3 )
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_BUTTON2 )
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_BUTTON1 )
+
+	PORT_START("IN.1") // R5
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON8 )
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_BUTTON7 )
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_BUTTON6 )
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_BUTTON5 )
+
+	PORT_START("IN.2") // R6
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON12 )
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_BUTTON11 )
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_BUTTON10 )
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_BUTTON9 )
+
+	PORT_START("IN.3") // R7
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON16 )
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_BUTTON15 )
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_BUTTON14 )
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_BUTTON13 )
+INPUT_PORTS_END
+
+// config
+
+void fingbowl_state::fingbowl(machine_config &config)
+{
+	// basic machine hardware
+	TMS1100(config, m_maincpu, 250000); // approximation - RC osc. R=68K, C=47pF
+	m_maincpu->read_k().set(FUNC(fingbowl_state::read_k));
+	m_maincpu->write_r().set(FUNC(fingbowl_state::write_r));
+	m_maincpu->write_o().set(FUNC(fingbowl_state::write_o));
+
+	// video hardware
+	PWM_DISPLAY(config, m_display).set_size(3, 7);
+	m_display->set_segmask(7, 0x7f);
+	config.set_default_layout(layout_fingbowl);
+
+	// sound hardware
+	SPEAKER(config, "mono").front_center();
+	SPEAKER_SOUND(config, m_speaker);
+	m_speaker->add_route(ALL_OUTPUTS, "mono", 0.25);
+}
+
+// roms
+
+ROM_START( fingbowl )
+	ROM_REGION( 0x0800, "maincpu", 0 )
+	ROM_LOAD( "mp1288", 0x0000, 0x0800, CRC(8eb489ad) SHA1(65efe9fb25f6a5e0a1319558388d84053e003e93) )
+
+	ROM_REGION( 867, "maincpu:mpla", 0 )
+	ROM_LOAD( "tms1100_common2_micro.pla", 0, 867, BAD_DUMP CRC(7cc90264) SHA1(c6e1cf1ffb178061da9e31858514f7cd94e86990) ) // not verified
+	ROM_REGION( 365, "maincpu:opla", ROMREGION_ERASE00 )
+	ROM_LOAD( "tms1100_fingbowl_output.pla", 0, 365, NO_DUMP )
+
+	ROM_REGION16_LE( 0x40, "maincpu:opla_b", ROMREGION_ERASE00 ) // verified, electronic dump, 2nd half unused
+	ROM_LOAD16_BYTE( "tms1100_fingbowl_output.bin", 0, 0x20, CRC(b84a8afb) SHA1(777c06c1ebb7884a268385b0f9d6d064400ff757) )
+ROM_END
+
+
+
+
+
+/*******************************************************************************
+
   Tiger 7 in 1 Sports Stadium (model 7-555)
   * TMS1400 MP7304 (die label: TMS1400, MP7304A, 28L 01D D000 R300)
   * 2x2-digit 7seg LED display + 39 other LEDs, 1-bit sound
@@ -15354,7 +16166,151 @@ ROM_END
 
 /*******************************************************************************
 
-  Tomy(tronics) Break Up (manufactured in Japan)
+  Tomy Volleyball
+  * TMS1000 MP0159 TOMY VOLLEY (die label: 1000B, MP0159)
+  * 2 7seg LEDs, 14 other LEDs, 1-bit sound
+
+*******************************************************************************/
+
+class tmvolleyb_state : public hh_tms1k_state
+{
+public:
+	tmvolleyb_state(const machine_config &mconfig, device_type type, const char *tag) :
+		hh_tms1k_state(mconfig, type, tag)
+	{ }
+
+	void tmvolleyb(machine_config &config);
+
+private:
+	void update_display();
+	void write_r(u32 data);
+	void write_o(u16 data);
+	u8 read_k();
+};
+
+// handlers
+
+void tmvolleyb_state::update_display()
+{
+	// O7 goes to left digit segments B/C
+	m_display->matrix_partial(0, 1, BIT(m_r, 4), BIT(m_o, 7) * 6);
+	m_display->matrix_partial(1, 3, m_r >> 4, m_o);
+}
+
+void tmvolleyb_state::write_r(u32 data)
+{
+	// R0-R3,R7-R9: input mux
+	m_inp_mux = (data & 0xf) | (data >> 3 & 0x70);
+
+	// R4: digit select
+	// R5,R6: led select
+	m_r = data;
+	update_display();
+
+	// R10: speaker out
+	m_speaker->level_w(BIT(data, 10));
+}
+
+void tmvolleyb_state::write_o(u16 data)
+{
+	// O0-O7: digit segment/led data
+	m_o = data;
+	update_display();
+}
+
+u8 tmvolleyb_state::read_k()
+{
+	// K: multiplexed inputs
+	return read_inputs(7);
+}
+
+// inputs
+
+static INPUT_PORTS_START( tmvolleyb )
+	PORT_START("IN.0") // R0
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_COCKTAIL
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_BUTTON2 ) PORT_COCKTAIL
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_BUTTON3 ) PORT_COCKTAIL
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
+
+	PORT_START("IN.1") // R1
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON6 ) PORT_COCKTAIL
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_BUTTON5 ) PORT_COCKTAIL
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_BUTTON4 ) PORT_COCKTAIL
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_SELECT ) PORT_NAME("Score")
+
+	PORT_START("IN.2") // R2
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON1 )
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_BUTTON2 )
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_BUTTON3 )
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_START2 ) PORT_NAME("P2 Serve")
+
+	PORT_START("IN.3") // R3
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON6 )
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_BUTTON5 )
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_BUTTON4 )
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_START1 ) PORT_NAME("P1 Serve")
+
+	PORT_START("IN.4") // R7
+	PORT_BIT( 0x01, 0x01, IPT_CUSTOM ) PORT_CONDITION("IN.7", 0x01, EQUALS, 0x01) // Game 2
+	PORT_BIT( 0x0e, IP_ACTIVE_HIGH, IPT_UNUSED )
+
+	PORT_START("IN.5") // R8
+	PORT_BIT( 0x02, 0x02, IPT_CUSTOM ) PORT_CONDITION("IN.7", 0x01, EQUALS, 0x00) // Game 1
+	PORT_BIT( 0x0d, IP_ACTIVE_HIGH, IPT_UNUSED )
+
+	PORT_START("IN.6") // R9
+	PORT_BIT( 0x07, IP_ACTIVE_HIGH, IPT_UNUSED )
+	PORT_CONFNAME( 0x08, 0x08, DEF_STR( Players ) )
+	PORT_CONFSETTING(    0x08, "1" )
+	PORT_CONFSETTING(    0x00, "2" )
+
+	PORT_START("IN.7") // fake
+	PORT_CONFNAME( 0x01, 0x00, "Game" )
+	PORT_CONFSETTING(    0x00, "1" )
+	PORT_CONFSETTING(    0x01, "2" )
+INPUT_PORTS_END
+
+// config
+
+void tmvolleyb_state::tmvolleyb(machine_config &config)
+{
+	// basic machine hardware
+	TMS1000(config, m_maincpu, 325000); // approximation - RC osc. R=47K, C=47pF
+	m_maincpu->read_k().set(FUNC(tmvolleyb_state::read_k));
+	m_maincpu->write_r().set(FUNC(tmvolleyb_state::write_r));
+	m_maincpu->write_o().set(FUNC(tmvolleyb_state::write_o));
+
+	// video hardware
+	PWM_DISPLAY(config, m_display).set_size(4, 8);
+	m_display->set_segmask(3, 0x7f);
+	config.set_default_layout(layout_tmvolleyb);
+
+	// sound hardware
+	SPEAKER(config, "mono").front_center();
+	SPEAKER_SOUND(config, m_speaker);
+	m_speaker->add_route(ALL_OUTPUTS, "mono", 0.25);
+}
+
+// roms
+
+ROM_START( tmvolleyb )
+	ROM_REGION( 0x0400, "maincpu", 0 )
+	ROM_LOAD( "mp0159_tomy_volley", 0x0000, 0x0400, CRC(0088b0cc) SHA1(90f222d6a3bef7b27709ef2816c15867921a8d4c) )
+
+	ROM_REGION( 867, "maincpu:mpla", 0 )
+	ROM_LOAD( "tms1000_common2_micro.pla", 0, 867, CRC(d33da3cf) SHA1(13c4ebbca227818db75e6db0d45b66ba5e207776) )
+	ROM_REGION( 365, "maincpu:opla", 0 )
+	ROM_LOAD( "tms1000_tmvolleyb_output.pla", 0, 365, CRC(01af7efd) SHA1(d90656a7884b37c7fd49989f8d38dd376b74557b) )
+ROM_END
+
+
+
+
+
+/*******************************************************************************
+
+  Tomy Break Up (manufactured in Japan)
   * PCB label: TOMY B.O.
   * TMS1040 MP2726 TOMY WIPE (die label: 1040B, MP2726A)
   * TMS1025N2LL I/O expander
@@ -15397,18 +16353,17 @@ public:
 
 	void tbreakup(machine_config &config);
 
-	DECLARE_INPUT_CHANGED_MEMBER(skill_switch) { set_clock(); }
+	DECLARE_INPUT_CHANGED_MEMBER(skill_switch);
 
 protected:
-	virtual void machine_reset() override;
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	required_device<tms1025_device> m_expander;
 	u8 m_exp_port[7] = { };
+
 	void expander_w(offs_t offset, u8 data);
 
-	void set_clock();
 	void update_display();
 	void write_r(u32 data);
 	void write_o(u16 data);
@@ -15421,18 +16376,12 @@ void tbreakup_state::machine_start()
 	save_item(NAME(m_exp_port));
 }
 
-void tbreakup_state::machine_reset()
-{
-	hh_tms1k_state::machine_reset();
-	set_clock();
-}
-
 // handlers
 
-void tbreakup_state::set_clock()
+INPUT_CHANGED_MEMBER(tbreakup_state::skill_switch)
 {
 	// MCU clock is from an analog circuit with resistor of 73K, PRO2 adds 100K
-	m_maincpu->set_unscaled_clock((m_inputs[3]->read() & 1) ? 500000 : 325000);
+	m_maincpu->set_unscaled_clock((newval & 1) ? 500000 : 325000);
 }
 
 void tbreakup_state::update_display()
@@ -15503,10 +16452,10 @@ static INPUT_PORTS_START( tbreakup )
 	PORT_CONFSETTING(    0x00, "3" )
 	PORT_CONFSETTING(    0x04, "5" )
 
-	PORT_START("IN.3") // fake
-	PORT_CONFNAME( 0x01, 0x00, DEF_STR( Difficulty ) ) PORT_CHANGED_MEMBER(DEVICE_SELF, tbreakup_state, skill_switch, 0)
-	PORT_CONFSETTING(    0x00, "Pro 1" )
-	PORT_CONFSETTING(    0x01, "Pro 2" )
+	PORT_START("CPU") // fake
+	PORT_CONFNAME( 0x01, 0x00, DEF_STR( Difficulty ) ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(tbreakup_state::skill_switch), 0)
+	PORT_CONFSETTING(    0x00, "1" ) // PRO 1
+	PORT_CONFSETTING(    0x01, "2" ) // PRO 2
 INPUT_PORTS_END
 
 // config
@@ -15514,7 +16463,7 @@ INPUT_PORTS_END
 void tbreakup_state::tbreakup(machine_config &config)
 {
 	// basic machine hardware
-	TMS1040(config, m_maincpu, 325000); // see set_clock
+	TMS1040(config, m_maincpu, 325000); // see skill_switch
 	m_maincpu->read_k().set(FUNC(tbreakup_state::read_k));
 	m_maincpu->write_r().set(FUNC(tbreakup_state::write_r));
 	m_maincpu->write_o().set(FUNC(tbreakup_state::write_o));
@@ -15543,7 +16492,7 @@ void tbreakup_state::tbreakup(machine_config &config)
 
 ROM_START( tbreakup )
 	ROM_REGION( 0x0400, "maincpu", 0 )
-	ROM_LOAD( "mp2726a", 0x0000, 0x0400, CRC(1f7c28e2) SHA1(164cda4eb3f0b1d20955212a197c9aadf8d18a06) )
+	ROM_LOAD( "mp2726_tomy_wipe", 0x0000, 0x0400, CRC(1f7c28e2) SHA1(164cda4eb3f0b1d20955212a197c9aadf8d18a06) )
 
 	ROM_REGION( 867, "maincpu:mpla", 0 )
 	ROM_LOAD( "tms1000_common2_micro.pla", 0, 867, CRC(d33da3cf) SHA1(13c4ebbca227818db75e6db0d45b66ba5e207776) )
@@ -15647,10 +16596,10 @@ static INPUT_PORTS_START( phpball )
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_BUTTON3 ) PORT_NAME("Plunger")
 	PORT_BIT( 0x0d, IP_ACTIVE_HIGH, IPT_UNUSED )
 
-	PORT_START("IN.1") // Vss!
+	PORT_START("IN.1") // Vss
 	PORT_BIT( 0x03, IP_ACTIVE_HIGH, IPT_UNUSED )
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_BUTTON2 ) PORT_NAME("Right Flipper") PORT_CHANGED_MEMBER(DEVICE_SELF, phpball_state, flipper_button, 0)
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_NAME("Left Flipper") PORT_CHANGED_MEMBER(DEVICE_SELF, phpball_state, flipper_button, 0)
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_BUTTON2 ) PORT_NAME("Right Flipper") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(phpball_state::flipper_button), 0)
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_NAME("Left Flipper") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(phpball_state::flipper_button), 0)
 INPUT_PORTS_END
 
 // config
@@ -15678,7 +16627,7 @@ void phpball_state::phpball(machine_config &config)
 
 ROM_START( phpball )
 	ROM_REGION( 0x0800, "maincpu", 0 )
-	ROM_LOAD( "mp1180", 0x0000, 0x0800, CRC(2163b92d) SHA1(bc53d1911e88b4e89d951c6f769703105c13389c) )
+	ROM_LOAD( "mp1180_tomy_pinb", 0x0000, 0x0800, CRC(2163b92d) SHA1(bc53d1911e88b4e89d951c6f769703105c13389c) )
 
 	ROM_REGION( 867, "maincpu:mpla", 0 )
 	ROM_LOAD( "tms1100_common2_micro.pla", 0, 867, CRC(7cc90264) SHA1(c6e1cf1ffb178061da9e31858514f7cd94e86990) )
@@ -15809,10 +16758,10 @@ ROM_START( tdracula )
 	ROM_REGION( 867, "maincpu:mpla", 0 )
 	ROM_LOAD( "tms1100_common2_micro.pla", 0, 867, CRC(7cc90264) SHA1(c6e1cf1ffb178061da9e31858514f7cd94e86990) )
 	ROM_REGION( 557, "maincpu:opla", 0 )
-	ROM_LOAD( "tms1400_tdracula_output.pla", 0, 557, CRC(54408672) SHA1(8fdc6910a27c22c1df2cadeb25c74118d5774481) )
+	ROM_LOAD( "tms1400_tdracula_output.pla", 0, 557, CRC(52e2258e) SHA1(3dcbef72d2309aeb2375041522acd1a879b9e881) )
 
-	ROM_REGION( 416612, "screen", 0)
-	ROM_LOAD( "tdracula.svg", 0, 416612, CRC(b4e723dc) SHA1(7d90aa92755727fc21f3b2913cd5d86f8594ea20) )
+	ROM_REGION( 417508, "screen", 0)
+	ROM_LOAD( "tdracula.svg", 0, 417508, CRC(4f093a2f) SHA1(2c0f9a18720ff1e694b267274967a60115fa2593) )
 ROM_END
 
 
@@ -15845,6 +16794,7 @@ public:
 
 private:
 	required_device<tms1024_device> m_expander;
+
 	void expander_w(offs_t offset, u8 data);
 
 	void update_display();
@@ -16306,7 +17256,7 @@ public:
 	DECLARE_INPUT_CHANGED_MEMBER(k4_button) { update_halt(); }
 
 protected:
-	virtual void machine_reset() override;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	void update_halt();
@@ -16370,61 +17320,61 @@ static INPUT_PORTS_START( xl25 )
 	PORT_START("IN.0") // R0
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 1")
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 6")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 11") PORT_CHANGED_MEMBER(DEVICE_SELF, xl25_state, k4_button, 0)
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 11") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(xl25_state::k4_button), 0)
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("IN.1") // R1
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 2")
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 7")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 12") PORT_CHANGED_MEMBER(DEVICE_SELF, xl25_state, k4_button, 0)
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 12") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(xl25_state::k4_button), 0)
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("IN.2") // R2
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 3")
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 8")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 13") PORT_CHANGED_MEMBER(DEVICE_SELF, xl25_state, k4_button, 0)
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 13") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(xl25_state::k4_button), 0)
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("IN.3") // R3
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 4")
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 9")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 14") PORT_CHANGED_MEMBER(DEVICE_SELF, xl25_state, k4_button, 0)
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 14") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(xl25_state::k4_button), 0)
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("IN.4") // R4
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 5")
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 10")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 15") PORT_CHANGED_MEMBER(DEVICE_SELF, xl25_state, k4_button, 0)
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 15") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(xl25_state::k4_button), 0)
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("IN.5") // R5
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 16")
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 21")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_1) PORT_NAME("Store / Recall") PORT_CHANGED_MEMBER(DEVICE_SELF, xl25_state, k4_button, 0)
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_1) PORT_NAME("Store / Recall") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(xl25_state::k4_button), 0)
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("IN.6") // R6
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 17")
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 22")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_2) PORT_NAME("Cross / Knight / Score") PORT_CHANGED_MEMBER(DEVICE_SELF, xl25_state, k4_button, 0)
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_2) PORT_NAME("Cross / Knight / Score") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(xl25_state::k4_button), 0)
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("IN.7") // R7
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 18")
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 23")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_3) PORT_NAME("Clear") PORT_CHANGED_MEMBER(DEVICE_SELF, xl25_state, k4_button, 0)
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_3) PORT_NAME("Clear") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(xl25_state::k4_button), 0)
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("IN.8") // R8
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 19")
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 24")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_4) PORT_NAME("Random") PORT_CHANGED_MEMBER(DEVICE_SELF, xl25_state, k4_button, 0)
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_4) PORT_NAME("Random") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(xl25_state::k4_button), 0)
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("IN.9") // R9
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 20")
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("Square 25")
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_5) PORT_NAME("Sound") PORT_CHANGED_MEMBER(DEVICE_SELF, xl25_state, k4_button, 0)
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_5) PORT_NAME("Sound") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(xl25_state::k4_button), 0)
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
 INPUT_PORTS_END
 
@@ -16471,7 +17421,7 @@ ROM_END
 *******************************************************************************/
 
 //    YEAR  NAME        PARENT     COMPAT  MACHINE    INPUT      CLASS            INIT        COMPANY, FULLNAME, FLAGS
-SYST( 1979, matchnum,   0,         0,      matchnum,  matchnum,  matchnum_state,  empty_init, "A-One LSI", "Match Number", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
+SYST( 1979, matchnum,   0,         0,      matchnum,  matchnum,  matchnum_state,  empty_init, "A-One LSI", "Match Number", MACHINE_SUPPORTS_SAVE )
 SYST( 1980, arrball,    0,         0,      arrball,   arrball,   arrball_state,   empty_init, "A-One LSI", "Arrange Ball", MACHINE_SUPPORTS_SAVE )
 
 SYST( 1980, mathmagi,   0,         0,      mathmagi,  mathmagi,  mathmagi_state,  empty_init, "APF Electronics Inc.", "Mathemagician", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
@@ -16479,14 +17429,15 @@ SYST( 1980, mathmagi,   0,         0,      mathmagi,  mathmagi,  mathmagi_state,
 SYST( 1979, bcheetah,   0,         0,      bcheetah,  bcheetah,  bcheetah_state,  empty_init, "Bandai", "System Control Car: Cheetah", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW | MACHINE_MECHANICAL ) // ***
 SYST( 1980, racetime,   0,         0,      racetime,  racetime,  racetime_state,  empty_init, "Bandai", "Race Time", MACHINE_SUPPORTS_SAVE )
 SYST( 1981, tc7atc,     0,         0,      tc7atc,    tc7atc,    tc7atc_state,    empty_init, "Bandai", "TC7: Air Traffic Control", MACHINE_SUPPORTS_SAVE )
+SYST( 1982, uboat,      0,         0,      uboat,     uboat,     uboat_state,     empty_init, "Bandai", "U-Boat", MACHINE_SUPPORTS_SAVE )
 
 SYST( 1977, palmf31,    0,         0,      palmf31,   palmf31,   palmf31_state,   empty_init, "Canon", "Palmtronic F-31", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
 SYST( 1977, palmmd8,    0,         0,      palmmd8,   palmmd8,   palmmd8_state,   empty_init, "Canon", "Palmtronic MD-8 (Multi 8)", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
 
 SYST( 1977, cchime,     0,         0,      cchime,    cchime,    cchime_state,    empty_init, "Chromatronics", "Chroma-Chime", MACHINE_SUPPORTS_SAVE )
 
-SYST( 1978, amaztron,   0,         0,      amaztron,  amaztron,  amaztron_state,  empty_init, "Coleco", "Amaze-A-Tron", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK | MACHINE_IMPERFECT_CONTROLS ) // ***
-SYST( 1979, zodiac,     0,         0,      zodiac,    zodiac,    zodiac_state,    empty_init, "Coleco", "Zodiac: The Astrology Computer", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
+SYST( 1978, amaztron,   0,         0,      amaztron,  amaztron,  amaztron_state,  empty_init, "Coleco", "Amaze-A-Tron", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_CONTROLS ) // ***
+SYST( 1979, zodiac,     0,         0,      zodiac,    zodiac,    zodiac_state,    empty_init, "Coleco", "Zodiac: The Astrology Computer", MACHINE_SUPPORTS_SAVE )
 SYST( 1978, cqback,     0,         0,      cqback,    cqback,    cqback_state,    empty_init, "Coleco", "Electronic Quarterback", MACHINE_SUPPORTS_SAVE )
 SYST( 1979, h2hfootb,   0,         0,      h2hfootb,  h2hfootb,  h2hfootb_state,  empty_init, "Coleco", "Head to Head: Electronic Football", MACHINE_SUPPORTS_SAVE )
 SYST( 1979, h2hbaskb,   0,         0,      h2hbaskb,  h2hbaskb,  h2hbaskb_state,  empty_init, "Coleco", "Head to Head: Electronic Basketball (TMS1000 version)", MACHINE_SUPPORTS_SAVE )
@@ -16496,16 +17447,16 @@ SYST( 1981, h2hboxing,  0,         0,      h2hboxing, h2hboxing, h2hboxing_state
 SYST( 1981, quizwizc,   0,         0,      quizwizc,  quizwizc,  quizwizc_state,  empty_init, "Coleco", "Quiz Wiz Challenger", MACHINE_SUPPORTS_SAVE ) // ***
 SYST( 1981, tc4,        0,         0,      tc4,       tc4,       tc4_state,       empty_init, "Coleco", "Total Control 4", MACHINE_SUPPORTS_SAVE | MACHINE_REQUIRES_ARTWORK )
 
-SYST( 1978, litelrn,    0,         0,      litelrn,   litelrn,   litelrn_state,   empty_init, "Concept 2000", "Lite 'n Learn: Electronic Organ", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
+SYST( 1978, litelrn,    0,         0,      litelrn,   litelrn,   litelrn_state,   empty_init, "Concept 2000", "Lite 'n Learn: Electronic Organ", MACHINE_SUPPORTS_SAVE )
 SYST( 1978, mrmusical,  0,         0,      mrmusical, mrmusical, mrmusical_state, empty_init, "Concept 2000", "Mr. Mus-I-Cal", MACHINE_SUPPORTS_SAVE )
 
 SYST( 1979, cnbaskb,    0,         0,      cnbaskb,   cnbaskb,   cnbaskb_state,   empty_init, "Conic", "Electronic Basketball (Conic)", MACHINE_SUPPORTS_SAVE )
 SYST( 1979, cmsport,    0,         0,      cmsport,   cmsport,   cmsport_state,   empty_init, "Conic", "Electronic Multisport", MACHINE_SUPPORTS_SAVE | MACHINE_REQUIRES_ARTWORK )
 SYST( 1979, cnfball,    0,         0,      cnfball,   cnfball,   cnfball_state,   empty_init, "Conic", "Electronic Football (Conic, TMS1000 version)", MACHINE_SUPPORTS_SAVE )
 SYST( 1979, cnfball2,   0,         0,      cnfball2,  cnfball2,  cnfball2_state,  empty_init, "Conic", "Electronic Football II (Conic)", MACHINE_SUPPORTS_SAVE )
-SYST( 1979, eleciq,     0,         0,      eleciq,    eleciq,    eleciq_state,    empty_init, "Conic", "Electronic I.Q.", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
+SYST( 1979, eleciq,     0,         0,      eleciq,    eleciq,    eleciq_state,    empty_init, "Conic", "Electronic I.Q.", MACHINE_SUPPORTS_SAVE )
 
-SYST( 1979, qfire,      0,         0,      qfire,     qfire,     qfire_state,     empty_init, "Electroplay", "Quickfire", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
+SYST( 1979, qfire,      0,         0,      qfire,     qfire,     qfire_state,     empty_init, "Electroplay", "Quickfire", MACHINE_SUPPORTS_SAVE )
 
 SYST( 1979, esoccer,    0,         0,      esoccer,   esoccer,   esoccer_state,   empty_init, "Entex", "Electronic Soccer (Entex)", MACHINE_SUPPORTS_SAVE )
 SYST( 1979, ebball,     0,         0,      ebball,    ebball,    ebball_state,    empty_init, "Entex", "Electronic Baseball (Entex)", MACHINE_SUPPORTS_SAVE )
@@ -16518,7 +17469,7 @@ SYST( 1980, efootb4 ,   0,         0,      efootb4,   efootb4,   efootb4_state, 
 SYST( 1980, ebaskb2 ,   0,         0,      ebaskb2,   ebaskb2,   ebaskb2_state,   empty_init, "Entex", "Electronic Basketball 2 (Entex)", MACHINE_SUPPORTS_SAVE )
 SYST( 1980, raisedvl,   0,         0,      raisedvl,  raisedvl,  raisedvl_state,  empty_init, "Entex", "Raise The Devil Pinball", MACHINE_SUPPORTS_SAVE | MACHINE_REQUIRES_ARTWORK )
 SYST( 1982, ebknight,   0,         0,      ebknight,  raisedvl,  raisedvl_state,  empty_init, "Entex", "Black Knight Pinball (Entex)", MACHINE_SUPPORTS_SAVE | MACHINE_REQUIRES_ARTWORK )
-SYST( 1980, mmarvin,    0,         0,      mmarvin,   mmarvin,   mmarvin_state,   empty_init, "Entex", "Musical Marvin", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_SOUND | MACHINE_CLICKABLE_ARTWORK )
+SYST( 1980, mmarvin,    0,         0,      mmarvin,   mmarvin,   mmarvin_state,   empty_init, "Entex", "Musical Marvin", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_SOUND )
 
 SYST( 1979, f2pbball,   0,         0,      f2pbball,  f2pbball,  f2pbball_state,  empty_init, "Fonas", "2 Player Baseball (Fonas)", MACHINE_SUPPORTS_SAVE )
 SYST( 1979, f3in1,      0,         0,      f3in1,     f3in1,     f3in1_state,     empty_init, "Fonas", "3 in 1: Football, Basketball, Soccer", MACHINE_SUPPORTS_SAVE | MACHINE_REQUIRES_ARTWORK )
@@ -16528,47 +17479,52 @@ SYST( 1980, gjackpot,   0,         0,      gjackpot,  gjackpot,  gjackpot_state,
 SYST( 1980, ginv,       0,         0,      ginv,      ginv,      ginv_state,      empty_init, "Gakken", "Invader (Gakken, cyan version)", MACHINE_SUPPORTS_SAVE )
 SYST( 1981, ginv1000,   0,         0,      ginv1000,  ginv1000,  ginv1000_state,  empty_init, "Gakken", "Galaxy Invader 1000", MACHINE_SUPPORTS_SAVE )
 SYST( 1982, ginv2000,   0,         0,      ginv2000,  ginv2000,  ginv2000_state,  empty_init, "Gakken", "Invader 2000", MACHINE_SUPPORTS_SAVE )
-SYST( 1981, fxmcr165,   0,         0,      fxmcr165,  fxmcr165,  fxmcr165_state,  empty_init, "Gakken", "FX-Micom R-165", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
+SYST( 1981, fxmcr165,   0,         0,      fxmcr165,  fxmcr165,  fxmcr165_state,  empty_init, "Gakken", "FX-Micom R-165", MACHINE_SUPPORTS_SAVE )
 
 SYST( 1979, elecdet,    0,         0,      elecdet,   elecdet,   elecdet_state,   empty_init, "Ideal Toy Corporation", "Electronic Detective", MACHINE_SUPPORTS_SAVE ) // ***
+SYST( 1981, skywriter,  0,         0,      skywriter, skywriter, skywriter_state, empty_init, "Ideal Toy Corporation", "Sky-Writer: The Electronic Message Sender", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW | MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_CONTROLS )
 
-SYST( 1978, starwlb,    0,         0,      starwlb,   starwlb,   starwlb_state,   empty_init, "Kenner", "Star Wars: Electronic Laser Battle Game", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
-SYST( 1979, starwbc,    0,         0,      starwbc,   starwbc,   starwbc_state,   empty_init, "Kenner", "Star Wars: Electronic Battle Command Game", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
-SYST( 1979, starwbcp,   starwbc,   0,      starwbc,   starwbc,   starwbc_state,   empty_init, "Kenner", "Star Wars: Electronic Battle Command Game (patent)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
+SYST( 1978, starwlb,    0,         0,      starwlb,   starwlb,   starwlb_state,   empty_init, "Kenner", "Star Wars: Electronic Laser Battle Game", MACHINE_SUPPORTS_SAVE )
+SYST( 1979, starwbc,    0,         0,      starwbc,   starwbc,   starwbc_state,   empty_init, "Kenner", "Star Wars: Electronic Battle Command Game", MACHINE_SUPPORTS_SAVE )
+SYST( 1979, starwbcp,   starwbc,   0,      starwbc,   starwbc,   starwbc_state,   empty_init, "Kenner", "Star Wars: Electronic Battle Command Game (patent)", MACHINE_SUPPORTS_SAVE )
 SYST( 1980, liveafb,    0,         0,      liveafb,   liveafb,   liveafb_state,   empty_init, "Kenner", "Live Action Football", MACHINE_SUPPORTS_SAVE )
 
+SYST( 1980, mega10k,    0,         0,      mega10k,   mega10k,   mega10k_state,   empty_init, "Jeux Nathan", u8"Mega 10.000: L'Encyclopédie Électronique", MACHINE_SUPPORTS_SAVE ) // ***
+
 SYST( 1979, astro,      0,         0,      astro,     astro,     astro_state,     empty_init, "Kosmos", "Astro", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
+
+SYST( 1980, strobe,     0,         0,      strobe,    strobe,    strobe_state,    empty_init, "Lakeside", "Strobe", MACHINE_SUPPORTS_SAVE )
 
 SYST( 1978, elecbowl,   0,         0,      elecbowl,  elecbowl,  elecbowl_state,  empty_init, "Marx", "Electronic Bowling (Marx)", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_CONTROLS | MACHINE_MECHANICAL | MACHINE_NOT_WORKING ) // ***
 
 SYST( 1979, horseran,   0,         0,      horseran,  horseran,  horseran_state,  empty_init, "Mattel Electronics", "Thoroughbred Horse Race Analyzer", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
-SYST( 1980, mdndclab,   0,         0,      mdndclab,  mdndclab,  mdndclab_state,  empty_init, "Mattel Electronics", "Dungeons & Dragons: Computer Labyrinth Game", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK | MACHINE_IMPERFECT_CONTROLS ) // ***
+SYST( 1980, mdndclab,   0,         0,      mdndclab,  mdndclab,  mdndclab_state,  empty_init, "Mattel Electronics", "Dungeons & Dragons: Computer Labyrinth Game", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_CONTROLS ) // ***
 
-SYST( 1977, comp4,      0,         0,      comp4,     comp4,     comp4_state,     empty_init, "Milton Bradley", "Comp IV", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK | MACHINE_NO_SOUND_HW )
-SYST( 1977, bship,      0,         0,      bship,     bship,     bship_state,     empty_init, "Milton Bradley", "Electronic Battleship (TMS1000 version, Rev. A)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK | MACHINE_IMPERFECT_SOUND ) // ***
-SYST( 1978, bshipb,     bship,     0,      bshipb,    bship,     bshipb_state,    empty_init, "Milton Bradley", "Electronic Battleship (TMS1000 version, Rev. B)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK | MACHINE_IMPERFECT_SOUND | MACHINE_NOT_WORKING ) // ***
-SYST( 1978, simon,      0,         0,      simon,     simon,     simon_state,     empty_init, "Milton Bradley", "Simon (Rev. A)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
-SYST( 1979, simonf,     simon,     0,      simon,     simon,     simon_state,     empty_init, "Milton Bradley", "Simon (Rev. F)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
-SYST( 1979, ssimon,     0,         0,      ssimon,    ssimon,    ssimon_state,    empty_init, "Milton Bradley", "Super Simon", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
+SYST( 1977, comp4,      0,         0,      comp4,     comp4,     comp4_state,     empty_init, "Milton Bradley", "Comp IV", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
+SYST( 1977, bship,      0,         0,      bship,     bship,     bship_state,     empty_init, "Milton Bradley", "Electronic Battleship (TMS1000 version, rev. A)", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_SOUND ) // ***
+SYST( 1978, bshipb,     bship,     0,      bshipb,    bship,     bshipb_state,    empty_init, "Milton Bradley", "Electronic Battleship (TMS1000 version, rev. B)", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_SOUND | MACHINE_NOT_WORKING ) // ***
+SYST( 1978, simon,      0,         0,      simon,     simon,     simon_state,     empty_init, "Milton Bradley", "Simon (rev. A)", MACHINE_SUPPORTS_SAVE )
+SYST( 1979, simonf,     simon,     0,      simon,     simon,     simon_state,     empty_init, "Milton Bradley", "Simon (rev. F)", MACHINE_SUPPORTS_SAVE )
+SYST( 1979, ssimon,     0,         0,      ssimon,    ssimon,    ssimon_state,    empty_init, "Milton Bradley", "Super Simon", MACHINE_SUPPORTS_SAVE )
 SYST( 1979, bigtrak,    0,         0,      bigtrak,   bigtrak,   bigtrak_state,   empty_init, "Milton Bradley", "Big Trak", MACHINE_SUPPORTS_SAVE | MACHINE_MECHANICAL ) // ***
-SYST( 1981, mbdtower,   0,         0,      mbdtower,  mbdtower,  mbdtower_state,  empty_init, "Milton Bradley", "Dark Tower (Milton Bradley)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK | MACHINE_MECHANICAL ) // ***
-SYST( 1983, arcmania,   0,         0,      arcmania,  arcmania,  arcmania_state,  empty_init, "Milton Bradley", "Electronic Arcade Mania (Arcade Machine)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK | MACHINE_REQUIRES_ARTWORK ) // ***
+SYST( 1981, mbdtower,   0,         0,      mbdtower,  mbdtower,  mbdtower_state,  empty_init, "Milton Bradley", "Dark Tower (Milton Bradley)", MACHINE_SUPPORTS_SAVE | MACHINE_MECHANICAL ) // ***
+SYST( 1983, arcmania,   0,         0,      arcmania,  arcmania,  arcmania_state,  empty_init, "Milton Bradley", "Electronic Arcade Mania (Arcade Machine)", MACHINE_SUPPORTS_SAVE | MACHINE_REQUIRES_ARTWORK ) // ***
 
-SYST( 1977, cnsector,   0,         0,      cnsector,  cnsector,  cnsector_state,  empty_init, "Parker Brothers", "Code Name: Sector", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK | MACHINE_NO_SOUND_HW ) // ***
-SYST( 1978, merlin,     0,         0,      merlin,    merlin,    merlin_state,    empty_init, "Parker Brothers", "Merlin: The Electronic Wizard", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
+SYST( 1977, cnsector,   0,         0,      cnsector,  cnsector,  cnsector_state,  empty_init, "Parker Brothers", "Code Name: Sector", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW ) // ***
+SYST( 1978, merlin,     0,         0,      merlin,    merlin,    merlin_state,    empty_init, "Parker Brothers", "Merlin: The Electronic Wizard", MACHINE_SUPPORTS_SAVE )
 SYST( 1978, pbmastm,    0,         0,      pbmastm,   pbmastm,   pbmastm_state,   empty_init, "Parker Brothers", "Electronic Master Mind (Parker Brothers)", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW ) // ***
-SYST( 1979, stopthief,  0,         0,      stopthief, stopthief, stopthief_state, empty_init, "Parker Brothers", "Stop Thief: Electronic Cops and Robbers (Electronic Crime Scanner)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK ) // ***
-SYST( 1979, stopthiefp, stopthief, 0,      stopthief, stopthief, stopthief_state, empty_init, "Parker Brothers", "Stop Thief: Electronic Cops and Robbers (Electronic Crime Scanner) (patent)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK ) // ***
+SYST( 1979, stopthief,  0,         0,      stopthief, stopthief, stopthief_state, empty_init, "Parker Brothers", "Stop Thief: Electronic Cops and Robbers (Electronic Crime Scanner)", MACHINE_SUPPORTS_SAVE ) // ***
+SYST( 1979, stopthiefp, stopthief, 0,      stopthief, stopthief, stopthief_state, empty_init, "Parker Brothers", "Stop Thief: Electronic Cops and Robbers (Electronic Crime Scanner) (patent)", MACHINE_SUPPORTS_SAVE ) // ***
 SYST( 1980, bankshot,   0,         0,      bankshot,  bankshot,  bankshot_state,  empty_init, "Parker Brothers", "Bank Shot: Electronic Pool", MACHINE_SUPPORTS_SAVE )
 SYST( 1980, splitsec,   0,         0,      splitsec,  splitsec,  splitsec_state,  empty_init, "Parker Brothers", "Split Second", MACHINE_SUPPORTS_SAVE )
-SYST( 1982, mmerlin,    0,         0,      mmerlin,   mmerlin,   mmerlin_state,   empty_init, "Parker Brothers", "Master Merlin", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
-SYST( 1982, lostreas,   0,         0,      lostreas,  lostreas,  lostreas_state,  empty_init, "Parker Brothers", "Lost Treasure: The Electronic Deep-Sea Diving Game (Electronic Dive-Control Center)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK ) // ***
+SYST( 1982, mmerlin,    0,         0,      mmerlin,   mmerlin,   mmerlin_state,   empty_init, "Parker Brothers", "Master Merlin", MACHINE_SUPPORTS_SAVE )
+SYST( 1982, lostreas,   0,         0,      lostreas,  lostreas,  lostreas_state,  empty_init, "Parker Brothers", "Lost Treasure: The Electronic Deep-Sea Diving Game (Electronic Dive-Control Center)", MACHINE_SUPPORTS_SAVE ) // ***
 
 SYST( 1978, alphie,     0,         0,      alphie,    alphie,    alphie_state,    empty_init, "Playskool", "Alphie: The Electronic Robot (patent)", MACHINE_SUPPORTS_SAVE ) // ***
 
 SYST( 1980, tcfball,    0,         0,      tcfball,   tcfball,   tcfball_state,   empty_init, "Tandy Corporation", "Championship Football (model 60-2150)", MACHINE_SUPPORTS_SAVE )
 SYST( 1980, tcfballa,   tcfball,   0,      tcfballa,  tcfballa,  tcfballa_state,  empty_init, "Tandy Corporation", "Championship Football (model 60-2151)", MACHINE_SUPPORTS_SAVE )
-SYST( 1981, comparc,    0,         0,      comparc,   comparc,   comparc_state,   empty_init, "Tandy Corporation", "Computerized Arcade (TMS1100 version, model 60-2159)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK ) // some of the minigames: ***
+SYST( 1981, comparc,    0,         0,      comparc,   comparc,   comparc_state,   empty_init, "Tandy Corporation", "Computerized Arcade (TMS1100 version, model 60-2159)", MACHINE_SUPPORTS_SAVE ) // some of the games: ***
 SYST( 1982, monkeysee,  0,         0,      monkeysee, monkeysee, monkeysee_state, empty_init, "Tandy Corporation", "Monkey See (1982 version)", MACHINE_SUPPORTS_SAVE )
 SYST( 1984, t3in1sa,    0,         0,      t3in1sa,   t3in1sa,   t3in1sa_state,   empty_init, "Tandy Corporation", "3 in 1 Sports Arena", MACHINE_SUPPORTS_SAVE | MACHINE_REQUIRES_ARTWORK )
 SYST( 1984, vclock3,    0,         0,      vclock3,   vclock3,   vclock3_state,   empty_init, "Tandy Corporation", "VoxClock 3", MACHINE_SUPPORTS_SAVE )
@@ -16590,9 +17546,11 @@ SYST( 1976, ti30,       0,         0,      ti30,      ti30,      ti30_state,    
 SYST( 1976, tibusan,    0,         0,      ti30,      tibusan,   ti30_state,      empty_init, "Texas Instruments", "TI Business Analyst", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
 SYST( 1977, tiprog,     0,         0,      ti30,      tiprog,    ti30_state,      empty_init, "Texas Instruments", "TI Programmer", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
 SYST( 1977, ti1000,     0,         0,      ti1000,    ti1000,    ti1000_state,    empty_init, "Texas Instruments", "TI-1000 (1977 version)", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
-SYST( 1977, wizatron,   0,         0,      wizatron,  wizatron,  wizatron_state,  empty_init, "Texas Instruments", "Wiz-A-Tron", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
-SYST( 1976, lilprof,    0,         0,      lilprof,   lilprof,   lilprof_state,   empty_init, "Texas Instruments", "Little Professor (1976 version)", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
-SYST( 1978, lilprofa,   lilprof,   0,      lilprofa,  lilprofa,  lilprofa_state,  empty_init, "Texas Instruments", "Little Professor (1978 version)", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
+SYST( 1978, lilprof,    0,         0,      lilprof,   lilprof,   lilprof_state,   empty_init, "Texas Instruments", "Little Professor (1978 version)", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
+SYST( 1976, lilprofoa,  lilprof,   0,      lilprofo,  lilprofo,  lilprofo_state,  empty_init, "Texas Instruments", "Little Professor (1976 version, rev. A)", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
+SYST( 1976, lilprofob,  lilprof,   0,      lilprofo,  lilprofo,  lilprofo_state,  empty_init, "Texas Instruments", "Little Professor (1976 version, rev. B)", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
+SYST( 1976, lilprofo,   lilprof,   0,      lilprofoc, lilprofo,  lilprofo_state,  empty_init, "Texas Instruments", "Little Professor (1976 version, rev. C)", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
+SYST( 1977, wizatron,   0,         0,      lilprofo,  wizatron,  lilprofo_state,  empty_init, "Texas Instruments", "Wiz-A-Tron", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
 SYST( 1977, ti1680,     0,         0,      ti1680,    ti1680,    ti1680_state,    empty_init, "Texas Instruments", "TI-1680", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
 SYST( 1977, dataman,    0,         0,      dataman,   dataman,   dataman_state,   empty_init, "Texas Instruments", "DataMan", MACHINE_SUPPORTS_SAVE | MACHINE_NO_SOUND_HW )
 SYST( 1980, mathmarv,   0,         0,      mathmarv,  mathmarv,  mathmarv_state,  empty_init, "Texas Instruments", "Math Marvel", MACHINE_SUPPORTS_SAVE )
@@ -16602,13 +17560,15 @@ SYST( 1979, tithermos,  0,         0,      tithermos, tithermos, tithermos_state
 SYST( 1979, subwars,    0,         0,      subwars,   subwars,   subwars_state,   empty_init, "Tiger Electronics", "Sub Wars (LED version)", MACHINE_SUPPORTS_SAVE )
 SYST( 1980, playmaker,  0,         0,      playmaker, playmaker, playmaker_state, empty_init, "Tiger Electronics", "Playmaker: Hockey, Soccer, Basketball", MACHINE_SUPPORTS_SAVE | MACHINE_REQUIRES_ARTWORK )
 SYST( 1980, dxfootb,    0,         0,      dxfootb,   dxfootb,   dxfootb_state,   empty_init, "Tiger Electronics", "Deluxe Football with Instant Replay", MACHINE_SUPPORTS_SAVE )
-SYST( 1979, copycat,    0,         0,      copycat,   copycat,   copycat_state,   empty_init, "Tiger Electronics", "Copy Cat (model 7-520)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
-SYST( 1989, copycata,   copycat,   0,      copycata,  copycata,  copycata_state,  empty_init, "Tiger Electronics", "Copy Cat (model 7-522)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
-SYST( 1981, ditto,      0,         0,      ditto,     ditto,     ditto_state,     empty_init, "Tiger Electronics", "Ditto", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
-SYST( 1982, t7in1ss,    0,         0,      t7in1ss,   t7in1ss,   t7in1ss_state,   empty_init, "Tiger Electronics", "7 in 1 Sports Stadium", MACHINE_SUPPORTS_SAVE | MACHINE_REQUIRES_ARTWORK )
+SYST( 1979, copycat,    0,         0,      copycat,   copycat,   copycat_state,   empty_init, "Tiger Electronics", "Copy Cat (model 7-520)", MACHINE_SUPPORTS_SAVE )
+SYST( 1989, copycata,   copycat,   0,      copycata,  copycata,  copycata_state,  empty_init, "Tiger Electronics", "Copy Cat (model 7-522)", MACHINE_SUPPORTS_SAVE )
+SYST( 1981, ditto,      0,         0,      ditto,     ditto,     ditto_state,     empty_init, "Tiger Electronics", "Ditto", MACHINE_SUPPORTS_SAVE )
+SYST( 1981, fingbowl,   0,         0,      fingbowl,  fingbowl,  fingbowl_state,  empty_init, "Tiger Electronics", "Finger Bowl", MACHINE_SUPPORTS_SAVE ) // some of the games: ***
+SYST( 1982, t7in1ss,    0,         0,      t7in1ss,   t7in1ss,   t7in1ss_state,   empty_init, "Tiger Electronics", "7 in 1 Sports Stadium", MACHINE_SUPPORTS_SAVE )
 
+SYST( 1979, tmvolleyb,  0,         0,      tmvolleyb, tmvolleyb, tmvolleyb_state, empty_init, "Tomy", "Volleyball (Tomy)", MACHINE_SUPPORTS_SAVE )
 SYST( 1979, tbreakup,   0,         0,      tbreakup,  tbreakup,  tbreakup_state,  empty_init, "Tomy", "Break Up (Tomy)", MACHINE_SUPPORTS_SAVE )
-SYST( 1980, phpball,    0,         0,      phpball,   phpball,   phpball_state,   empty_init, "Tomy", "Power House Pinball", MACHINE_SUPPORTS_SAVE | MACHINE_REQUIRES_ARTWORK )
+SYST( 1980, phpball,    0,         0,      phpball,   phpball,   phpball_state,   empty_init, "Tomy", "Power House Pinball", MACHINE_SUPPORTS_SAVE )
 
 SYST( 1982, tdracula,   0,         0,      tdracula,  tdracula,  tdracula_state,  empty_init, "Tsukuda", "The Dracula (Tsukuda)", MACHINE_SUPPORTS_SAVE )
 SYST( 1983, slepachi,   0,         0,      slepachi,  slepachi,  slepachi_state,  empty_init, "Tsukuda", "Slot Elepachi", MACHINE_SUPPORTS_SAVE )
@@ -16616,7 +17576,7 @@ SYST( 1983, slepachi,   0,         0,      slepachi,  slepachi,  slepachi_state,
 SYST( 1980, scruiser,   0,         0,      scruiser,  scruiser,  scruiser_state,  empty_init, "U.S. Games Corporation", "Space Cruiser (U.S. Games)", MACHINE_SUPPORTS_SAVE | MACHINE_REQUIRES_ARTWORK )
 SYST( 1980, ssports4,   0,         0,      ssports4,  ssports4,  ssports4_state,  empty_init, "U.S. Games Corporation", "Super Sports-4", MACHINE_SUPPORTS_SAVE | MACHINE_REQUIRES_ARTWORK )
 
-SYST( 1983, xl25,       0,         0,      xl25,      xl25,      xl25_state,      empty_init, "Vulcan Electronics", "XL 25", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
+SYST( 1983, xl25,       0,         0,      xl25,      xl25,      xl25_state,      empty_init, "Vulcan Electronics", "XL 25", MACHINE_SUPPORTS_SAVE )
 
 // ***: As far as MAME is concerned, the game is emulated fine. But for it to be playable, it requires interaction
 // with other, unemulatable, things eg. game board/pieces, book, playing cards, pen & paper, etc.

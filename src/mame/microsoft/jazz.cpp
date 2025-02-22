@@ -35,7 +35,8 @@
  *         Intel 82358               EISA Bus Controller
  *         Intel 82357               EISA Integrated System Peripheral (ISP)
  *         Intel 82352 x 2           EISA Bus Buffer (EBB)
- *         Emulex FAS216             SCSI controller
+ *         Emulex FAS216             SCSI controller (similar to NCR 53CF94-2;
+ *                                   older boards have NCR 53C94 instead)
  *         27C01                     128k EPROM
  *         28F020                    256k flash memory
  *         NEC μPD31432              ARC address path ASIC
@@ -91,10 +92,7 @@
 #include "bus/pc_kbd/keyboards.h"
 
 #include "imagedev/floppy.h"
-#include "formats/pc_dsk.h"
 #include "softlist.h"
-
-#include "debugger.h"
 
 #include "jazz.lh"
 
@@ -133,12 +131,12 @@ public:
 
 protected:
 	// driver_device overrides
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	// address maps
-	void cpu_map(address_map &map);
-	void mct_map(address_map &map);
+	void cpu_map(address_map &map) ATTR_COLD;
+	void mct_map(address_map &map) ATTR_COLD;
 
 	// machine config
 	void jazz(machine_config &config);
@@ -229,8 +227,8 @@ void jazz_state::mct_map(address_map &map)
 	// LE: only reads 4000
 	// BE: read 400d, write 400d, write 400c
 	map(0x80004000, 0x8000400f).lrw8(
-			NAME([this] (offs_t offset) { return m_rtc->read(1); }),
-			NAME([this] (offs_t offset, u8 data) { m_rtc->write(1, data); }));
+			NAME([this] (offs_t offset) { return m_rtc->data_r(); }),
+			NAME([this] (offs_t offset, u8 data) { m_rtc->data_w(data); }));
 	map(0x80005000, 0x80005000).rw(m_kbdc, FUNC(ps2_keyboard_controller_device::data_r), FUNC(ps2_keyboard_controller_device::data_w));
 	map(0x80005001, 0x80005001).rw(m_kbdc, FUNC(ps2_keyboard_controller_device::status_r), FUNC(ps2_keyboard_controller_device::command_w));
 	map(0x80006000, 0x80006007).rw(m_ace[0], FUNC(ns16550_device::ins8250_r), FUNC(ns16550_device::ins8250_w));
@@ -313,7 +311,7 @@ void jazz_state::jazz(machine_config &config)
 	NSCSI_CONNECTOR(config, "scsi:6", jazz_scsi_devices, "cdrom");
 
 	// scsi host adapter
-	NSCSI_CONNECTOR(config, "scsi:7").option_set("ncr53cf94", NCR53CF94).clock(24_MHz_XTAL).machine_config(
+	NSCSI_CONNECTOR(config, "scsi:7").option_set("ncr53cf94", NCR53CF94).clock(40000000).machine_config(
 		[this] (device_t *device)
 		{
 			ncr53cf94_device &adapter = downcast<ncr53cf94_device &>(*device);
@@ -415,7 +413,7 @@ void jazz_state::jazz(machine_config &config)
 	m_net->set_bus(m_mct_adr, 1);
 
 	I82357(config, m_isp, 14.318181_MHz_XTAL);
-	m_isp->out_rtc_cb().set(m_rtc, FUNC(mc146818_device::write));
+	m_isp->out_rtc_address_cb().set(m_rtc, FUNC(mc146818_device::address_w));
 	m_isp->out_int_cb().set_inputline(m_cpu, INPUT_LINE_IRQ2);
 	m_isp->out_nmi_cb().set_inputline(m_cpu, INPUT_LINE_IRQ3);
 	m_isp->out_spkr_cb().set(m_buzzer, FUNC(speaker_sound_device::level_w));

@@ -36,10 +36,10 @@ public:
 
 protected:
 	// device-level overrides
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	// optional information overrides
-	virtual void device_add_mconfig(machine_config &config) override;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
 
 	virtual uint8_t read(offs_t offset, int inhrom, int inhram, int be) override;
 	virtual void write(offs_t offset, uint8_t data, int inhrom, int inhram, int be) override;
@@ -49,9 +49,9 @@ private:
 
 	void control_w(uint8_t data);
 	uint8_t status_r();
-	DECLARE_WRITE_LINE_MEMBER(fdc_irq_w);
-	DECLARE_WRITE_LINE_MEMBER(fdc_drq_w);
-	DECLARE_WRITE_LINE_MEMBER(irq_w);
+	void fdc_irq_w(int state);
+	void fdc_drq_w(int state);
+	void irq_w(int state);
 
 	required_device<fd1793_device> m_fdc;
 	required_device_array<floppy_connector, 4> m_floppies;

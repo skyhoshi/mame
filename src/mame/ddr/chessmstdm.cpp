@@ -65,8 +65,8 @@ public:
 	void chessmstdm(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	required_device<z80_device> m_maincpu;
@@ -78,8 +78,15 @@ private:
 	required_ioport_array<2> m_inputs;
 	output_finder<4> m_digits;
 
-	void chessmstdm_mem(address_map &map);
-	void chessmstdm_io(address_map &map);
+	u16 m_matrix = 0;
+	u8 m_led_data = 0;
+	u8 m_direct_leds = 0;
+	u8 m_digit_matrix = 0;
+	int m_digit_dot = 0;
+	u16 m_digit_data = 0;
+
+	void chessmstdm_mem(address_map &map) ATTR_COLD;
+	void chessmstdm_io(address_map &map) ATTR_COLD;
 
 	void reset_w(u8 data = 0);
 	u8 reset_r();
@@ -91,13 +98,6 @@ private:
 
 	void update_leds();
 	void update_digits();
-
-	u16 m_matrix = 0;
-	u8 m_led_data = 0;
-	u8 m_direct_leds = 0;
-	u8 m_digit_matrix = 0;
-	int m_digit_dot = 0;
-	u16 m_digit_data = 0;
 };
 
 void chessmstdm_state::machine_start()
@@ -264,17 +264,14 @@ static INPUT_PORTS_START( chessmstdm )
 	PORT_BIT(0x02, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_NAME("Move Back")               PORT_CODE(KEYCODE_LEFT)
 	PORT_BIT(0x04, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_NAME("Board")                   PORT_CODE(KEYCODE_B)
 	PORT_BIT(0x08, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_NAME("Match / Time")            PORT_CODE(KEYCODE_M)
-	PORT_BIT(0x10, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_NAME("Parameter / Information") PORT_CODE(KEYCODE_I)
+	PORT_BIT(0x10, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_NAME("Parameter / Information") PORT_CODE(KEYCODE_P)
 	PORT_BIT(0x20, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_NAME("Selection / Dialogue")    PORT_CODE(KEYCODE_S)
 	PORT_BIT(0x40, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_NAME("Function / Notation")     PORT_CODE(KEYCODE_F)
 	PORT_BIT(0x80, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_NAME("Enter")                   PORT_CODE(KEYCODE_ENTER) PORT_CODE(KEYCODE_ENTER_PAD)
 
 	PORT_START("IN.1")
-	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_NAME("Monitor") PORT_CODE(KEYCODE_F1) PORT_CHANGED_MEMBER(DEVICE_SELF, chessmstdm_state, monitor_button, 0)
-	PORT_BIT(0x02, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_NAME("View")    PORT_CODE(KEYCODE_F2) PORT_CHANGED_MEMBER(DEVICE_SELF, chessmstdm_state, view_button, 0)
-
-	PORT_START("CLICKABLE") // helper for clickable artwork
-	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_OTHER)
+	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_NAME("Monitor") PORT_CODE(KEYCODE_F1) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(chessmstdm_state::monitor_button), 0)
+	PORT_BIT(0x02, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_NAME("View")    PORT_CODE(KEYCODE_F2) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(chessmstdm_state::view_button), 0)
 INPUT_PORTS_END
 
 
@@ -283,7 +280,7 @@ INPUT_PORTS_END
     Machine Configs
 *******************************************************************************/
 
-static const z80_daisy_config chessmstdm_daisy_chain[] =
+static const z80_daisy_config daisy_chain[] =
 {
 	{ "z80pio1" },
 	{ nullptr }
@@ -295,7 +292,7 @@ void chessmstdm_state::chessmstdm(machine_config &config)
 	Z80(config, m_maincpu, 8_MHz_XTAL / 2);
 	m_maincpu->set_addrmap(AS_PROGRAM, &chessmstdm_state::chessmstdm_mem);
 	m_maincpu->set_addrmap(AS_IO, &chessmstdm_state::chessmstdm_io);
-	m_maincpu->set_daisy_config(chessmstdm_daisy_chain);
+	m_maincpu->set_daisy_config(daisy_chain);
 
 	auto &strobe(CLOCK(config, "strobe", 500)); // from 555 timer, 50% duty
 	strobe.signal_handler().set(m_pio[1], FUNC(z80pio_device::strobe_b));
@@ -354,4 +351,4 @@ ROM_END
 *******************************************************************************/
 
 //    YEAR  NAME        PARENT  COMPAT  MACHINE     INPUT       CLASS             INIT        COMPANY                                     FULLNAME                FLAGS
-SYST( 1987, chessmstdm, 0,      0,      chessmstdm, chessmstdm, chessmstdm_state, empty_init, "VEB Mikroelektronik \"Karl Marx\" Erfurt", "Chess-Master Diamond", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
+SYST( 1987, chessmstdm, 0,      0,      chessmstdm, chessmstdm, chessmstdm_state, empty_init, "VEB Mikroelektronik \"Karl Marx\" Erfurt", "Chess-Master Diamond", MACHINE_SUPPORTS_SAVE )

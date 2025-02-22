@@ -73,13 +73,13 @@ public:
 	void mfabfz(machine_config &config);
 
 private:
-	void mfabfz85_io(address_map &map);
-	void mfabfz_io(address_map &map);
-	void mfabfz_mem(address_map &map);
-	void machine_reset() override;
-	void machine_start() override;
-	DECLARE_WRITE_LINE_MEMBER(kansas_r);
-	DECLARE_WRITE_LINE_MEMBER(kansas_w);
+	void mfabfz85_io(address_map &map) ATTR_COLD;
+	void mfabfz_io(address_map &map) ATTR_COLD;
+	void mfabfz_mem(address_map &map) ATTR_COLD;
+	void machine_reset() override ATTR_COLD;
+	void machine_start() override ATTR_COLD;
+	void kansas_r(int state);
+	void kansas_w(int state);
 	u8 m_cass_data[5]{};
 	bool m_cassoutbit = false, m_cassbit = false, m_cassold = false;
 	required_device<cpu_device> m_maincpu;
@@ -116,7 +116,7 @@ INPUT_PORTS_END
 
 // Note: if the other baud rates are to be supported, then this function
 //       will need to be redesigned.
-WRITE_LINE_MEMBER( mfabfz_state::kansas_w )
+void mfabfz_state::kansas_w(int state)
 {
 	if ((m_cass->get_state() & CASSETTE_MASK_UISTATE) == CASSETTE_RECORD)
 	{
@@ -157,7 +157,7 @@ WRITE_LINE_MEMBER( mfabfz_state::kansas_w )
 	m_uart->write_txc(state);
 }
 
-WRITE_LINE_MEMBER(mfabfz_state::kansas_r)
+void mfabfz_state::kansas_r(int state)
 {
 	// incoming @76923Hz
 	if (state)

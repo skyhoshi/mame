@@ -129,7 +129,7 @@ protected:
 	nasbus_slot_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock);
 
 	// device_t implementation
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 private:
 	required_device<nasbus_device> m_bus;
@@ -156,12 +156,12 @@ public:
 	template <typename T> void set_io_space(T &&tag, int spacenum) { m_io.set_tag(std::forward<T>(tag), spacenum); }
 
 	// from cards
-	DECLARE_WRITE_LINE_MEMBER( ram_disable_w );
+	void ram_disable_w(int state);
 
 protected:
 	// device_t implementation
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 private:
 	using card_vector = std::vector<std::reference_wrapper<device_nasbus_card_interface> >;
@@ -192,7 +192,7 @@ protected:
 
 	virtual void interface_pre_start() override;
 
-	DECLARE_WRITE_LINE_MEMBER( ram_disable_w ) { m_nasbus->ram_disable_w(state); }
+	void ram_disable_w(int state) { m_nasbus->ram_disable_w(state); }
 
 	address_space &program_space() { return *m_nasbus->m_program; }
 	address_space &io_space() { return *m_nasbus->m_io; }

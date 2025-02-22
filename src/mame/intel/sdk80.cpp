@@ -57,10 +57,10 @@ public:
 	void sdk80(machine_config &config);
 
 private:
-	DECLARE_WRITE_LINE_MEMBER( usart_clock_tick );
+	void usart_clock_tick(int state);
 
-	void sdk80_io(address_map &map);
-	void sdk80_mem(address_map &map);
+	void sdk80_io(address_map &map) ATTR_COLD;
+	void sdk80_mem(address_map &map) ATTR_COLD;
 
 	required_device<cpu_device> m_maincpu;
 	required_device<i8251_device> m_usart;
@@ -101,7 +101,7 @@ static INPUT_PORTS_START( sdk80 )
 	PORT_DIPSETTING(    0x40, "75")
 INPUT_PORTS_END
 
-WRITE_LINE_MEMBER( sdk80_state::usart_clock_tick )
+void sdk80_state::usart_clock_tick(int state)
 {
 	uint8_t old_counter = m_usart_divide_counter;
 	m_usart_divide_counter++;

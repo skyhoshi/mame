@@ -237,6 +237,7 @@ if BASE_TARGETOS=="unix" then
 			"-framework QuartzCore",
 			"-framework OpenGL",
 			"-framework IOKit",
+			"-rpath " .. _OPTIONS["SDL_FRAMEWORK_PATH"],
 		}
 
 

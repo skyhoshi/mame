@@ -19,18 +19,18 @@ public:
 
 	auto rxd_cb() { return m_rxd_cb.bind(); }
 
-	DECLARE_WRITE_LINE_MEMBER(txd_w) { m_txd = state ? 1U : 0U; }
+	void txd_w(int state) { m_txd = state ? 1U : 0U; }
 
 protected:
-	virtual const tiny_rom_entry *device_rom_region() const override;
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual ioport_constructor device_input_ports() const override;
-	virtual void device_start() override;
+	virtual const tiny_rom_entry *device_rom_region() const override ATTR_COLD;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual ioport_constructor device_input_ports() const override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
 
 	uint8_t p1_r();
 	uint8_t p2_r();
 	void p2_w(uint8_t data);
-	DECLARE_READ_LINE_MEMBER(t1_r);
+	int t1_r();
 	uint8_t bus_r();
 	void bus_w(uint8_t data);
 

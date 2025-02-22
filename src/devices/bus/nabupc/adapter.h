@@ -45,13 +45,13 @@ public:
 	virtual const char *image_brief_type_name() const noexcept override { return "hcca"; }
 	virtual std::pair<std::error_condition, std::string> call_load() override;
 
-	virtual DECLARE_WRITE_LINE_MEMBER(input_txd) override;
+	virtual void input_txd(int state) override;
 
 protected:
 	// device_t implementation
-	virtual ioport_constructor device_input_ports() const override;
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual ioport_constructor device_input_ports() const override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 	// device_buffered_serial_interface implementation
 	virtual void tra_callback() override;

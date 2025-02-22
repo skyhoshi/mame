@@ -170,7 +170,7 @@ void device_sns_cart_interface::rom_map_setup(uint32_t size)
 //  write_irq - set the cart IRQ output
 //-------------------------------------------------
 
-WRITE_LINE_MEMBER(device_sns_cart_interface::write_irq)
+void device_sns_cart_interface::write_irq(int state)
 {
 	if (m_slot != nullptr)
 		m_slot->write_irq(state);
@@ -227,7 +227,7 @@ base_sns_cart_slot_device::base_sns_cart_slot_device(const machine_config &mconf
 	m_type(SNES_MODE20),
 	m_cart(nullptr),
 	m_irq_callback(*this),
-	m_open_bus_callback(*this)
+	m_open_bus_callback(*this, 0xff)
 {
 }
 
@@ -263,9 +263,6 @@ void base_sns_cart_slot_device::device_start()
 	m_cart = dynamic_cast<device_sns_cart_interface *>(get_card_device());
 	if (m_cart != nullptr)
 		m_cart->m_slot = this;
-
-	m_irq_callback.resolve_safe();
-	m_open_bus_callback.resolve_safe(0xff);
 }
 
 
@@ -1047,8 +1044,7 @@ std::string base_sns_cart_slot_device::get_default_card_software(get_default_car
 		std::vector<uint8_t> rom(len);
 		int type = 0, addon = 0;
 
-		size_t actual;
-		hook.image_file()->read(&rom[0], len, actual); // FIXME: check for error result or read returning short
+		/*auto const [err, actual] =*/ read(*hook.image_file(), &rom[0], len); // FIXME: check for error result or read returning short
 
 		offset = snes_skip_header(&rom[0], len);
 

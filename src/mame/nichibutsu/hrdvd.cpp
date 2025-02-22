@@ -18,9 +18,12 @@
       H8/3002
       MN7100 8-bit channel data acquisition system
       Fujitsu MD0208
-      Zoran ZR36110PQC
+      Zoran ZR36110PQC (mpeg ps/video decoder)
+      Nippon Steel Corp NN71003F (mpeg audio decoder)
+      uPD6379A dual 16-bits DAC
+      Toshiba TC9223 PLL
       IDE and RS232c ports
-      xtal 27 MHz, 12.288MHz
+      xtal 27 MHz (dvd board), 12.288MHz (main board)
 
     H8 ports directions:
       8: fe /5 ---ooooi
@@ -31,16 +34,23 @@
 ***********************************************************************************************************/
 
 #include "emu.h"
+
+#include "nichisnd.h"
+
 #include "bus/ata/atadev.h"
 #include "bus/ata/atapicdr.h"
 #include "bus/ata/ataintf.h"
 #include "cpu/h8/h83002.h"
 #include "cpu/m68000/tmp68301.h"
 #include "machine/nvram.h"
+#include "machine/tc9223.h"
 #include "machine/timer.h"
+#include "sound/nn71003f.h"
 #include "video/v9938.h"
 #include "video/zr36110.h"
-#include "nichisnd.h"
+
+#include "speaker.h"
+
 
 class hrdvd_ata_controller_device : public abstract_ata_interface_device
 {
@@ -64,8 +74,14 @@ public:
 		m_maincpu(*this, "maincpu"),
 		m_subcpu(*this, "subcpu"),
 		m_ata(*this, "ata"),
+		m_video(*this, "v9958"),
 		m_mpeg(*this, "mpeg"),
+		m_mpega(*this, "mpeg_audio"),
+		m_pll(*this, "pll"),
 		m_nichisnd(*this, "nichisnd"),
+		m_lspeaker(*this, "lspeaker"),
+		m_rspeaker(*this, "rspeaker"),
+		m_screen(*this, "screen"),
 		m_key(*this, "KEY.%u", 0),
 		m_region_maincpu(*this, "maincpu")
 	{ }
@@ -73,18 +89,30 @@ public:
 	required_device<tmp68301_device> m_maincpu;
 	required_device<h83002_device> m_subcpu;
 	required_device<hrdvd_ata_controller_device> m_ata;
+	required_device<v9958_device> m_video;
 	required_device<zr36110_device> m_mpeg;
+	required_device<nn71003f_device> m_mpega;
+	required_device<tc9223_device> m_pll;
 	required_device<nichisnd_device> m_nichisnd;
+	required_device<speaker_device> m_lspeaker;
+	required_device<speaker_device> m_rspeaker;
+	required_device<screen_device> m_screen;
 	required_ioport_array<5> m_key;
 	required_memory_region m_region_maincpu;
 
 	uint16_t m_mux_data;
 
-	uint8_t m_p5, m_pa, m_pb;
+	uint8_t m_p6, m_pa, m_pb;
 
-	uint16_t pb_r();
-	void pb_w(uint16_t data);
-	void pa_w(uint16_t data);
+	bool m_mpeg_dreq;
+
+	void mpeg_dreq_w(int state);
+
+	uint8_t p6_r();
+	void p6_w(uint8_t data);
+	uint8_t pb_r();
+	void pb_w(uint8_t data);
+	void pa_w(uint8_t data);
 
 	uint8_t cs0_r(offs_t offset);
 	void cs0_w(offs_t offset, uint8_t data);
@@ -93,43 +121,68 @@ public:
 	void hrdvd_mux_w(uint16_t data);
 	void tmp68301_parallel_port_w(uint16_t data);
 
-	DECLARE_WRITE_LINE_MEMBER(ata_irq);
-	DECLARE_WRITE_LINE_MEMBER(ata_drq);
+	void ata_irq(int state);
+	void ata_drq(int state);
 
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	void general_init(int patchaddress, int patchvalue);
 	void hrdvd(machine_config &config);
-	void hrdvd_map(address_map &map);
-	void hrdvd_sub_io_map(address_map &map);
-	void hrdvd_sub_map(address_map &map);
+	void hrdvd_map(address_map &map) ATTR_COLD;
+	void hrdvd_sub_map(address_map &map) ATTR_COLD;
 
 	static void dvdrom_config(device_t *device);
 };
 
-uint16_t hrdvd_state::pb_r()
+void hrdvd_state::mpeg_dreq_w(int state)
+{
+	m_mpeg_dreq = state;
+	m_subcpu->set_input_line(H8_INPUT_LINE_DREQ0, m_mpeg_dreq && !(m_p6 & 0x04));
+}
+
+uint8_t hrdvd_state::p6_r()
+{
+	return m_p6;
+}
+
+void hrdvd_state::p6_w(uint8_t data)
+{
+	u8 delta = data ^ m_p6;
+	m_p6 = data;
+	if(delta & 0x02)
+		m_mpeg->reset();
+
+	m_subcpu->set_input_line(H8_INPUT_LINE_DREQ0, m_mpeg_dreq && !(m_p6 & 0x04));
+
+	logerror("p6 %02x\n", m_p6);
+}
+
+uint8_t hrdvd_state::pb_r()
 {
 	return m_pb;
 }
 
-void hrdvd_state::pb_w(uint16_t data)
+void hrdvd_state::pb_w(uint8_t data)
 {
+	u8 delta = data ^ m_pb;
 	m_pb = (m_pb & 0xc0) | (data & 0x3f);
-	logerror("pb %02x\n", data);
+	m_mpega->ss_w(BIT(m_pb, 0));
+	m_mpega->sclk_w(BIT(m_pb, 1));
+	m_mpega->mosi_w(BIT(m_pb, 2));
+	if(delta & 0x38)
+		logerror("pb %02x\n", data);
 }
 
-void hrdvd_state::pa_w(uint16_t data)
+void hrdvd_state::pa_w(uint8_t data)
 {
-	if((m_pa & 0x80) && !(data & 0x80))
-		logerror("bit %c\n", data & 0x40 ? '1' : '0');
-	if(m_pa & 0x20)
-		logerror("bit reset\n");
+	u8 delta = data ^ m_pa;
 	m_pa = data;
-	logerror("pa %02x %c%c%c\n",
-			 data,
-			 data & 0x80 ? 'c' : '-',
-			 data & 0x40 ? 'd' : '-',
-			 data & 0x20 ? '#' : '-');
+	m_pll->stb_w(BIT(m_pa, 5));
+	m_pll->dat_w(BIT(m_pa, 6));
+	m_pll->clk_w(BIT(m_pa, 7));
+	if(delta & 0x1f)
+		logerror("pa %02x\n", data);
 }
 
 uint16_t hrdvd_state::hrdvd_mux_r()
@@ -213,25 +266,16 @@ void hrdvd_state::hrdvd_sub_map(address_map &map)
 {
 	map(0x000000, 0x01ffff).rom();
 
-	map(0x020008, 0x020008).rw(m_mpeg, FUNC(zr36110_device::stat0_r), FUNC(zr36110_device::setup8_w));
-	map(0x02000a, 0x02000a).rw(m_mpeg, FUNC(zr36110_device::stat1_r), FUNC(zr36110_device::mc18_w));
-	map(0x02000c, 0x02000c).rw(m_mpeg, FUNC(zr36110_device::stat2_r), FUNC(zr36110_device::cmd8_w));
-	map(0x02000e, 0x02000e). w(m_mpeg,                                FUNC(zr36110_device::mc238_w));
+	map(0x020008, 0x020009).rw(m_mpeg, FUNC(zr36110_device::stat0x_r), FUNC(zr36110_device::setupx_w));
+	map(0x02000a, 0x02000b).rw(m_mpeg, FUNC(zr36110_device::stat1x_r), FUNC(zr36110_device::mc1x_w));
+	map(0x02000c, 0x02000d).rw(m_mpeg, FUNC(zr36110_device::stat2x_r), FUNC(zr36110_device::cmdx_w));
+	map(0x02000e, 0x02000f).rw(m_mpeg, FUNC(zr36110_device::userx_r),  FUNC(zr36110_device::mc23x_w));
+	map(0x020010, 0x02001f). w(m_mpeg,                                 FUNC(zr36110_device::dmax_w));
 
 	map(0x040018, 0x040019).rw(m_ata, FUNC(hrdvd_ata_controller_device::dma_read), FUNC(hrdvd_ata_controller_device::dma_write));
 	map(0x040028, 0x04002f).rw(m_ata, FUNC(hrdvd_ata_controller_device::read), FUNC(hrdvd_ata_controller_device::write));
 
-	map(0x060000, 0x06bfff).ram();
-
-	map(0x078000, 0x07ffff).mirror(0xf80000).ram(); //.share("nvram");
-}
-
-
-void hrdvd_state::hrdvd_sub_io_map(address_map &map)
-{
-	map(h8_device::PORT_A, h8_device::PORT_A).w (FUNC(hrdvd_state::pa_w));
-	map(h8_device::PORT_B, h8_device::PORT_B).rw(FUNC(hrdvd_state::pb_r), FUNC(hrdvd_state::pb_w));
-//  map(h8_device::PORT_6, h8_device::PORT_6).noprw();
+	map(0x060000, 0x07ffff).mirror(0xf80000).ram(); //.share("nvram");
 }
 
 
@@ -382,19 +426,30 @@ static INPUT_PORTS_START( hrdvd )
 INPUT_PORTS_END
 
 
-void hrdvd_state::machine_reset()
+void hrdvd_state::machine_start()
 {
-	m_p5 = 0;
-	m_pa = 0;
-	m_pb = 0;
+	save_item(NAME(m_mux_data));
+	save_item(NAME(m_p6));
+	save_item(NAME(m_pa));
+	save_item(NAME(m_pb));
+	save_item(NAME(m_mpeg_dreq));
 }
 
-WRITE_LINE_MEMBER(hrdvd_state::ata_irq)
+void hrdvd_state::machine_reset()
+{
+	m_mux_data = 0;
+	m_p6 = 0;
+	m_pa = 0;
+	m_pb = 0;
+	m_mpeg_dreq = false;
+}
+
+void hrdvd_state::ata_irq(int state)
 {
 	//  logerror("ata irq %d\n", state);
 }
 
-WRITE_LINE_MEMBER(hrdvd_state::ata_drq)
+void hrdvd_state::ata_drq(int state)
 {
 	//  logerror("ata drq %d\n", state);
 	m_pb = (m_pb & 0x7f) | (state ? 0x00 : 0x80);
@@ -413,12 +468,12 @@ void hrdvd_state::tmp68301_parallel_port_w(uint16_t data)
 
 static void atapi_devs(device_slot_interface &device)
 {
-	device.option_add("dvdrom", ATAPI_FIXED_DVDROM);
+	device.option_add("dvdrom", ATAPI_DVDROM);
 }
 
 void hrdvd_state::dvdrom_config(device_t *device)
 {
-	auto *drive = downcast<atapi_fixed_dvdrom_device *>(device);
+	auto *drive = downcast<atapi_dvdrom_device *>(device);
 	drive->set_model("PIONEER        DVD-A01  1.17"); // Wants firmware version between 1.14 and 1.19
 }
 
@@ -431,10 +486,14 @@ void hrdvd_state::hrdvd(machine_config &config)
 
 	H83002(config, m_subcpu, 27_MHz_XTAL/2);
 	m_subcpu->set_addrmap(AS_PROGRAM, &hrdvd_state::hrdvd_sub_map);
-	m_subcpu->set_addrmap(AS_IO, &hrdvd_state::hrdvd_sub_io_map);
+	m_subcpu->read_port6().set(FUNC(hrdvd_state::p6_r));
+	m_subcpu->write_port6().set(FUNC(hrdvd_state::p6_w));
+	m_subcpu->write_porta().set(FUNC(hrdvd_state::pa_w));
+	m_subcpu->read_portb().set(FUNC(hrdvd_state::pb_r));
+	m_subcpu->write_portb().set(FUNC(hrdvd_state::pb_w));
 
-	m_maincpu->tx0_handler().set(*m_subcpu->subdevice<h8_sci_device>("sci0"), FUNC(h8_sci_device::rx_w));
-	m_subcpu->subdevice<h8_sci_device>("sci0")->tx_handler().set(m_maincpu, FUNC(tmp68301_device::rx0_w));
+	m_maincpu->tx0_handler().set(m_subcpu, FUNC(h83002_device::sci_rx_w<0>));
+	m_subcpu->write_sci_tx<0>().set(m_maincpu, FUNC(tmp68301_device::rx0_w));
 
 	HRDVD_ATA_CONTROLLER_DEVICE(config, m_ata).options(atapi_devs, "dvdrom", nullptr, true);
 	m_ata->slot(0).set_option_machine_config("dvdrom", dvdrom_config);
@@ -443,18 +502,30 @@ void hrdvd_state::hrdvd(machine_config &config)
 
 	//  NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 
-	/* video hardware */
-	v9958_device &v9958(V9958(config, "v9958", XTAL(21'477'272))); // typical 9958 clock, not verified
-	v9958.set_screen_ntsc("screen");
-	v9958.set_vram_size(0x20000);
-	v9958.int_cb().set_inputline(m_maincpu, 0);
-	SCREEN(config, "screen", SCREEN_TYPE_RASTER);
+	/* video & sound hardware */
+	TC9223(config, m_pll);
+
+	V9958(config, m_video, XTAL(21'477'272)); // typical 9958 clock, not verified
+	m_video->set_screen_ntsc(m_screen);
+	m_video->set_vram_size(0x20000);
+	m_video->int_cb().set_inputline(m_maincpu, 0);
+
+	SCREEN(config, m_screen, SCREEN_TYPE_RASTER);
 
 	ZR36110(config, m_mpeg, 27_MHz_XTAL/2);
-	m_mpeg->drq_handler().set_inputline(m_maincpu, H8_INPUT_LINE_DREQ0);
+	m_mpeg->drq_w().set(FUNC(hrdvd_state::mpeg_dreq_w));
 
-	/* sound hardware */
+	NN71003F(config, m_mpega, 0);
+	m_mpega->add_route(0, m_lspeaker, 1.0);
+	m_mpega->add_route(1, m_rspeaker, 1.0);
+	m_mpeg->sp2_frm_w().set(m_mpega, FUNC(nn71003f_device::frm_w));
+	m_mpeg->sp2_clk_w().set(m_mpega, FUNC(nn71003f_device::clk_w));
+	m_mpeg->sp2_dat_w().set(m_mpega, FUNC(nn71003f_device::dat_w));
+
 	NICHISND(config, m_nichisnd, 0);
+
+	SPEAKER(config, m_lspeaker).front_left();
+	SPEAKER(config, m_rspeaker).front_right();
 }
 
 
@@ -481,7 +552,7 @@ ROM_START( nichidvd )
 
 	DVD_BIOS
 
-	ROM_REGION( 0x20000, ":nichisnd:audiorom", ROMREGION_ERASE00 ) // z80
+	ROM_REGION( 0x20000, "nichisnd:audiorom", ROMREGION_ERASE00 ) // z80
 
 	ROM_REGION16_BE( 0x400000, "blit_gfx", ROMREGION_ERASEFF ) // blitter based gfxs
 
@@ -497,7 +568,7 @@ ROM_START( csplayh1 )
 	ROM_REGION( 0x20000, "subcpu", 0 ) // h8, cd-rom player
 	ROM_LOAD16_WORD_SWAP( "u2",   0x00000, 0x20000, NO_DUMP )
 
-	ROM_REGION( 0x20000, ":nichisnd:audiorom", 0 ) // z80
+	ROM_REGION( 0x20000, "nichisnd:audiorom", 0 ) // z80
 	ROM_LOAD( "1.bin", 0x000000, 0x020000, CRC(8296d67f) SHA1(20eb944a2bd27980e1aaf60ca544059e84129760) )
 
 	ROM_REGION16_BE( 0x400000, "blit_gfx", ROMREGION_ERASEFF ) // blitter based gfxs
@@ -516,7 +587,7 @@ ROM_START( mjgalpri )
 	ROM_LOAD16_BYTE( "2.ic3",            0x000000, 0x020000, CRC(e8427076) SHA1(9b449599ffac2b67a29fac11d1e85218668d805d) )
 	ROM_LOAD16_BYTE( "1.ic2",            0x000001, 0x020000, CRC(653fcc14) SHA1(6231ec5f45a9f5e587dcd00ff85f9bbfae7364ab) )
 
-	ROM_REGION( 0x20000, ":nichisnd:audiorom", 0 ) // z80
+	ROM_REGION( 0x20000, "nichisnd:audiorom", 0 ) // z80
 	ROM_LOAD( "11.ic51",           0x000000, 0x020000, CRC(7b9b1887) SHA1(1393a1d79f3cc7ab68275791af4ec16e825056df) )
 
 	DVD_BIOS
@@ -537,7 +608,7 @@ ROM_START( sengomjk )
 	ROM_LOAD16_BYTE( "2.ic3",            0x000000, 0x020000, CRC(a202bf13) SHA1(01e15e7577f6ac6a90b7ab30f402def211360d4d) )
 	ROM_LOAD16_BYTE( "1.ic2",            0x000001, 0x020000, CRC(98d4979a) SHA1(477361ec183674220e282fed8bfce098b0f75873) )
 
-	ROM_REGION( 0x20000, ":nichisnd:audiorom", 0 ) // z80
+	ROM_REGION( 0x20000, "nichisnd:audiorom", 0 ) // z80
 	ROM_LOAD( "11.ic51",           0x000000, 0x020000, CRC(c0bf69c6) SHA1(dd06ec9b3232f025de2c87765b88cb101eab47f5) )
 
 	DVD_BIOS
@@ -560,7 +631,7 @@ ROM_START( junai )
 
 	DVD_BIOS
 
-	ROM_REGION( 0x20000, ":nichisnd:audiorom", 0 ) // z80
+	ROM_REGION( 0x20000, "nichisnd:audiorom", 0 ) // z80
 	ROM_LOAD( "11.ic51",   0x00000, 0x20000, CRC(a0472ea5) SHA1(0fd04941ff595cffe64357f3a1a9dc1170db8703) )
 
 	ROM_REGION16_BE( 0x400000, "blit_gfx", ROMREGION_ERASEFF ) // blitter based gfxs
@@ -569,7 +640,7 @@ ROM_START( junai )
 	// 0x100000 - 0x3fffff empty sockets
 
 	DISK_REGION( "ata:0:dvdrom" )
-	DISK_IMAGE_READONLY( "junai", 0, SHA1(098925d09cfdd2c970edf40054b36423f6e71a42) )
+	DISK_IMAGE_READONLY( "nb8003", 0, SHA1(098925d09cfdd2c970edf40054b36423f6e71a42) )
 ROM_END
 
 ROM_START( csplayh5 )
@@ -579,7 +650,7 @@ ROM_START( csplayh5 )
 
 	DVD_BIOS
 
-	ROM_REGION( 0x20000, ":nichisnd:audiorom", 0 ) // z80
+	ROM_REGION( 0x20000, "nichisnd:audiorom", 0 ) // z80
 	ROM_LOAD( "11.ic51",   0x00000, 0x20000, CRC(0b920806) SHA1(95f50ebfb296ba29aaa8079a41f5362cb9e879cc) )
 
 	ROM_REGION16_BE( 0x400000, "blit_gfx", ROMREGION_ERASEFF ) // blitter based gfxs
@@ -588,7 +659,7 @@ ROM_START( csplayh5 )
 	// 0x100000 - 0x3fffff empty sockets
 
 	DISK_REGION( "ata:0:dvdrom" )
-	DISK_IMAGE_READONLY( "csplayh5", 0, SHA1(30a5262529196d2bf6608114781ccf20ab284e37) )
+	DISK_IMAGE_READONLY( "nb8004", 0, SHA1(51520ef06125b9ae45c2fb0ce0e9d554dd98bfd9) )
 ROM_END
 
 ROM_START( junai2 )
@@ -598,7 +669,7 @@ ROM_START( junai2 )
 
 	DVD_BIOS
 
-	ROM_REGION( 0x20000, ":nichisnd:audiorom", 0 ) // z80
+	ROM_REGION( 0x20000, "nichisnd:audiorom", 0 ) // z80
 	ROM_LOAD( "11.ic51",   0x00000, 0x20000, CRC(a4b07757) SHA1(5010f28d7a80af0cc3f4fd135f777950fb2cf679) )
 
 	ROM_REGION16_BE( 0x400000, "blit_gfx", ROMREGION_ERASEFF ) // blitter based gfxs
@@ -607,7 +678,7 @@ ROM_START( junai2 )
 	// 0x100000 - 0x3fffff empty sockets
 
 	DISK_REGION( "ata:0:dvdrom" )
-	DISK_IMAGE_READONLY( "junai2", 0, SHA1(ec11caa96833b80324e68f0345b000d702eaf6cb) )
+	DISK_IMAGE_READONLY( "nb8005", 0, SHA1(ec11caa96833b80324e68f0345b000d702eaf6cb) )
 
 	ROM_REGION( 0x1000, "gal", ROMREGION_ERASE00 )
 	ROM_LOAD( "gal16v8b.ic8", 0x000000, 0x0008c1, BAD_DUMP CRC(01c2895a) SHA1(782166a60fa14d5faa5a92629f7ca65a878ad7fe) )
@@ -621,7 +692,7 @@ ROM_START( mogitate )
 
 	DVD_BIOS
 
-	ROM_REGION( 0x20000, ":nichisnd:audiorom", 0 ) // z80
+	ROM_REGION( 0x20000, "nichisnd:audiorom", 0 ) // z80
 	ROM_LOAD( "11.ic51",           0x000000, 0x020000, CRC(7927c1d6) SHA1(15f0c0051124e7b7667eb721dd12938333b31899) )
 
 	ROM_REGION16_BE( 0x400000, "blit_gfx", ROMREGION_ERASEFF ) // blitter based gfxs
@@ -642,7 +713,7 @@ ROM_START( mjmania )
 
 	DVD_BIOS
 
-	ROM_REGION( 0x20000, ":nichisnd:audiorom", 0 ) // z80
+	ROM_REGION( 0x20000, "nichisnd:audiorom", 0 ) // z80
 	ROM_LOAD( "11.ic51", 0x000000, 0x020000, CRC(f0c3bb11) SHA1(691a0ff53a9417e69051e9e2bdee7500bc6a746b) )
 
 	ROM_REGION16_BE( 0x400000, "blit_gfx", ROMREGION_ERASEFF ) // blitter based gfxs
@@ -650,7 +721,7 @@ ROM_START( mjmania )
 	ROM_LOAD16_BYTE( "4.ic41", 0x000000, 0x080000, CRC(dea4a2d2) SHA1(0118eb1330c9da8fead99f64fc015fd343fed79b) )
 
 	DISK_REGION( "ata:0:dvdrom" )
-	DISK_IMAGE_READONLY( "mjmania", 0, SHA1(777668854058b1586f599d266d1cea55c35aa30d) )
+	DISK_IMAGE_READONLY( "nb8007", 0, SHA1(777668854058b1586f599d266d1cea55c35aa30d) )
 
 	ROM_REGION( 0x1000, "gal", ROMREGION_ERASE00 )
 	ROM_LOAD( "gal16v8b.ic8", 0x000000, 0x0008c1, BAD_DUMP CRC(6a92b563) SHA1(a6c4305cf021f37845f99713427daa9394b6ec7d) )
@@ -663,7 +734,7 @@ ROM_START( renaimj )
 
 	DVD_BIOS
 
-	ROM_REGION( 0x20000, ":nichisnd:audiorom", 0 ) // z80
+	ROM_REGION( 0x20000, "nichisnd:audiorom", 0 ) // z80
 	ROM_LOAD( "11.ic51",   0x00000, 0x20000, CRC(614d17b9) SHA1(d6fb4441f55902c2b89b4bec53aae5311d81f07b) )
 
 	ROM_REGION16_BE( 0x400000, "blit_gfx", ROMREGION_ERASEFF ) // blitter based gfxs
@@ -685,7 +756,7 @@ ROM_START( bikiniko )
 
 	DVD_BIOS
 
-	ROM_REGION( 0x20000, ":nichisnd:audiorom", 0 ) // z80
+	ROM_REGION( 0x20000, "nichisnd:audiorom", 0 ) // z80
 	ROM_LOAD( "11.ic51",   0x00000, 0x20000, CRC(4a2142d6) SHA1(3a762f7b7cccdb6715b5f59524b04b12694fc130) )
 
 	ROM_REGION16_BE( 0x400000, "blit_gfx", ROMREGION_ERASEFF ) // blitter based gfxs
@@ -694,7 +765,7 @@ ROM_START( bikiniko )
 	// 0x100000 - 0x3fffff empty sockets
 
 	DISK_REGION( "ata:0:dvdrom" )
-	DISK_IMAGE_READONLY( "bikiniko", 0, SHA1(cac9a6c7fe86751c968cd15f7b779edbc14d5f0b) )
+	DISK_IMAGE_READONLY( "nb8009", 0, SHA1(cac9a6c7fe86751c968cd15f7b779edbc14d5f0b) )
 ROM_END
 
 ROM_START( csplayh6 )
@@ -704,7 +775,7 @@ ROM_START( csplayh6 )
 
 	DVD_BIOS
 
-	ROM_REGION( 0x20000, ":nichisnd:audiorom", 0 ) // z80
+	ROM_REGION( 0x20000, "nichisnd:audiorom", 0 ) // z80
 	ROM_LOAD( "11.ic51",   0x00000, 0x20000, CRC(3ce03f2d) SHA1(5ccdcac8bad25b4f680ed7a2074575711c25af41) )
 
 	ROM_REGION16_BE( 0x400000, "blit_gfx", ROMREGION_ERASEFF ) // blitter based gfxs
@@ -726,7 +797,7 @@ ROM_START( thenanpa )
 
 	DVD_BIOS
 
-	ROM_REGION( 0x20000, ":nichisnd:audiorom", 0 ) // z80
+	ROM_REGION( 0x20000, "nichisnd:audiorom", 0 ) // z80
 	ROM_LOAD( "11.ic51", 0x000000, 0x020000, CRC(f44c4095) SHA1(d43e464bd6d614c34791445f8fd4af2f62a4dfc2) )
 
 	ROM_REGION16_BE( 0x400000, "blit_gfx", ROMREGION_ERASEFF ) // blitter based gfxs
@@ -734,7 +805,7 @@ ROM_START( thenanpa )
 	ROM_LOAD16_BYTE( "4.ic41", 0x000000, 0x080000, CRC(ce987845) SHA1(2f7dca32a79ad6afbc55ca1d492b582f952688ff) )
 
 	DISK_REGION( "ata:0:dvdrom" )
-	DISK_IMAGE_READONLY( "thenanpa", 0,  SHA1(730848295802b8596929ffd22b81712ec4ea30a6) )
+	DISK_IMAGE_READONLY( "nb8011", 0,  SHA1(730848295802b8596929ffd22b81712ec4ea30a6) )
 
 	ROM_REGION( 0x1000, "gal", ROMREGION_ERASE00 )
 	ROM_LOAD( "gal16v8b.ic8", 0x000000, 0x0008c1, BAD_DUMP CRC(daffd0ac)SHA1(cbeff914163d425a9cb30fe8d62f91fca281b11f) )
@@ -747,7 +818,7 @@ ROM_START( pokoachu )
 
 	DVD_BIOS
 
-	ROM_REGION( 0x20000, ":nichisnd:audiorom", 0 ) // z80
+	ROM_REGION( 0x20000, "nichisnd:audiorom", 0 ) // z80
 	ROM_LOAD( "11.ic51", 0x000000, 0x020000, CRC(9d344bad) SHA1(276c8066a2b5090edf6ba00843b7a9496c90f99f) )
 
 	ROM_REGION16_BE( 0x400000, "blit_gfx", ROMREGION_ERASEFF ) // blitter based gfxs
@@ -768,7 +839,7 @@ ROM_START( csplayh7 )
 
 	DVD_BIOS
 
-	ROM_REGION( 0x20000, ":nichisnd:audiorom", 0 ) // z80
+	ROM_REGION( 0x20000, "nichisnd:audiorom", 0 ) // z80
 	ROM_LOAD( "11.ic51", 0x000000, 0x020000, CRC(5905b199) SHA1(9155455bc21d23d439c4732549ff1143ee17b9d3) )
 
 	ROM_REGION16_BE( 0x400000, "blit_gfx", ROMREGION_ERASEFF ) // blitter based gfxs
@@ -776,7 +847,7 @@ ROM_START( csplayh7 )
 	ROM_LOAD16_BYTE( "4.ic41", 0x000000, 0x080000, CRC(b4f5f990) SHA1(88cccae04f89fef43d88f4e82b65de3de946e9af) )
 
 	DISK_REGION( "ata:0:dvdrom" )
-	DISK_IMAGE_READONLY( "csplayh7", 0, SHA1(be6450351d6da4c96cbff353d587980a2728e306) )
+	DISK_IMAGE_READONLY( "nb8013", 0, SHA1(e559c0667e5c55518442b874f6538b937e2e84b9) )
 
 	ROM_REGION( 0x1000, "gal", ROMREGION_ERASE00 )
 	ROM_LOAD( "mjdvd12.gal16v8b.ic8.bin", 0x000000, 0x0008c1, BAD_DUMP CRC(6a92b563)SHA1(a6c4305cf021f37845f99713427daa9394b6ec7d) )
@@ -789,7 +860,7 @@ ROM_START( aimode )
 
 	DVD_BIOS
 
-	ROM_REGION( 0x20000, ":nichisnd:audiorom", 0 ) // z80
+	ROM_REGION( 0x20000, "nichisnd:audiorom", 0 ) // z80
 	ROM_LOAD( "11.ic51", 0x000000, 0x020000, CRC(e6404950) SHA1(bb179c27ce65f7dc58d2aeed4710347e7953e11c) )
 
 	ROM_REGION16_BE( 0x400000, "blit_gfx", ROMREGION_ERASEFF ) // blitter based gfxs
@@ -810,7 +881,7 @@ ROM_START( fuudol )
 
 	DVD_BIOS
 
-	ROM_REGION( 0x20000, ":nichisnd:audiorom", 0 ) // z80
+	ROM_REGION( 0x20000, "nichisnd:audiorom", 0 ) // z80
 	ROM_LOAD( "11.ic51", 0x000000, 0x020000, CRC(f6442026) SHA1(f49ddeeeaf6fffdccea9ba73bce3ca60c07a7647) )
 
 	ROM_REGION16_BE( 0x400000, "blit_gfx", ROMREGION_ERASEFF ) // blitter based gfxs
@@ -818,7 +889,7 @@ ROM_START( fuudol )
 	ROM_LOAD16_BYTE( "4.ic41", 0x000000, 0x080000, CRC(fdd79d8f) SHA1(f8bb82afaa28affb04b83270eb407129f1c7e611) )
 
 	DISK_REGION( "ata:0:dvdrom" )
-	DISK_IMAGE_READONLY( "fuudol", 0, SHA1(d6b5af48775304caa1d98878dc8dc154c975720e) )
+	DISK_IMAGE_READONLY( "nb8015", 0, SHA1(d6b5af48775304caa1d98878dc8dc154c975720e) )
 
 	ROM_REGION( 0x1000, "gal", ROMREGION_ERASE00 )
 	ROM_LOAD( "gal16v8b.ic8", 0x000000, 0x0008c1, CRC(30719630) SHA1(a8c7b6d0304c38691775c5af6c32fbeeefd9f9fa) )
@@ -831,7 +902,7 @@ ROM_START( nuretemi )
 
 	DVD_BIOS
 
-	ROM_REGION( 0x20000, ":nichisnd:audiorom", 0 ) // z80
+	ROM_REGION( 0x20000, "nichisnd:audiorom", 0 ) // z80
 	ROM_LOAD( "11.ic51", 0x000000, 0x020000, CRC(655ec499) SHA1(5cea38e998edc7833b9a644930daecd99933c277) )
 
 	ROM_REGION16_BE( 0x400000, "blit_gfx", ROMREGION_ERASEFF ) // blitter based gfxs
@@ -852,7 +923,7 @@ ROM_START( tsuwaku )
 
 	DVD_BIOS
 
-	ROM_REGION( 0x20000, ":nichisnd:audiorom", 0 ) // z80
+	ROM_REGION( 0x20000, "nichisnd:audiorom", 0 ) // z80
 	ROM_LOAD( "11.ic51",           0x000000, 0x020000, CRC(8451b9a9) SHA1(4e61c4b5ea7e91b53c97bd060b41466ba5005fd0) )
 
 	ROM_REGION16_BE( 0x400000, "blit_gfx", ROMREGION_ERASEFF ) // blitter based gfxs
@@ -873,7 +944,7 @@ ROM_START( torarech )
 
 	DVD_BIOS
 
-	ROM_REGION( 0x20000, ":nichisnd:audiorom", 0 ) // z80
+	ROM_REGION( 0x20000, "nichisnd:audiorom", 0 ) // z80
 	ROM_LOAD( "11.ic51",           0x000000, 0x020000, CRC(bd785d10) SHA1(ceb91c0f13eafabb8d48384857af6fc555d48951) )
 
 	ROM_REGION16_BE( 0x400000, "blit_gfx", ROMREGION_ERASEFF ) // blitter based gfxs
@@ -894,7 +965,7 @@ ROM_START( nichisel )
 
 	DVD_BIOS
 
-	ROM_REGION( 0x20000, ":nichisnd:audiorom", 0 ) // z80
+	ROM_REGION( 0x20000, "nichisnd:audiorom", 0 ) // z80
 	ROM_LOAD( "11.ic51",           0x000000, 0x020000, CRC(f94981fd) SHA1(84dae027f10717a084016310cd245bb4c2ee6a56) )
 
 	ROM_REGION16_BE( 0x400000, "blit_gfx", ROMREGION_ERASEFF ) // blitter based gfxs
@@ -915,7 +986,7 @@ ROM_START( konhaji )
 
 	DVD_BIOS
 
-	ROM_REGION( 0x20000, ":nichisnd:audiorom", 0 ) // z80
+	ROM_REGION( 0x20000, "nichisnd:audiorom", 0 ) // z80
 	ROM_LOAD( "11.ic51",           0x000000, 0x020000, CRC(d1ba05d6) SHA1(8d29cdbf00946e06e92225eb260a694d17d7b8d4) )
 
 	ROM_REGION16_BE( 0x400000, "blit_gfx", ROMREGION_ERASEFF ) // blitter based gfxs

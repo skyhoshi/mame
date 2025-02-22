@@ -29,6 +29,7 @@ public:
 		, m_keyboard(*this, "keyboard")
 		, m_pvtc(*this, "pvtc")
 		, m_sio(*this, "sio")
+		, m_aux(*this, "aux")
 		, m_charram(*this, "charram")
 		, m_attrram(*this, "attrram")
 		, m_fontram(*this, "fontram", 0x2000, ENDIANNESS_LITTLE)
@@ -43,12 +44,12 @@ public:
 	void wy60(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 	virtual void driver_start() override;
 
 private:
 	SCN2672_DRAW_CHARACTER_MEMBER(draw_character);
-	DECLARE_WRITE_LINE_MEMBER(mbc_attr_clock_w);
+	void mbc_attr_clock_w(int state);
 	u8 mbc_char_r(offs_t offset);
 	u8 mbc_attr_r(offs_t offset);
 
@@ -59,16 +60,18 @@ private:
 
 	void p1_w(u8 data);
 	u8 p1_r();
-	DECLARE_WRITE_LINE_MEMBER(ea_w);
+	u8 p3_r();
+	void ea_w(int state);
 
-	void prog_map(address_map &map);
-	void ext_map(address_map &map);
-	void row_buffer_map(address_map &map);
+	void prog_map(address_map &map) ATTR_COLD;
+	void ext_map(address_map &map) ATTR_COLD;
+	void row_buffer_map(address_map &map) ATTR_COLD;
 
 	required_device<i2cmem_device> m_eeprom;
 	required_device<wyse_keyboard_port_device> m_keyboard;
 	required_device<scn2672_device> m_pvtc;
 	required_device<scn2661b_device> m_sio;
+	required_device<rs232_port_device> m_aux;
 	required_shared_ptr<u8> m_charram;
 	required_shared_ptr<u8> m_attrram;
 	memory_share_creator<u8> m_fontram;
@@ -137,7 +140,7 @@ SCN2672_DRAW_CHARACTER_MEMBER(wy60_state::draw_character)
 	std::fill_n(&bitmap.pix(y, x), m_is_132 ? 2 : 3, BIT(dots, 7) ? fg : rgb_t::black());
 }
 
-WRITE_LINE_MEMBER(wy60_state::mbc_attr_clock_w)
+void wy60_state::mbc_attr_clock_w(int state)
 {
 	if (state)
 		m_last_row_attr = m_cur_attr;
@@ -186,6 +189,7 @@ void wy60_state::sio_w(offs_t offset, u8 data)
 
 void wy60_state::p1_w(u8 data)
 {
+	// P1.0 -> _80/132
 	if (BIT(data, 0) != m_is_132)
 	{
 		m_is_132 = BIT(data, 0);
@@ -193,22 +197,33 @@ void wy60_state::p1_w(u8 data)
 		m_pvtc->set_unscaled_clock(m_is_132 ? 39.71_MHz_XTAL / 9 : 26.58_MHz_XTAL / 10);
 	}
 
+	// P1.1 -> EEPROM SDA
+	// P1.2 -> EEPROM SCL
 	// N.B. The current i2cmem emulation is a bit sensitive to the order of these writes.
 	m_eeprom->write_scl(BIT(data, 2));
 	m_eeprom->write_sda(BIT(data, 1));
 
-	m_keyboard->cmd_w(!BIT(data, 5));
+	// P1.3 -> AUX DSR
+	m_aux->write_dtr(BIT(data, 3));
 
-	// TODO: P1.3 -> AUX DSR
+	// P1.5 -> KBD CMD (transmitted through 74LS368)
+	m_keyboard->cmd_w(!BIT(data, 5));
 }
 
 u8 wy60_state::p1_r()
 {
-	// TODO: P1.4 <- AUX DTR
-	return (m_eeprom->read_sda() << 1) | (m_keyboard->data_r() ? 0 : 0x40) | 0xad;
+	// P1.1 <- EEPROM SDA
+	// P1.4 <- AUX DTR
+	// P1.6 <- KBD DATA (received through 74LS368)
+	return (m_eeprom->read_sda() << 1) | (m_aux->dsr_r() << 4) | (m_keyboard->data_r() ? 0 : 0x40) | 0xad;
 }
 
-WRITE_LINE_MEMBER(wy60_state::ea_w)
+u8 wy60_state::p3_r()
+{
+	return m_aux->rxd_r() | 0xfe;
+}
+
+void wy60_state::ea_w(int state)
 {
 	if (state)
 		m_internal_view.select(0);
@@ -250,7 +265,9 @@ void wy60_state::wy60(machine_config &config)
 	maincpu.set_addrmap(AS_IO, &wy60_state::ext_map);
 	maincpu.port_out_cb<1>().set(FUNC(wy60_state::p1_w));
 	maincpu.port_in_cb<1>().set(FUNC(wy60_state::p1_r));
-	maincpu.port_out_cb<3>().set(FUNC(wy60_state::ea_w)).bit(5);
+	maincpu.port_out_cb<3>().set(m_aux, FUNC(rs232_port_device::write_txd)).bit(1);
+	maincpu.port_out_cb<3>().append(FUNC(wy60_state::ea_w)).bit(5);
+	maincpu.port_in_cb<3>().set(FUNC(wy60_state::p3_r));
 
 	I2C_X2404P(config, m_eeprom);
 
@@ -284,7 +301,7 @@ void wy60_state::wy60(machine_config &config)
 	modem.cts_handler().set(m_sio, FUNC(scn2661b_device::cts_w));
 	modem.dcd_handler().set(m_sio, FUNC(scn2661b_device::dcd_w));
 
-	// TODO: AUX port connected to 8051
+	RS232_PORT(config, m_aux, default_rs232_devices, "loopback");
 }
 
 // CPU:   8051(202008-03)

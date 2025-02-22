@@ -110,9 +110,9 @@ public:
 	void gunsmoke(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	// memory pointers
@@ -139,20 +139,18 @@ private:
 	uint8_t protection_r(offs_t offset);
 	void videoram_w(offs_t offset, uint8_t data);
 	void colorram_w(offs_t offset, uint8_t data);
-	void c804_w(uint8_t data);
-	void d806_w(uint8_t data);
+	void control_w(uint8_t data);
+	void layer_w(uint8_t data);
 	TILE_GET_INFO_MEMBER(get_bg_tile_info);
 	TILE_GET_INFO_MEMBER(get_fg_tile_info);
 	void palette(palette_device &palette) const;
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	void draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	void main_map(address_map &map);
-	void sound_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
 };
 
-
-// video
 
 /***************************************************************************
 
@@ -220,7 +218,7 @@ void gunsmoke_state::colorram_w(offs_t offset, uint8_t data)
 	m_fg_tilemap->mark_tile_dirty(offset);
 }
 
-void gunsmoke_state::c804_w(uint8_t data)
+void gunsmoke_state::control_w(uint8_t data)
 {
 	// bits 0 and 1 are for coin counters
 	machine().bookkeeping().coin_counter_w(1, data & 0x01);
@@ -238,7 +236,7 @@ void gunsmoke_state::c804_w(uint8_t data)
 	m_chon = data & 0x80;
 }
 
-void gunsmoke_state::d806_w(uint8_t data)
+void gunsmoke_state::layer_w(uint8_t data)
 {
 	// bits 0-2 select the sprite 3 bank
 	m_sprite3bank = data & 0x07;
@@ -337,8 +335,6 @@ uint32_t gunsmoke_state::screen_update(screen_device &screen, bitmap_ind16 &bitm
 }
 
 
-// machine
-
 // Read/Write Handlers
 
 uint8_t gunsmoke_state::protection_r(offs_t offset)
@@ -375,13 +371,13 @@ void gunsmoke_state::main_map(address_map &map)
 	map(0xc004, 0xc004).portr("DSW2");
 	map(0xc4c9, 0xc4cb).r(FUNC(gunsmoke_state::protection_r));
 	map(0xc800, 0xc800).w("soundlatch", FUNC(generic_latch_8_device::write));
-	map(0xc804, 0xc804).w(FUNC(gunsmoke_state::c804_w));  // ROM bank switch, screen flip
+	map(0xc804, 0xc804).w(FUNC(gunsmoke_state::control_w));  // ROM bank switch, screen flip
 	// 0xc806 DMA trigger (not emulated)
 	map(0xd000, 0xd3ff).ram().w(FUNC(gunsmoke_state::videoram_w)).share(m_videoram);
 	map(0xd400, 0xd7ff).ram().w(FUNC(gunsmoke_state::colorram_w)).share(m_colorram);
 	map(0xd800, 0xd801).ram().share(m_scrollx);
 	map(0xd802, 0xd802).ram().share(m_scrolly);
-	map(0xd806, 0xd806).w(FUNC(gunsmoke_state::d806_w));  // sprites and bg enable
+	map(0xd806, 0xd806).w(FUNC(gunsmoke_state::layer_w));  // sprites and bg enable
 	map(0xe000, 0xefff).ram();
 	map(0xf000, 0xffff).ram().share(m_spriteram);
 }
@@ -405,8 +401,8 @@ static INPUT_PORTS_START( gunsmoke )
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_CUSTOM )    // VBLANK
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_SERVICE1 )
 	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_UNUSED )
-	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_COIN2 )
-	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_COIN1 )
+	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_COIN1 )
+	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_COIN2 )
 
 	PORT_START("P1")
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_JOYSTICK_RIGHT ) PORT_8WAY
@@ -451,7 +447,7 @@ static INPUT_PORTS_START( gunsmoke )
 	PORT_SERVICE( 0x80, IP_ACTIVE_LOW ) // Also "debug mode"
 
 	PORT_START("DSW2")
-	PORT_DIPNAME( 0x07, 0x07, DEF_STR( Coin_B ) )
+	PORT_DIPNAME( 0x07, 0x07, DEF_STR( Coin_A ) )
 	PORT_DIPSETTING(    0x00, DEF_STR( 4C_1C ) )
 	PORT_DIPSETTING(    0x01, DEF_STR( 3C_1C ) )
 	PORT_DIPSETTING(    0x02, DEF_STR( 2C_1C ) )
@@ -460,7 +456,7 @@ static INPUT_PORTS_START( gunsmoke )
 	PORT_DIPSETTING(    0x05, DEF_STR( 1C_3C ) )
 	PORT_DIPSETTING(    0x04, DEF_STR( 1C_4C ) )
 	PORT_DIPSETTING(    0x03, DEF_STR( 1C_6C ) )
-	PORT_DIPNAME( 0x38, 0x38, DEF_STR( Coin_A ) )
+	PORT_DIPNAME( 0x38, 0x38, DEF_STR( Coin_B ) )
 	PORT_DIPSETTING(    0x00, DEF_STR( 4C_1C ) )
 	PORT_DIPSETTING(    0x08, DEF_STR( 3C_1C ) )
 	PORT_DIPSETTING(    0x10, DEF_STR( 2C_1C ) )

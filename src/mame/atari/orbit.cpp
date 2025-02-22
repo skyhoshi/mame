@@ -59,9 +59,9 @@ public:
 	void orbit(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	// memory pointers
@@ -83,7 +83,7 @@ private:
 	uint8_t m_flip_screen;
 	emu_timer *m_irq_off_timer = nullptr;
 
-	DECLARE_WRITE_LINE_MEMBER(coin_lockout_w);
+	void coin_lockout_w(int state);
 	void playfield_w(offs_t offset, uint8_t data);
 	TILE_GET_INFO_MEMBER(get_tile_info);
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
@@ -95,14 +95,12 @@ private:
 	void noise_amp_w(uint8_t data);
 	void noise_rst_w(uint8_t data);
 
-	void main_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
 
 	void draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect);
 	void update_misc_flags(address_space &space, uint8_t val);
 };
 
-
-// video
 
 void orbit_state::playfield_w(offs_t offset, uint8_t data)
 {
@@ -181,8 +179,6 @@ uint32_t orbit_state::screen_update(screen_device &screen, bitmap_ind16 &bitmap,
 }
 
 
-// machine
-
 /*************************************
  *
  *  Interrupts and timing
@@ -218,7 +214,7 @@ INTERRUPT_GEN_MEMBER(orbit_state::interrupt)
  *************************************/
 
 
-WRITE_LINE_MEMBER(orbit_state::coin_lockout_w)
+void orbit_state::coin_lockout_w(int state)
 {
 	machine().bookkeeping().coin_lockout_w(0, !state);
 	machine().bookkeeping().coin_lockout_w(1, !state);
@@ -346,7 +342,7 @@ static INPUT_PORTS_START( orbit )
 	PORT_DIPNAME( 0x40, 0x40, "DIAG TEST" ) // should be off
 	PORT_DIPSETTING( 0x40, DEF_STR( Off ))
 	PORT_DIPSETTING( 0x00, DEF_STR( On ))
-	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_VBLANK("screen")
+	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("screen", FUNC(screen_device::vblank))
 
 	PORT_START("BUTTONS")   // 2800
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_BUTTON1 ) PORT_NAME("Game 7 / Strong Gravity") PORT_CODE(KEYCODE_7_PAD)

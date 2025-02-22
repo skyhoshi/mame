@@ -239,8 +239,8 @@ public:
 	void init_raidenm();
 
 protected:
-	virtual void machine_start() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -268,21 +268,21 @@ private:
 
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	void raidenm_map(address_map &map);
-	void raidenm_sub_map(address_map &map);
+	void raidenm_map(address_map &map) ATTR_COLD;
+	void raidenm_sub_map(address_map &map) ATTR_COLD;
 
 	u8 sound_status_r();
 	void adpcm_w(u8 data);
 	void ym_w(offs_t offset, u8 data);
-	void audio_map(address_map& map);
-	DECLARE_WRITE_LINE_MEMBER(adpcm_int);
+	void audio_map(address_map &map) ATTR_COLD;
+	void adpcm_int(int state);
 	bool m_audio_select;
 	u8 m_adpcm_data;
 
 	void unk_snd_dffx_w(offs_t offset, u8 data);
 	void soundlatch_w(u8 data);
 
-	DECLARE_WRITE_LINE_MEMBER(vblank_irq);
+	void vblank_irq(int state);
 
 	void descramble_16x16tiles(uint8_t* src, int len);
 
@@ -401,7 +401,7 @@ void raiden_ms_state::audio_map(address_map &map)
 	map(0xe00a, 0xe00b).r(m_ym2, FUNC(ym2203_device::read));
 }
 
-WRITE_LINE_MEMBER(raiden_ms_state::adpcm_int)
+void raiden_ms_state::adpcm_int(int state)
 {
 	m_msm->data_w(m_adpcm_data);
 	m_audiocpu->set_input_line(0, HOLD_LINE);
@@ -642,7 +642,7 @@ static GFXDECODE_START( gfx_raiden_ms )
 	GFXDECODE_ENTRY( "gfx3", 0, tiles8x8x4_layout, 0x000, 16 )
 GFXDECODE_END
 
-WRITE_LINE_MEMBER(raiden_ms_state::vblank_irq)
+void raiden_ms_state::vblank_irq(int state)
 {
 	if (state)
 	{

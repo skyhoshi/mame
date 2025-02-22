@@ -170,20 +170,20 @@ private:
 	void jollyjgr_misc_w(uint8_t data);
 	void jollyjgr_coin_lookout_w(uint8_t data);
 	TILE_GET_INFO_MEMBER(get_bg_tile_info);
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 	void jollyjgr_palette(palette_device &palette) const;
 	uint32_t screen_update_jollyjgr(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	uint32_t screen_update_fspider(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
-	DECLARE_WRITE_LINE_MEMBER(vblank_irq);
+	void vblank_irq(int state);
 	void draw_bitmap( bitmap_rgb32 &bitmap );
 	required_device<cpu_device> m_maincpu;
 	required_device<gfxdecode_device> m_gfxdecode;
 	required_device<palette_device> m_palette;
 	required_device<palette_device> m_bm_palette;
-	void fspider_map(address_map &map);
-	void jollyjgr_map(address_map &map);
+	void fspider_map(address_map &map) ATTR_COLD;
+	void jollyjgr_map(address_map &map) ATTR_COLD;
 };
 
 
@@ -476,7 +476,7 @@ void jollyjgr_state::jollyjgr_palette(palette_device &palette) const
 		// blue component
 		bit0 = BIT(*color_prom, 6);
 		bit1 = BIT(*color_prom, 7);
-		int const b = 0x4f * bit0 + 0xa8 * bit1;
+		int const b = 0x52 * bit0 + 0xad * bit1;
 
 		palette.set_pen_color(i, rgb_t(r,g,b));
 		color_prom++;
@@ -653,7 +653,7 @@ GFXDECODE_END
  *
  *************************************/
 
-WRITE_LINE_MEMBER(jollyjgr_state::vblank_irq)
+void jollyjgr_state::vblank_irq(int state)
 {
 	if (state && m_nmi_enable)
 		m_maincpu->set_input_line(INPUT_LINE_NMI, ASSERT_LINE);

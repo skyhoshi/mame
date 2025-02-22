@@ -108,8 +108,6 @@
 #include "machine/upd765.h"
 #include "machine/z80scc.h"
 
-#include "formats/pc_dsk.h"
-
 #define LOG_INTERRUPT (1U << 1)
 #define LOG_ALL_INTERRUPT (1U << 2)
 #define LOG_LED (1U << 3)
@@ -306,16 +304,16 @@ protected:
 	};
 
 	// driver_device overrides
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	void machine_common(machine_config &config);
 
 	// address maps
-	void cpu_map(address_map &map);
-	void sonic3_map(address_map &map);
-	void cpu_map_main_memory(address_map &map);
-	void cpu_map_debug(address_map &map);
+	void cpu_map(address_map &map) ATTR_COLD;
+	void sonic3_map(address_map &map) ATTR_COLD;
+	void cpu_map_main_memory(address_map &map) ATTR_COLD;
+	void cpu_map_debug(address_map &map) ATTR_COLD;
 
 	// Interrupts
 	// See news5000 section of https://github.com/NetBSD/src/blob/trunk/sys/arch/newsmips/include/adrsmap.h
@@ -526,6 +524,8 @@ void news_r4k_state::machine_common(machine_config &config)
 	m_dmac->dma_w_cb<dmac3_device::CTRL0>().set(m_scsi0, FUNC(spifi3_device::dma_w));
 	m_dmac->dma_r_cb<dmac3_device::CTRL1>().set(m_scsi1, FUNC(spifi3_device::dma_r));
 	m_dmac->dma_w_cb<dmac3_device::CTRL1>().set(m_scsi1, FUNC(spifi3_device::dma_w));
+
+	SOFTWARE_LIST(config, "software_list").set_original("sony_news").set_filter("RISC,NWS5000");
 }
 
 void news_r4k_state::nws5000x(machine_config &config) { machine_common(config); }
@@ -673,12 +673,12 @@ void news_r4k_state::cpu_map_main_memory(address_map &map)
 				   {
 					   if (data == 0x10001)
 					   {
-						   LOGMASKED(LOG_GENERAL, "Enabling RAM map shift!\n");
+						   LOG("Enabling RAM map shift!\n");
 						   m_ram_map_shift = true;
 					   }
 					   else
 					   {
-						   LOGMASKED(LOG_GENERAL, "Disabling RAM map shift!\n");
+						   LOG("Disabling RAM map shift!\n");
 						   m_ram_map_shift = false;
 					   }
 				   }));
@@ -769,7 +769,7 @@ uint8_t news_r4k_state::ram_r(offs_t offset)
 	}
 	else
 	{
-		LOGMASKED(LOG_GENERAL, "Unmapped RAM read attempted at offset 0x%x\n", offset);
+		LOG("Unmapped RAM read attempted at offset 0x%x\n", offset);
 	}
 	return result;
 }
@@ -792,7 +792,7 @@ void news_r4k_state::ram_w(offs_t offset, uint8_t data)
 	}
 	else
 	{
-		LOGMASKED(LOG_GENERAL, "Unmapped RAM write attempted at offset 0x%x (data: 0x%x)\n", offset, data);
+		LOG("Unmapped RAM write attempted at offset 0x%x (data: 0x%x)\n", offset, data);
 	}
 }
 

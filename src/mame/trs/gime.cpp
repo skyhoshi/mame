@@ -79,12 +79,13 @@
 
     POP*STAR PILOT: Timer is synchronized with scanlines.
 
+    Cloud Kingdoms: 512K bank switch on scanline.
+
 **********************************************************************/
 
 
 #include "emu.h"
 #include "gime.h"
-#include "6883sam.h"
 #include "bus/coco/cococart.h"
 #include "machine/ram.h"
 
@@ -139,12 +140,12 @@
 //  ctor
 //-------------------------------------------------
 
-gime_device::gime_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock, const uint8_t *fontdata)
-	: mc6847_friend_device(mconfig, type, tag, owner, clock, fontdata, true, 263, 25+192+26+3, 8, false)
+gime_device::gime_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock, const uint8_t *fontdata, bool pal)
+	: mc6847_friend_device(mconfig, type, tag, owner, clock, fontdata, true, 262, 25+192+26+1, 8, false, pal)
 	, sam6883_friend_device_interface(mconfig, *this, 8)
 	, m_write_irq(*this)
 	, m_write_firq(*this)
-	, m_read_floating_bus(*this)
+	, m_read_floating_bus(*this, 0)
 	, m_maincpu(*this, finder_base::DUMMY_TAG)
 	, m_ram(*this, finder_base::DUMMY_TAG)
 	, m_cart_device(*this, finder_base::DUMMY_TAG)
@@ -192,11 +193,6 @@ void gime_device::device_start()
 		snprintf(buffer, std::size(buffer), "wbank%d", i);
 		m_write_banks[i] = machine().root_device().membank(buffer);
 	}
-
-	// resolve callbacks
-	m_write_irq.resolve_safe();
-	m_write_firq.resolve_safe();
-	m_read_floating_bus.resolve_safe(0);
 
 	// set up ROM/RAM pointers
 	m_rom = m_rom_region->base();
@@ -259,7 +255,8 @@ void gime_device::update_composite_palette()
 
 inline gime_device::pixel_t gime_device::get_composite_color(int color)
 {
-	static pixel_t composite_palette[64] = {
+	static const pixel_t composite_palette[64] =
+	{
 		0x000000, 0x004c00, 0x004300, 0x0a3100, 0x2f1b00, 0x550100, 0x6c0000, 0x770006,
 		0x71004b, 0x5c008b, 0x3b00b8, 0x1100ca, 0x001499, 0x002c62, 0x004011, 0x004b00,
 		0x2d2d2d, 0x069800, 0x288f00, 0x537d00, 0x786700, 0xa04c00, 0xb63402, 0xc3224c,
@@ -271,7 +268,8 @@ inline gime_device::pixel_t gime_device::get_composite_color(int color)
 	};
 
 	// composite output with phase inverted
-	static pixel_t composite_palette_180[64] = {
+	static const pixel_t composite_palette_180[64] =
+	{
 		0x000000, 0x5a0e5a, 0x4f0c4f, 0x360f40, 0x0d213c, 0x003334, 0x004141, 0x004943,
 		0x005409, 0x005600, 0x114c00, 0x263700, 0x392500, 0x491d00, 0x4f0f3e, 0x590e59,
 		0x2d2d2d, 0xb11fb7, 0x9932c1, 0x7248c5, 0x4a5bc2, 0x1a6eba, 0x0077a9, 0x008c62,
@@ -593,14 +591,11 @@ void gime_device::update_memory(int bank)
 		is_read_only = false;
 	}
 
-	// compensate for offset
-	memory += offset;
-
 	// set the banks
 	if (memory)
 	{
-		read_bank->set_base(memory);
-		write_bank->set_base(is_read_only ? m_dummy_bank : memory);
+		read_bank->set_base(memory + offset);
+		write_bank->set_base(is_read_only ? m_dummy_bank : memory + offset);
 	}
 	else
 	{
@@ -994,7 +989,7 @@ inline void gime_device::write_gime_register(offs_t offset, uint8_t data)
 			// alone won't affect the MMU; writes to $FFAx are required to "latch"
 			// in the $FF9B value.
 			//
-			// The reason that $FF9B is not mentioned in offical documentation
+			// The reason that $FF9B is not mentioned in official documentation
 			// is because it is only meaningful in CoCo 3's with the 2MB upgrade
 			break;
 
@@ -1202,7 +1197,7 @@ void gime_device::change_gime_firq(uint8_t data)
 //  ignored in lo-res mode.  Specifically, $FF9D is masked with $E0, and
 //  $FF9E is masked with $3F
 //
-//  John Kowalski confirms this behavior
+//  John Kowalski confirms this behaviour
 //-------------------------------------------------
 
 inline offs_t gime_device::get_video_base()
@@ -1226,8 +1221,7 @@ inline offs_t gime_device::get_video_base()
 	}
 
 	result += ((offs_t) (m_gime_registers[0x0E] & ff9e_mask)    * 0x00008)
-			| ((offs_t) (m_gime_registers[0x0D] & ff9d_mask)    * 0x00800)
-			| ((offs_t) (m_gime_registers[0x0B] & 0x0F)         * 0x80000);
+			| ((offs_t) (m_gime_registers[0x0D] & ff9d_mask)    * 0x00800);
 	return result;
 }
 
@@ -1237,10 +1231,10 @@ inline offs_t gime_device::get_video_base()
 //  new_frame
 //-------------------------------------------------
 
-TIMER_CALLBACK_MEMBER(gime_device::new_frame)
+void gime_device::new_frame()
 {
 	/* call inherited function */
-	super::new_frame(param);
+	super::new_frame();
 
 	/* latch in legacy video value */
 	bool legacy_video_changed = update_value(&m_legacy_video, m_gime_registers[0] & 0x80 ? true : false);
@@ -1289,22 +1283,20 @@ void gime_device::update_border(uint16_t physical_scanline)
 	if (m_legacy_video)
 	{
 		/* legacy video */
-		switch(border_value(m_ff22_value, true))
+		if (m_ff22_value & MODE_AG)
 		{
-			case BORDER_COLOR_GREEN:
-				border = 0x12;      /* green */
-				break;
-			case BORDER_COLOR_WHITE:
-				border = 0x3F;      /* white */
-				break;
-			case BORDER_COLOR_BLACK:
-				border = 0x00;      /* black */
-				break;
-			case BORDER_COLOR_ORANGE:
-				border = 0x26;      /* orange */
-				break;
-			default:
-				fatalerror("Should not get here\n");
+			// graphics, green or white
+			border = (~m_ff22_value & MODE_CSS) ? 0x12 : 0x3F;
+		}
+		else if ((m_ff22_value & MODE_GM2) && !(m_ff22_value & MODE_GM1))
+		{
+			// text, green or orange
+			border = (~m_ff22_value & MODE_CSS) ? 0x12 : 0x26;
+		}
+		else
+		{
+			// text, black
+			border = 0x00;
 		}
 	}
 	else
@@ -1339,42 +1331,26 @@ inline uint16_t gime_device::get_lines_per_row()
 	uint16_t lines_per_row;
 	if (m_legacy_video)
 	{
-		switch(m_ff22_value & MODE_AG)
+		if (m_ff22_value & MODE_AG)
 		{
-			case 0:
+			static const int gime_legacy_lines_per_row_graphic[8] =
 			{
-				// http://cocogamedev.mxf.yuku.com/topic/4299238#.VyC6ozArI-U
-				static int ff9c_lines_per_row[16] =
-				{
-					11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 4, 3, 2, 1, 12
-				};
+				3, 3, 3, 2, 2, 1, 1, 1
+			};
 
-				int i = m_gime_registers[0x0C] & 0x0F;
-				//lines_per_row = 12;
-				lines_per_row = ff9c_lines_per_row[i];
-				break;
-			}
+			int i = m_sam_state & (SAM_STATE_V0|SAM_STATE_V1|SAM_STATE_V2);
+			lines_per_row = gime_legacy_lines_per_row_graphic[i];
+		}
+		else
+		{
+			// http://cocogamedev.mxf.yuku.com/topic/4299238#.VyC6ozArI-U
+			static const int ff9c_lines_per_row_alpha[16] =
+			{
+				11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 4, 3, 2, 1, 12
+			};
 
-			case MODE_AG:
-				switch (m_sam_state & (SAM_STATE_V0|SAM_STATE_V1|SAM_STATE_V2))
-				{
-				case 0:
-					lines_per_row = 12;
-					break;
-				case SAM_STATE_V1:
-					lines_per_row = 3;
-					break;
-				case SAM_STATE_V2:
-				case SAM_STATE_V1|SAM_STATE_V0:
-					lines_per_row = 2;
-					break;
-				default:
-					lines_per_row = 1;
-				}
-				break;
-
-			default:
-				fatalerror("Should not get here\n");
+			int i = m_gime_registers[0x0C] & 0x0F;
+			lines_per_row = ff9c_lines_per_row_alpha[i];
 		}
 	}
 	else
@@ -1420,6 +1396,8 @@ template<uint8_t xres, gime_device::get_data_func get_data, bool record_mode>
 inline uint32_t gime_device::record_scanline_res(int scanline)
 {
 	int column;
+	/* capture 512K memory bank per scan line */
+	uint32_t bank_512k = (m_gime_registers[0x0B] & 0x0F) * 0x80000;
 	uint32_t base_offset = m_legacy_video ? 0 : (m_gime_registers[0x0F] & 0x7F) * 2;
 	uint32_t offset = 0;
 
@@ -1428,7 +1406,7 @@ inline uint32_t gime_device::record_scanline_res(int scanline)
 	{
 		/* input data */
 		uint8_t data, mode;
-		offset += ((*this).*(get_data))(m_video_position + ((base_offset + offset) & 0xFF), &data, &mode);
+		offset += ((*this).*(get_data))((m_video_position + ((base_offset + offset) & 0xFF)) | bank_512k, &data, &mode);
 
 		/* and record the pertinent values */
 		if (record_mode)
@@ -1508,7 +1486,7 @@ uint32_t gime_device::get_data_with_attributes(uint32_t video_position, uint8_t 
 //  record_body_scanline
 //-------------------------------------------------
 
-void gime_device::record_body_scanline(uint16_t physical_scanline, uint16_t logical_scanline)
+void gime_device::record_full_body_scanline(uint16_t physical_scanline, uint16_t logical_scanline)
 {
 	/* update the border first */
 	update_border(physical_scanline);
@@ -1531,7 +1509,11 @@ void gime_device::record_body_scanline(uint16_t physical_scanline, uint16_t logi
 			case MODE_AG|MODE_GM0:
 			case MODE_AG|MODE_GM1|MODE_GM0:
 			case MODE_AG|MODE_GM2|MODE_GM0:
-				pitch = record_scanline_res<16, &gime_device::get_data_mc6847, true>(physical_scanline);
+				if (m_sam_state & SAM_STATE_V0)
+					pitch = record_scanline_res<16, &gime_device::get_data_mc6847, true>(physical_scanline);
+				else
+					pitch = record_scanline_res<32, &gime_device::get_data_mc6847, true>(physical_scanline);
+
 				break;
 
 			case 0:
@@ -1695,9 +1677,10 @@ uint32_t gime_device::emit_dummy_samples(const scanline_record *scanline, int sa
 //  emit_mc6847_samples
 //-------------------------------------------------
 
+template<int xscale>
 inline uint32_t gime_device::emit_mc6847_samples(const scanline_record *scanline, int sample_start, int sample_count, pixel_t *pixels, const pixel_t *palette)
 {
-	return super::emit_mc6847_samples<2>(
+	return super::emit_mc6847_samples<xscale>(
 		scanline->m_mode[sample_start],
 		&scanline->m_data[sample_start],
 		sample_count,
@@ -1891,11 +1874,14 @@ bool gime_device::update_screen(bitmap_rgb32 &bitmap, const rectangle &cliprect,
 				case MODE_AG|MODE_GM0:
 				case MODE_AG|MODE_GM1|MODE_GM0:
 				case MODE_AG|MODE_GM2|MODE_GM0:
-					render_scanline<16, &gime_device::emit_mc6847_samples>(scanline, pixels, min_x, max_x, &resolver);
+					if (m_sam_state & SAM_STATE_V0)
+						render_scanline<16, &gime_device::emit_mc6847_samples<2>>(scanline, pixels, min_x, max_x, &resolver);
+					else
+						render_scanline<32, &gime_device::emit_mc6847_samples<1>>(scanline, pixels, min_x, max_x, &resolver);
 					break;
 
 				default:
-					render_scanline<32, &gime_device::emit_mc6847_samples>(scanline, pixels, min_x, max_x, &resolver);
+					render_scanline<32, &gime_device::emit_mc6847_samples<2>>(scanline, pixels, min_x, max_x, &resolver);
 					break;
 			}
 		}
@@ -2216,10 +2202,10 @@ DEFINE_DEVICE_TYPE(GIME_NTSC, gime_ntsc_device, "gime_ntsc", "TCC1014 (VC2645QC)
 DEFINE_DEVICE_TYPE(GIME_PAL,  gime_pal_device,  "gime_pal",  "TCC1014 (VC2645QC) GIME (PAL)")
 
 gime_ntsc_device::gime_ntsc_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
-	: gime_device(mconfig, GIME_NTSC, tag, owner, clock, lowres_font) { }
+	: gime_device(mconfig, GIME_NTSC, tag, owner, clock, lowres_font, false) { }
 
 gime_pal_device::gime_pal_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
-	: gime_device(mconfig, GIME_PAL, tag, owner, clock, lowres_font) { }
+	: gime_device(mconfig, GIME_PAL, tag, owner, clock, lowres_font, true) { }
 
 template class device_finder<gime_device, false>;
 template class device_finder<gime_device, true>;

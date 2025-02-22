@@ -158,6 +158,9 @@ public:
 
 	auto wait_cb() { return m_read_wait.bind(); }
 	auto clear_cb() { return m_read_clear.bind(); }
+	auto int_cb() { return m_read_int.bind(); }
+	auto dma_in_cb() { return m_read_dma_in.bind(); }
+	auto dma_out_cb() { return m_read_dma_out.bind(); }
 	auto ef1_cb() { return m_read_ef[0].bind(); }
 	auto ef2_cb() { return m_read_ef[1].bind(); }
 	auto ef3_cb() { return m_read_ef[2].bind(); }
@@ -171,28 +174,27 @@ public:
 	// public interfaces
 	offs_t get_memory_address();
 
-	DECLARE_WRITE_LINE_MEMBER( wait_w ) { set_input_line(COSMAC_INPUT_LINE_WAIT, state); }
-	DECLARE_WRITE_LINE_MEMBER( clear_w ) { set_input_line(COSMAC_INPUT_LINE_CLEAR, state); }
-	DECLARE_WRITE_LINE_MEMBER( int_w ) { set_input_line(COSMAC_INPUT_LINE_INT, state); }
-	DECLARE_WRITE_LINE_MEMBER( dma_in_w ) { set_input_line(COSMAC_INPUT_LINE_DMAIN, state); }
-	DECLARE_WRITE_LINE_MEMBER( dma_out_w ) { set_input_line(COSMAC_INPUT_LINE_DMAOUT, state); }
-	DECLARE_WRITE_LINE_MEMBER( ef1_w ) { set_input_line(COSMAC_INPUT_LINE_EF1, state); }
-	DECLARE_WRITE_LINE_MEMBER( ef2_w ) { set_input_line(COSMAC_INPUT_LINE_EF2, state); }
-	DECLARE_WRITE_LINE_MEMBER( ef3_w ) { set_input_line(COSMAC_INPUT_LINE_EF3, state); }
-	DECLARE_WRITE_LINE_MEMBER( ef4_w ) { set_input_line(COSMAC_INPUT_LINE_EF4, state); }
+	void wait_w(int state) { set_input_line(COSMAC_INPUT_LINE_WAIT, state); }
+	void clear_w(int state) { set_input_line(COSMAC_INPUT_LINE_CLEAR, state); }
+	void int_w(int state) { set_input_line(COSMAC_INPUT_LINE_INT, state); }
+	void dma_in_w(int state) { set_input_line(COSMAC_INPUT_LINE_DMAIN, state); }
+	void dma_out_w(int state) { set_input_line(COSMAC_INPUT_LINE_DMAOUT, state); }
+	void ef1_w(int state) { set_input_line(COSMAC_INPUT_LINE_EF1, state); }
+	void ef2_w(int state) { set_input_line(COSMAC_INPUT_LINE_EF2, state); }
+	void ef3_w(int state) { set_input_line(COSMAC_INPUT_LINE_EF3, state); }
+	void ef4_w(int state) { set_input_line(COSMAC_INPUT_LINE_EF4, state); }
 
 protected:
 	// construction/destruction
 	cosmac_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock);
 
 	// device-level overrides
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 	// device_execute_interface overrides
 	virtual uint32_t execute_min_cycles() const noexcept override;
 	virtual uint32_t execute_max_cycles() const noexcept override;
-	virtual uint32_t execute_input_lines() const noexcept override;
 	virtual void execute_run() override;
 	virtual void execute_set_input(int inputnum, int state) override;
 
@@ -225,8 +227,10 @@ protected:
 	inline void dma_input();
 	inline void dma_output();
 	inline void interrupt();
-	virtual bool check_irq() { return m_ie && m_irq; }
+	virtual bool check_irq() { return m_ie && sample_interrupt(); }
 	inline void sample_wait_clear();
+	bool sample_interrupt();
+	inline void sample_dma_io();
 	inline void sample_ef_lines();
 	virtual void output_state_code();
 	inline void set_q_flag(int state);
@@ -367,6 +371,9 @@ protected:
 	// device callbacks
 	devcb_read_line        m_read_wait;
 	devcb_read_line        m_read_clear;
+	devcb_read_line        m_read_int;
+	devcb_read_line        m_read_dma_in;
+	devcb_read_line        m_read_dma_out;
 	devcb_read_line::array<4> m_read_ef;
 	devcb_write_line       m_write_q;
 	devcb_read8            m_read_dma;
@@ -506,7 +513,7 @@ protected:
 
 	virtual cosmac_device::ophandler get_ophandler(uint16_t opcode) const override;
 	virtual bool has_extended_opcodes() override { return true; }
-	virtual bool check_irq() override { return m_ie && ((m_irq && m_xie) || (m_cil && m_cie)); }
+	virtual bool check_irq() override { return m_ie && ((sample_interrupt() && m_xie) || (m_cil && m_cie)); }
 	virtual void reset_state() override;
 
 private:

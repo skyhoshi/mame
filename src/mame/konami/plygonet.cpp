@@ -151,14 +151,14 @@ public:
 	void plygonet(machine_config &config);
 
 private:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
-	void main_map(address_map &map);
-	void sound_map(address_map &map);
-	void dsp_program_map(address_map &map);
-	void dsp_data_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
+	void dsp_program_map(address_map &map) ATTR_COLD;
+	void dsp_data_map(address_map &map) ATTR_COLD;
 
 	// Main-board handlers
 	void sys_w(offs_t offset, u8 data);
@@ -205,7 +205,7 @@ private:
 	// Sound handlers
 	void sound_ctrl_w(u8 data);
 	void update_sound_nmi();
-	DECLARE_WRITE_LINE_MEMBER(k054539_nmi_gen);
+	void k054539_nmi_gen(int state);
 
 	template <int PolyPage> void process_polys();
 	template <int PolyPage> void draw_poly(bitmap_rgb32 &bitmap, const u16 raw_color, const u16 span_ptr, const u16 raw_start, const u16 raw_end);
@@ -345,8 +345,8 @@ static INPUT_PORTS_START( polygonet )
 	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_UNKNOWN )
 
 	PORT_START("IN2")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_er5911_device, do_read)
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_er5911_device, ready_read)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("eeprom", FUNC(eeprom_serial_er5911_device::do_read))
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("eeprom", FUNC(eeprom_serial_er5911_device::ready_read))
 	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_COIN2 )
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_UNUSED ) // Start 2, unused
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_UNKNOWN )
@@ -365,9 +365,9 @@ static INPUT_PORTS_START( polygonet )
 	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_UNKNOWN )
 
 	PORT_START( "EEPROMOUT" )
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_OUTPUT ) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_er5911_device, di_write)
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_OUTPUT ) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_er5911_device, cs_write)
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_OUTPUT ) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_er5911_device, clk_write)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_OUTPUT ) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", FUNC(eeprom_serial_er5911_device::di_write))
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_OUTPUT ) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", FUNC(eeprom_serial_er5911_device::cs_write))
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_OUTPUT ) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", FUNC(eeprom_serial_er5911_device::clk_write))
 INPUT_PORTS_END
 
 static INPUT_PORTS_START( polynetw )
@@ -419,11 +419,11 @@ void polygonet_state::sys_w(offs_t offset, u8 data)
 				m_maincpu->set_input_line(M68K_IRQ_5, CLEAR_LINE);
 
 			m_sys1 = data;
-			LOGMASKED(LOG_GENERAL, "sys1 write: %02x\n", data);
+			LOG("sys1 write: %02x\n", data);
 			break;
 
 		default:
-			LOGMASKED(LOG_GENERAL, "Unknown sys_w write: %08x = %02x\n", offset, data);
+			LOG("Unknown sys_w write: %08x = %02x\n", offset, data);
 			break;
 	}
 }
@@ -835,13 +835,13 @@ void polygonet_state::ttl_vram_w(offs_t offset, u32 data, u32 mem_mask)
 void polygonet_state::fix_regs_w(offs_t offset, u32 data, u32 mem_mask)
 {
 	COMBINE_DATA(&m_fix_regs[offset]);
-	LOGMASKED(LOG_GENERAL, "fix_regs_w: %08x = %08x & %08x\n", offset, data, mem_mask);
+	LOG("fix_regs_w: %08x = %08x & %08x\n", offset, data, mem_mask);
 }
 
 u32 polygonet_state::fix_regs_r(offs_t offset, u32 mem_mask)
 {
 	const u32 data = m_fix_regs[offset];
-	LOGMASKED(LOG_GENERAL, "fix_regs_r: %08x: %08x & %08x\n", offset, data, mem_mask);
+	LOG("fix_regs_r: %08x: %08x & %08x\n", offset, data, mem_mask);
 	return data;
 }
 
@@ -941,7 +941,7 @@ void polygonet_state::main_map(address_map &map)
 	map(0x540000, 0x540fff).ram().share(m_ttl_vram).w(FUNC(polygonet_state::ttl_vram_w));
 	map(0x541000, 0x54101f).ram().share(m_fix_regs).rw(FUNC(polygonet_state::fix_regs_r), FUNC(polygonet_state::fix_regs_w));
 	map(0x580000, 0x5807ff).rw(m_k056230, FUNC(k056230_device::ram_r), FUNC(k056230_device::ram_w));
-	map(0x580800, 0x580803).rw(m_k056230, FUNC(k056230_device::regs_r), FUNC(k056230_device::regs_w));
+	map(0x580800, 0x580803).m(m_k056230, FUNC(k056230_device::regs_map));
 	map(0x600000, 0x60000f).m(m_k054321, FUNC(k054321_device::main_map));
 	map(0x640000, 0x640003).w(FUNC(polygonet_state::sound_irq_w));
 	map(0x680000, 0x680003).w(m_watchdog, FUNC(watchdog_timer_device::reset32_w));
@@ -1027,7 +1027,7 @@ void polygonet_state::update_sound_nmi()
 		m_audiocpu->set_input_line(INPUT_LINE_NMI, CLEAR_LINE);
 }
 
-WRITE_LINE_MEMBER(polygonet_state::k054539_nmi_gen)
+void polygonet_state::k054539_nmi_gen(int state)
 {
 	m_sound_intck = state;
 	update_sound_nmi();

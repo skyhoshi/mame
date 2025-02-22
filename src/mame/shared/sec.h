@@ -49,15 +49,15 @@ public:
 	sec_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock = 0);
 
 	/* serial interface */
-	DECLARE_WRITE_LINE_MEMBER(clk_w);
-	DECLARE_WRITE_LINE_MEMBER(data_w);
-	DECLARE_WRITE_LINE_MEMBER(cs_w);
+	void clk_w(int state);
+	void data_w(int state);
+	void cs_w(int state);
 
 	int data_r();
 
 protected:
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 private:
 	static const size_t MAX_COUNTERS = 32;

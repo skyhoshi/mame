@@ -277,7 +277,7 @@
 
 #include "dcs.h"
 
-#include "bus/ata/idehd.h"
+#include "bus/ata/hdd.h"
 #include "bus/rs232/rs232.h"
 #include "cpu/adsp2100/adsp2100.h"
 #include "cpu/mips/mips3.h"
@@ -292,20 +292,22 @@
 #include "video/voodoo_pci.h"
 
 #include "screen.h"
+#include "speaker.h"
 
 #include "sf2049.lh"
 
+#define LOG_TIMEKEEPER       (1U << 1)
+#define LOG_TIMEKEEPER_LOCKS (1U << 2)
+#define LOG_SIO              (1U << 3)
+#define LOG_SIO_VERBOSE      (1U << 4)
+#define LOG_WATCHDOG         (1U << 5)
+#define LOG_UNKNOWN          (1U << 6)
+
+#define VERBOSE (LOG_UNKNOWN)
+#include "logmacro.h"
+
 
 namespace {
-
-/*************************************
- *
- *  Debugging constants
- *
- *************************************/
-
-#define LOG_TIMEKEEPER      (0)
-#define LOG_SIO             (0)
 
 /*************************************
  *
@@ -340,8 +342,7 @@ public:
 		m_io_dips(*this, "DIPS"),
 		m_system_led(*this, "system_led"),
 		m_wheel_driver(*this, "wheel"),
-		m_lamps(*this, "lamp%u", 0U),
-		m_a2d_shift(0)
+		m_lamps(*this, "lamp%u", 0U)
 	{ }
 
 	void vegascore(machine_config &config);
@@ -378,18 +379,18 @@ public:
 	void init_sf2049();
 	void init_sf2049se();
 
-	DECLARE_CUSTOM_INPUT_MEMBER(i40_r);
-	DECLARE_CUSTOM_INPUT_MEMBER(gauntleg_p12_r);
-	DECLARE_CUSTOM_INPUT_MEMBER(gauntleg_p34_r);
-	DECLARE_CUSTOM_INPUT_MEMBER(keypad_r);
-	DECLARE_CUSTOM_INPUT_MEMBER(gearshift_r);
+	ioport_value i40_r();
+	ioport_value gauntleg_p12_r();
+	ioport_value gauntleg_p34_r();
+	ioport_value keypad_r();
+	ioport_value gearshift_r();
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
-	static constexpr unsigned SYSTEM_CLOCK = 100000000;
+	static constexpr unsigned SYSTEM_CLOCK = 100'000'000;
 
 	required_device<mips3_device> m_maincpu;
 	required_device<vrc5074_device> m_nile;
@@ -416,31 +417,31 @@ private:
 
 	static const uint8_t translate49[7];
 
-	int m_a2d_shift;
-	int8_t m_wheel_force;
-	int m_wheel_offset;
-	bool m_wheel_calibrated;
-	uint8_t m_vblank_state;
-	uint8_t m_cpuio_data[4];
-	uint8_t m_sio_reset_ctrl;
-	uint8_t m_sio_irq_enable;
-	uint8_t m_sio_irq_state;
-	uint8_t m_duart_irq_state;
-	uint8_t m_sio_led_state;
-	uint8_t m_pending_analog_read;
-	uint8_t m_cmos_unlocked;
-	uint8_t m_dcs_idma_cs;
-	uint32_t m_i40_data;
-	uint32_t m_keypad_select;
-	uint32_t m_gear;
+	uint8_t m_a2d_shift = 0;
+	int8_t m_wheel_force = 0;
+	int m_wheel_offset = 0;
+	bool m_wheel_calibrated = false;
+	uint8_t m_vblank_state = 0;
+	uint8_t m_cpuio_data[4] = { };
+	uint8_t m_sio_reset_ctrl = 0;
+	uint8_t m_sio_irq_enable = 0;
+	uint8_t m_sio_irq_state = 0;
+	uint8_t m_duart_irq_state = 0;
+	uint8_t m_sio_led_state = 0;
+	uint8_t m_pending_analog_read = 0;
+	uint8_t m_cmos_unlocked = 0;
+	uint8_t m_dcs_idma_cs = 0;
+	uint32_t m_i40_data = 0;
+	uint32_t m_keypad_select = 0;
+	uint32_t m_gear = 0;
 
-	DECLARE_WRITE_LINE_MEMBER(duart_irq_cb);
-	DECLARE_WRITE_LINE_MEMBER(vblank_assert);
+	void duart_irq_cb(int state);
+	void vblank_assert(int state);
 
 	void update_sio_irqs();
 
-	DECLARE_WRITE_LINE_MEMBER(watchdog_reset);
-	DECLARE_WRITE_LINE_MEMBER(watchdog_irq);
+	void watchdog_reset(int state);
+	void watchdog_irq(int state);
 	void timekeeper_w(offs_t offset, uint32_t data, uint32_t mem_mask = ~0);
 	uint32_t timekeeper_r(offs_t offset, uint32_t mem_mask = ~0);
 	void reset_sio(void);
@@ -454,8 +455,8 @@ private:
 	uint32_t ethernet_r(offs_t offset, uint32_t mem_mask = ~0);
 	void ethernet_w(offs_t offset, uint32_t data, uint32_t mem_mask = ~0);
 	void dcs3_fifo_full_w(uint32_t data);
-	DECLARE_WRITE_LINE_MEMBER(ethernet_interrupt);
-	DECLARE_WRITE_LINE_MEMBER(ioasic_irq);
+	void ethernet_interrupt(int state);
+	void ioasic_irq(int state);
 	uint32_t unknown_r(offs_t offset, uint32_t mem_mask = ~0);
 	uint8_t parallel_r(offs_t offset);
 	void parallel_w(offs_t offset, uint8_t data);
@@ -466,13 +467,13 @@ private:
 
 	std::string sioIRQString(uint8_t data);
 
-	void vegas_cs2_map(address_map &map);
-	void vegas_cs3_map(address_map &map);
-	void vegas_cs4_map(address_map &map);
-	void vegas_cs5_map(address_map &map);
-	void vegas_cs6_map(address_map &map);
-	void vegas_cs7_map(address_map &map);
-	void vegas_cs8_map(address_map &map);
+	void vegas_cs2_map(address_map &map) ATTR_COLD;
+	void vegas_cs3_map(address_map &map) ATTR_COLD;
+	void vegas_cs4_map(address_map &map) ATTR_COLD;
+	void vegas_cs5_map(address_map &map) ATTR_COLD;
+	void vegas_cs6_map(address_map &map) ATTR_COLD;
+	void vegas_cs7_map(address_map &map) ATTR_COLD;
+	void vegas_cs8_map(address_map &map) ATTR_COLD;
 
 	static void hdd_config(device_t *device);
 };
@@ -513,18 +514,15 @@ void vegas_state::machine_start()
 	/* identify our sound board */
 	if (m_dcs->get_rev() == dcs_audio_device::REV_DSIO) {
 		m_dcs_idma_cs = 6;
-		if (LOG_SIO)
-			logerror("Found dsio\n");
+		LOGMASKED(LOG_SIO, "Found dsio\n");
 	}
 	else if (m_dcs->get_rev() == dcs_audio_device::REV_DENV) {
 		m_dcs_idma_cs = 7;
-		if (LOG_SIO)
-			logerror("Found denver\n");
+		LOGMASKED(LOG_SIO, "Found denver\n");
 	}
 	else {
 		m_dcs_idma_cs = 0;
-		if (LOG_SIO)
-			logerror("Did not find dcs2 sound board\n");
+		LOGMASKED(LOG_SIO, "Did not find dcs2 sound board\n");
 	}
 
 	m_cmos_unlocked = 0;
@@ -538,6 +536,7 @@ void vegas_state::machine_reset()
 
 	// Clear CPU IO registers
 	std::fill(std::begin(m_cpuio_data), std::end(m_cpuio_data), 0);
+
 	// Clear SIO registers
 	reset_sio();
 	m_duart_irq_state = 0;
@@ -547,22 +546,21 @@ void vegas_state::machine_reset()
 	m_wheel_force = 0;
 	m_wheel_offset = 0;
 	m_wheel_calibrated = false;
-
 }
 
 /*************************************
 *  Watchdog interrupts
 *************************************/
 #define WD_IRQ 0x1
-WRITE_LINE_MEMBER(vegas_state::watchdog_irq)
+void vegas_state::watchdog_irq(int state)
 {
 	if (state && !(m_sio_irq_state & WD_IRQ)) {
-		logerror("%s: vegas_state::watchdog_irq state = %i\n", machine().describe_context(), state);
+		LOGMASKED(LOG_WATCHDOG, "%s: vegas_state::watchdog_irq state = %i\n", machine().describe_context(), state);
 		m_sio_irq_state |= WD_IRQ;
 		update_sio_irqs();
 	}
 	else if (!state && (m_sio_irq_state & WD_IRQ)) {
-		logerror("%s: vegas_state::watchdog_irq state = %i\n", machine().describe_context(), state);
+		LOGMASKED(LOG_WATCHDOG, "%s: vegas_state::watchdog_irq state = %i\n", machine().describe_context(), state);
 		m_sio_irq_state &= ~WD_IRQ;
 		update_sio_irqs();
 	}
@@ -571,11 +569,10 @@ WRITE_LINE_MEMBER(vegas_state::watchdog_irq)
 /*************************************
 *  Watchdog Reset
 *************************************/
-WRITE_LINE_MEMBER(vegas_state::watchdog_reset)
+void vegas_state::watchdog_reset(int state)
 {
 	if (state) {
-		printf("vegas_state::watchdog_reset!!!\n");
-		logerror("vegas_state::watchdog_reset!!!\n");
+		LOGMASKED(LOG_WATCHDOG, "vegas_state::watchdog_reset!!!\n");
 		machine().schedule_soft_reset();
 	}
 }
@@ -588,8 +585,7 @@ WRITE_LINE_MEMBER(vegas_state::watchdog_reset)
 
 void vegas_state::timekeeper_w(offs_t offset, uint32_t data, uint32_t mem_mask)
 {
-	if (m_cmos_unlocked)
-	{
+	if (m_cmos_unlocked) {
 		if (ACCESSING_BITS_0_7)
 			m_timekeeper->write(offset * 4 + 0, data >> 0);
 		if (ACCESSING_BITS_8_15)
@@ -599,11 +595,11 @@ void vegas_state::timekeeper_w(offs_t offset, uint32_t data, uint32_t mem_mask)
 		if (ACCESSING_BITS_24_31)
 			m_timekeeper->write(offset * 4 + 3, data >> 24);
 		if (offset*4 >= 0x7ff0)
-			if (LOG_TIMEKEEPER) logerror("%s timekeeper_w(%04X & %08X) = %08X\n", machine().describe_context(), offset*4, mem_mask, data);
+			LOGMASKED(LOG_TIMEKEEPER, "%s timekeeper_w(%04X & %08X) = %08X\n", machine().describe_context(), offset*4, mem_mask, data);
 		m_cmos_unlocked = 0;
 	}
 	else
-		logerror("%s: timekeeper_w(%04X,%08X & %08X) without CMOS unlocked\n", machine().describe_context(), offset, data, mem_mask);
+		LOGMASKED(LOG_TIMEKEEPER_LOCKS, "%s: timekeeper_w(%04X,%08X & %08X) without CMOS unlocked\n", machine().describe_context(), offset, data, mem_mask);
 }
 
 
@@ -621,11 +617,10 @@ uint32_t vegas_state::timekeeper_r(offs_t offset, uint32_t mem_mask)
 	if (offset * 4 >= 0x7ff0) {
 		// Initial RTC check expects reads to the RTC to take some time
 		m_maincpu->eat_cycles(30);
-		if (LOG_TIMEKEEPER) logerror("%s: timekeeper_r(%04X & %08X) = %08X\n", machine().describe_context(), offset * 4, mem_mask, result);
+		LOGMASKED(LOG_TIMEKEEPER, "%s: timekeeper_r(%04X & %08X) = %08X\n", machine().describe_context(), offset * 4, mem_mask, result);
 	}
 	return result;
 }
-
 
 
 
@@ -653,14 +648,13 @@ void vegas_state::update_sio_irqs()
 	else {
 		m_nile->pci_intr_c(CLEAR_LINE);
 	}
-	if (LOG_SIO) {
-		std::string sioEnable = sioIRQString(m_sio_irq_enable);
-		std::string sioState = sioIRQString(m_sio_irq_state);
-		logerror("update_sio_irqs: irq_enable: %02x %s irq_state: %02x %s\n", m_sio_irq_enable, sioEnable, m_sio_irq_state, sioState);
-	}
+
+	std::string sioEnable = sioIRQString(m_sio_irq_enable);
+	std::string sioState = sioIRQString(m_sio_irq_state);
+	LOGMASKED(LOG_SIO, "update_sio_irqs: irq_enable: %02x %s irq_state: %02x %s\n", m_sio_irq_enable, sioEnable, m_sio_irq_state, sioState);
 }
 
-WRITE_LINE_MEMBER(vegas_state::duart_irq_cb)
+void vegas_state::duart_irq_cb(int state)
 {
 	// Duart shares IRQ with SIO
 	if (state ^ m_duart_irq_state) {
@@ -669,20 +663,18 @@ WRITE_LINE_MEMBER(vegas_state::duart_irq_cb)
 	}
 }
 
-WRITE_LINE_MEMBER(vegas_state::vblank_assert)
+void vegas_state::vblank_assert(int state)
 {
-	if (LOG_SIO)
-		logerror("vblank_assert: m_sio_reset_ctrl: %04x state: %d\n", m_sio_reset_ctrl, state);
+	LOGMASKED(LOG_SIO, "vblank_assert: m_sio_reset_ctrl: %04x state: %d\n", m_sio_reset_ctrl, state);
 	// latch on the correct polarity transition
-	if ((m_sio_irq_enable & 0x20) && ((state && !(m_sio_reset_ctrl & 0x10)) || (!state && (m_sio_reset_ctrl & 0x10))))
-	{
+	if ((m_sio_irq_enable & 0x20) && ((state && !(m_sio_reset_ctrl & 0x10)) || (!state && (m_sio_reset_ctrl & 0x10)))) {
 		m_sio_irq_state |= 0x20;
 		update_sio_irqs();
 	}
 }
 
 
-WRITE_LINE_MEMBER(vegas_state::ioasic_irq)
+void vegas_state::ioasic_irq(int state)
 {
 	if (state)
 		m_sio_irq_state |= 0x04;
@@ -691,7 +683,7 @@ WRITE_LINE_MEMBER(vegas_state::ioasic_irq)
 	update_sio_irqs();
 }
 
-WRITE_LINE_MEMBER(vegas_state::ethernet_interrupt)
+void vegas_state::ethernet_interrupt(int state)
 {
 	if (state)
 		m_sio_irq_state |= 0x10;
@@ -723,27 +715,18 @@ uint8_t vegas_state::sio_r(offs_t offset)
 	case 1:
 		// Interrupt Enable
 		result = m_sio_irq_enable;
-		if (LOG_SIO) {
-			std::string sioBitSel = sioIRQString(result);
-			logerror("%s: sio_r: INTR ENABLE 0x%02x %s\n", machine().describe_context(), result, sioBitSel);
-		}
+		LOGMASKED(LOG_SIO, "%s: sio_r: INTR ENABLE 0x%02x %s\n", machine().describe_context(), result, sioIRQString(result).c_str());
 		break;
 	case 2:
 		// Interrupt Cause
 		result = m_sio_irq_state & m_sio_irq_enable;
-		if (LOG_SIO) {
-			std::string sioBitSel = sioIRQString(result);
-			logerror("%s: sio_r: INTR CAUSE 0x%02x %s\n", machine().describe_context(), result, sioBitSel);
-		}
+		LOGMASKED(LOG_SIO, "%s: sio_r: INTR CAUSE 0x%02x %s\n", machine().describe_context(), result, sioIRQString(result).c_str());
 		//m_sio_irq_state &= ~0x02;
 		break;
 	case 3:
 		// Interrupt Status
 		result = m_sio_irq_state;
-		if (LOG_SIO) {
-			std::string sioBitSel = sioIRQString(result);
-			logerror("%s: sio_r: INTR STATUS 0x%02x %s\n", machine().describe_context(), result, sioBitSel);
-		}
+		LOGMASKED(LOG_SIO, "%s: sio_r: INTR STATUS 0x%02x %s\n", machine().describe_context(), result, sioIRQString(result).c_str());
 		break;
 	case 4:
 		// LED
@@ -790,12 +773,12 @@ uint8_t vegas_state::sio_r(offs_t offset)
 			result = (((m_io_8way[2]->read() & 0x40) >> 3) | ((m_io_8way[3]->read() & 0x7000) >> 8));
 			break;
 		}
-		if (LOG_SIO) logerror("%s: sio_r: offset: %08x index: %d result: %02X\n", machine().describe_context(), offset, index, result);
+		LOGMASKED(LOG_SIO, "%s: sio_r: offset: %08x index: %d result: %02X\n", machine().describe_context(), offset, index, result);
 		break;
 	}
 	}
-	if (LOG_SIO && (index < 0x1 || index > 0x4))
-		logerror("%s: sio_r: offset: %08x index: %d result: %02X\n", machine().describe_context(), offset, index, result);
+	if (index < 0x1 || index > 0x4)
+		LOGMASKED(LOG_SIO, "%s: sio_r: offset: %08x index: %d result: %02X\n", machine().describe_context(), offset, index, result);
 	return result;
 }
 
@@ -807,8 +790,7 @@ void vegas_state::sio_w(offs_t offset, uint8_t data)
 		int index = offset >> 12;
 		switch (index) {
 		case 0:
-			if (LOG_SIO)
-				logerror("sio_w: Reset Control offset: %08x index: %d data: %02X\n", offset, index, data);
+			LOGMASKED(LOG_SIO, "sio_w: Reset Control offset: %08x index: %d data: %02X\n", offset, index, data);
 			// Reset Control:  Bit 0=>Reset IOASIC, Bit 1=>Reset NSS Connection, Bit 2=>Reset SMC, Bit 3=>Reset VSYNC, Bit 4=>VSYNC Polarity
 			/* bit 0 is used to reset the IOASIC */
 			if (!(data & (1 << 0)))
@@ -834,18 +816,13 @@ void vegas_state::sio_w(offs_t offset, uint8_t data)
 			// Bit 3 => NSS / Hi-Link
 			// Bit 4 => Ethernet
 			// Bit 5 => Vsync
-			if (LOG_SIO) {
-				std::string sioBitSel = sioIRQString(data);
-				logerror("sio_w: Interrupt Enable 0x%02x %s\n", data, sioBitSel);
-				//logerror("sio_w: Interrupt Enable offset: %08x index: %d data: %02X\n", offset, index, data);
-			}
+			LOGMASKED(LOG_SIO, "sio_w: Interrupt Enable 0x%02x %s\n", data, sioIRQString(data).c_str());
 			m_sio_irq_enable = data;
 			update_sio_irqs();
 			break;
 		case 4:
 			// LED
-			if (LOG_SIO)
-				logerror("sio_w: LED offset: %08x index: %d data: %02X\n", offset, index, data);
+			LOGMASKED(LOG_SIO, "sio_w: LED offset: %08x index: %d data: %02X\n", offset, index, data);
 			m_sio_led_state = data;
 			break;
 		case 6:
@@ -855,8 +832,7 @@ void vegas_state::sio_w(offs_t offset, uint8_t data)
 		case 7:
 			// Watchdog
 			m_timekeeper->watchdog_write();
-			if (0 && LOG_SIO)
-				logerror("sio_w: Watchdog: %08x index: %d data: %02X\n", offset, index, data);
+			LOGMASKED(LOG_SIO_VERBOSE, "sio_w: Watchdog: %08x index: %d data: %02X\n", offset, index, data);
 			//m_maincpu->eat_cycles(100);
 			break;
 		}
@@ -877,40 +853,37 @@ void vegas_state::cpu_io_w(offs_t offset, uint8_t data)
 	// 3: System Reset Bit 0=>enable sio, Bit 1=>enable ide, Bit 2=>enable PCI
 	m_cpuio_data[offset] = data;
 	switch (offset) {
-	case 0:
-	{
+	case 0: {
 		m_system_led = ~data & 0xff;
-		if (LOG_SIO) {
-			char digit = 'U';
-			switch (data & 0xff) {
-			case 0xc0: digit = '0'; break;
-			case 0xf9: digit = '1'; break;
-			case 0xa4: digit = '2'; break;
-			case 0xb0: digit = '3'; break;
-			case 0x99: digit = '4'; break;
-			case 0x92: digit = '5'; break;
-			case 0x82: digit = '6'; break;
-			case 0xf8: digit = '7'; break;
-			case 0x80: digit = '8'; break;
-			case 0x90: digit = '9'; break;
-			case 0x88: digit = 'A'; break;
-			case 0x83: digit = 'B'; break;
-			case 0xc6: digit = 'C'; break;
-			case 0xa7: digit = 'c'; break;
-			case 0xa1: digit = 'D'; break;
-			case 0x86: digit = 'E'; break;
-			case 0x87: digit = 'F'; break;
-			case 0x7f: digit = '.'; break;
-			case 0xf7: digit = '_'; break;
-			case 0xbf: digit = '|'; break;
-			case 0xfe: digit = '-'; break;
-			case 0xff: digit = 'Z'; break;
-			}
-			//popmessage("System LED: %C", digit);
-			logerror("%s: cpu_io_w System LED offset %X = %02X '%c'\n", machine().describe_context(), offset, data, digit);
+		char digit = 'U';
+		switch (data & 0xff) {
+		case 0xc0: digit = '0'; break;
+		case 0xf9: digit = '1'; break;
+		case 0xa4: digit = '2'; break;
+		case 0xb0: digit = '3'; break;
+		case 0x99: digit = '4'; break;
+		case 0x92: digit = '5'; break;
+		case 0x82: digit = '6'; break;
+		case 0xf8: digit = '7'; break;
+		case 0x80: digit = '8'; break;
+		case 0x90: digit = '9'; break;
+		case 0x88: digit = 'A'; break;
+		case 0x83: digit = 'B'; break;
+		case 0xc6: digit = 'C'; break;
+		case 0xa7: digit = 'c'; break;
+		case 0xa1: digit = 'D'; break;
+		case 0x86: digit = 'E'; break;
+		case 0x87: digit = 'F'; break;
+		case 0x7f: digit = '.'; break;
+		case 0xf7: digit = '_'; break;
+		case 0xbf: digit = '|'; break;
+		case 0xfe: digit = '-'; break;
+		case 0xff: digit = 'Z'; break;
 		}
-	}
+		//popmessage("System LED: %c", digit);
+		LOGMASKED(LOG_SIO, "%s: cpu_io_w System LED offset %X = %02X '%c'\n", machine().describe_context(), offset, data, digit);
 		break;
+	}
 	case 1:
 		m_cpuio_data[2] = (m_cpuio_data[2] & ~0x02) | ((m_cpuio_data[1] & 0x01) << 1) | (m_cpuio_data[1] & 0x01);
 		if (!(data & 0x1)) {
@@ -919,20 +892,18 @@ void vegas_state::cpu_io_w(offs_t offset, uint8_t data)
 			// Reset the SIO registers
 			reset_sio();
 		}
-		if (LOG_SIO)
-			logerror("%s: cpu_io_w PLD Config offset %X = %02X\n", machine().describe_context(), offset, data);
+		LOGMASKED(LOG_SIO, "%s: cpu_io_w PLD Config offset %X = %02X\n", machine().describe_context(), offset, data);
 		break;
 	case 2:
-		if (LOG_SIO && (m_cpuio_data[3] & 0x1))
-			logerror("%s: cpu_io_w PLD Status / Jamma Serial Sense offset %X = %02X\n", machine().describe_context(), offset, data);
+		if (m_cpuio_data[3] & 0x1)
+			LOGMASKED(LOG_SIO, "%s: cpu_io_w PLD Status / Jamma Serial Sense offset %X = %02X\n", machine().describe_context(), offset, data);
 		break;
 	case 3:
 		// Bit 0: Enable SIO, Bit 1: Enable SIO_R0/IDE, Bit 2: Enable PCI
-		if (LOG_SIO)
-			logerror("%s: cpu_io_w System Reset offset %X = %02X\n", machine().describe_context(), offset, data);
+		LOGMASKED(LOG_SIO, "%s: cpu_io_w System Reset offset %X = %02X\n", machine().describe_context(), offset, data);
 		break;
 	default:
-		logerror("%s: cpu_io_w unknown offset %X = %02X\n", machine().describe_context(), offset, data);
+		LOGMASKED(LOG_UNKNOWN, "%s: cpu_io_w unknown offset %X = %02X\n", machine().describe_context(), offset, data);
 		break;
 	}
 }
@@ -942,8 +913,8 @@ uint8_t vegas_state::cpu_io_r(offs_t offset)
 	uint32_t result = 0;
 	if (offset < 4)
 		result = m_cpuio_data[offset];
-	if (LOG_SIO && !(!(m_cpuio_data[3] & 0x1)))
-		logerror("%s:cpu_io_r offset %X = %02X\n", machine().describe_context(), offset, result);
+	if (m_cpuio_data[3] & 0x1)
+		LOGMASKED(LOG_SIO, "%s:cpu_io_r offset %X = %02X\n", machine().describe_context(), offset, result);
 	return result;
 }
 
@@ -1088,7 +1059,7 @@ void vegas_state::i40_w(uint32_t data)
 	m_i40_data = data;
 }
 
-CUSTOM_INPUT_MEMBER(vegas_state::i40_r)
+ioport_value vegas_state::i40_r()
 {
 	if (m_io_dips->read() & 0x100) {
 		// 8 way joysticks
@@ -1143,7 +1114,7 @@ CUSTOM_INPUT_MEMBER(vegas_state::i40_r)
 /*************************************
 * Gauntlet Player 1 & 2 control read
 *************************************/
-CUSTOM_INPUT_MEMBER(vegas_state::gauntleg_p12_r)
+ioport_value vegas_state::gauntleg_p12_r()
 {
 	if (m_io_dips->read() & 0x2000) {
 		// 8 way joysticks
@@ -1159,7 +1130,7 @@ CUSTOM_INPUT_MEMBER(vegas_state::gauntleg_p12_r)
 /*************************************
 * Gauntlet Player 3 & 4 control read
 *************************************/
-CUSTOM_INPUT_MEMBER(vegas_state::gauntleg_p34_r)
+ioport_value vegas_state::gauntleg_p34_r()
 {
 	if (m_io_dips->read() & 0x2000) {
 		// 8 way joysticks
@@ -1184,10 +1155,8 @@ void vegas_state::wheel_board_w(uint32_t data)
 
 	//logerror("wheel_board_w: data = %08x op: %02x arg: %02x\n", data, op, arg);
 
-	if (chip_select && latch_clk)
-	{
-		switch (op)
-		{
+	if (chip_select && latch_clk) {
+		switch (op) {
 		case 0x0:
 			m_wheel_driver[0] = arg; // target wheel angle. signed byte.
 			m_wheel_force = int8_t(~arg);
@@ -1208,11 +1177,10 @@ void vegas_state::wheel_board_w(uint32_t data)
 	}
 }
 
-CUSTOM_INPUT_MEMBER(vegas_state::keypad_r)
+ioport_value vegas_state::keypad_r()
 {
 	int row_sel;
-	for (row_sel=0; row_sel<4; row_sel++)
-	{
+	for (row_sel=0; row_sel<4; row_sel++) {
 		if (!(m_keypad_select & (1 << row_sel)))
 			break;
 	}
@@ -1230,12 +1198,11 @@ CUSTOM_INPUT_MEMBER(vegas_state::keypad_r)
 *  Gearshift
 *
 *************************************/
-DECLARE_CUSTOM_INPUT_MEMBER(vegas_state::gearshift_r)
+ioport_value vegas_state::gearshift_r()
 {
 	// Check for gear change and save gear selection
 	uint32_t gear = m_io_gearshift->read();
-	for (int i = 0; i < 4; i++)
-	{
+	for (int i = 0; i < 4; i++) {
 		if (gear & (1 << i))
 			m_gear = 1 << i;
 	}
@@ -1372,7 +1339,6 @@ static INPUT_PORTS_START( vegas_common )
 
 	PORT_START("8WAY_P4")
 	PORT_BIT( 0xff00, IP_ACTIVE_HIGH, IPT_UNUSED )
-
 INPUT_PORTS_END
 
 static INPUT_PORTS_START( vegas_analog )
@@ -1384,7 +1350,6 @@ static INPUT_PORTS_START( vegas_analog )
 
 	PORT_MODIFY("IN2")
 	PORT_BIT( 0xffff, IP_ACTIVE_LOW, IPT_UNUSED  )
-
 INPUT_PORTS_END
 
 /*************************************
@@ -1426,19 +1391,19 @@ static INPUT_PORTS_START( gauntleg )
 	PORT_DIPSETTING(      0x0000, "VGA Res 640x480" ) //VGA res not supported for gauntleg
 
 	PORT_MODIFY("IN1")
-	PORT_BIT( 0xffff, IP_ACTIVE_LOW, IPT_CUSTOM  ) PORT_CUSTOM_MEMBER(vegas_state, gauntleg_p12_r)
+	PORT_BIT( 0xffff, IP_ACTIVE_LOW, IPT_CUSTOM  ) PORT_CUSTOM_MEMBER(FUNC(vegas_state::gauntleg_p12_r))
 
 	PORT_MODIFY("IN2")
-	PORT_BIT( 0xffff, IP_ACTIVE_LOW, IPT_CUSTOM  ) PORT_CUSTOM_MEMBER(vegas_state, gauntleg_p34_r)
+	PORT_BIT( 0xffff, IP_ACTIVE_LOW, IPT_CUSTOM  ) PORT_CUSTOM_MEMBER(FUNC(vegas_state::gauntleg_p34_r))
 
 	PORT_MODIFY("8WAY_P1")
 	PORT_BIT( 0x0001, IP_ACTIVE_HIGH, IPT_JOYSTICK_UP    ) PORT_PLAYER(1) PORT_8WAY
 	PORT_BIT( 0x0002, IP_ACTIVE_HIGH, IPT_JOYSTICK_DOWN  ) PORT_PLAYER(1) PORT_8WAY
 	PORT_BIT( 0x0004, IP_ACTIVE_HIGH, IPT_JOYSTICK_LEFT  ) PORT_PLAYER(1) PORT_8WAY
 	PORT_BIT( 0x0008, IP_ACTIVE_HIGH, IPT_JOYSTICK_RIGHT ) PORT_PLAYER(1) PORT_8WAY
-	PORT_BIT( 0x0010, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_PLAYER(1) PORT_NAME("P1 Magic")
-	PORT_BIT( 0x0020, IP_ACTIVE_HIGH, IPT_BUTTON2 ) PORT_PLAYER(1) PORT_NAME("P1 Fight")
-	PORT_BIT( 0x0040, IP_ACTIVE_HIGH, IPT_BUTTON3 ) PORT_PLAYER(1) PORT_NAME("P1 Turbo")
+	PORT_BIT( 0x0010, IP_ACTIVE_HIGH, IPT_BUTTON2 ) PORT_PLAYER(1) PORT_NAME("P1 Fight")
+	PORT_BIT( 0x0020, IP_ACTIVE_HIGH, IPT_BUTTON3 ) PORT_PLAYER(1) PORT_NAME("P1 Magic")
+	PORT_BIT( 0x0040, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_PLAYER(1) PORT_NAME("P1 Turbo")
 	PORT_BIT( 0x0080, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_MODIFY("8WAY_P2")
@@ -1446,9 +1411,9 @@ static INPUT_PORTS_START( gauntleg )
 	PORT_BIT( 0x0200, IP_ACTIVE_HIGH, IPT_JOYSTICK_DOWN  ) PORT_PLAYER(2) PORT_8WAY
 	PORT_BIT( 0x0400, IP_ACTIVE_HIGH, IPT_JOYSTICK_LEFT  ) PORT_PLAYER(2) PORT_8WAY
 	PORT_BIT( 0x0800, IP_ACTIVE_HIGH, IPT_JOYSTICK_RIGHT ) PORT_PLAYER(2) PORT_8WAY
-	PORT_BIT( 0x1000, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_PLAYER(2) PORT_NAME("P2 Magic")
-	PORT_BIT( 0x2000, IP_ACTIVE_HIGH, IPT_BUTTON2 ) PORT_PLAYER(2) PORT_NAME("P2 Fight")
-	PORT_BIT( 0x4000, IP_ACTIVE_HIGH, IPT_BUTTON3 ) PORT_PLAYER(2) PORT_NAME("P2 Turbo")
+	PORT_BIT( 0x1000, IP_ACTIVE_HIGH, IPT_BUTTON2 ) PORT_PLAYER(2) PORT_NAME("P2 Fight")
+	PORT_BIT( 0x2000, IP_ACTIVE_HIGH, IPT_BUTTON3 ) PORT_PLAYER(2) PORT_NAME("P2 Magic")
+	PORT_BIT( 0x4000, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_PLAYER(2) PORT_NAME("P2 Turbo")
 	PORT_BIT( 0x8000, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_MODIFY("8WAY_P3")
@@ -1456,9 +1421,9 @@ static INPUT_PORTS_START( gauntleg )
 	PORT_BIT( 0x0002, IP_ACTIVE_HIGH, IPT_JOYSTICK_DOWN  ) PORT_PLAYER(3) PORT_8WAY
 	PORT_BIT( 0x0004, IP_ACTIVE_HIGH, IPT_JOYSTICK_LEFT  ) PORT_PLAYER(3) PORT_8WAY
 	PORT_BIT( 0x0008, IP_ACTIVE_HIGH, IPT_JOYSTICK_RIGHT ) PORT_PLAYER(3) PORT_8WAY
-	PORT_BIT( 0x0010, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_PLAYER(3) PORT_NAME("P3 Magic")
-	PORT_BIT( 0x0020, IP_ACTIVE_HIGH, IPT_BUTTON2 ) PORT_PLAYER(3) PORT_NAME("P3 Fight")
-	PORT_BIT( 0x0040, IP_ACTIVE_HIGH, IPT_BUTTON3 ) PORT_PLAYER(3) PORT_NAME("P3 Turbo")
+	PORT_BIT( 0x0010, IP_ACTIVE_HIGH, IPT_BUTTON2 ) PORT_PLAYER(3) PORT_NAME("P3 Fight")
+	PORT_BIT( 0x0020, IP_ACTIVE_HIGH, IPT_BUTTON3 ) PORT_PLAYER(3) PORT_NAME("P3 Magic")
+	PORT_BIT( 0x0040, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_PLAYER(3) PORT_NAME("P3 Turbo")
 	PORT_BIT( 0x0080, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_MODIFY("8WAY_P4")
@@ -1466,9 +1431,9 @@ static INPUT_PORTS_START( gauntleg )
 	PORT_BIT( 0x0200, IP_ACTIVE_HIGH, IPT_JOYSTICK_DOWN  ) PORT_PLAYER(4) PORT_8WAY
 	PORT_BIT( 0x0400, IP_ACTIVE_HIGH, IPT_JOYSTICK_LEFT  ) PORT_PLAYER(4) PORT_8WAY
 	PORT_BIT( 0x0800, IP_ACTIVE_HIGH, IPT_JOYSTICK_RIGHT ) PORT_PLAYER(4) PORT_8WAY
-	PORT_BIT( 0x1000, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_PLAYER(4) PORT_NAME("P4 Magic")
-	PORT_BIT( 0x2000, IP_ACTIVE_HIGH, IPT_BUTTON2 ) PORT_PLAYER(4) PORT_NAME("P4 Fight")
-	PORT_BIT( 0x4000, IP_ACTIVE_HIGH, IPT_BUTTON3 ) PORT_PLAYER(4) PORT_NAME("P4 Turbo")
+	PORT_BIT( 0x1000, IP_ACTIVE_HIGH, IPT_BUTTON2 ) PORT_PLAYER(4) PORT_NAME("P4 Fight")
+	PORT_BIT( 0x2000, IP_ACTIVE_HIGH, IPT_BUTTON3 ) PORT_PLAYER(4) PORT_NAME("P4 Magic")
+	PORT_BIT( 0x4000, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_PLAYER(4) PORT_NAME("P4 Turbo")
 	PORT_BIT( 0x8000, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("49WAYX_P1")
@@ -1494,7 +1459,6 @@ static INPUT_PORTS_START( gauntleg )
 
 	PORT_START("49WAYY_P4")
 	PORT_BIT(0xff, 0x38, IPT_AD_STICK_Y) PORT_MINMAX(0x00, 0x6f) PORT_SENSITIVITY(100) PORT_KEYDELTA(10) PORT_PLAYER(4) PORT_REVERSE
-
 INPUT_PORTS_END
 
 static INPUT_PORTS_START( tenthdeg )
@@ -1531,7 +1495,6 @@ static INPUT_PORTS_START( tenthdeg )
 	PORT_BIT( 0x0040, IP_ACTIVE_LOW, IPT_BUTTON3 ) PORT_PLAYER(2) PORT_NAME("P2 Fierce")
 	PORT_BIT( 0x0080, IP_ACTIVE_LOW, IPT_BUTTON7 ) PORT_PLAYER(2) PORT_NAME("P2 Counter")
 	PORT_BIT( 0xe000, IP_ACTIVE_LOW, IPT_UNUSED)
-
 INPUT_PORTS_END
 
 
@@ -1572,7 +1535,6 @@ static INPUT_PORTS_START( warfa )
 
 	PORT_MODIFY("AN.1")
 	PORT_BIT( 0xff, 0x80, IPT_AD_STICK_Y ) PORT_SENSITIVITY(100) PORT_KEYDELTA(10) PORT_PLAYER(1)
-
 INPUT_PORTS_END
 
 
@@ -1604,7 +1566,6 @@ static INPUT_PORTS_START( roadburn )
 
 	PORT_MODIFY("AN.2")
 	PORT_BIT( 0xff, 0x80, IPT_AD_STICK_X ) PORT_NAME("Bank") PORT_MINMAX(0x00, 0xff) PORT_SENSITIVITY(50) PORT_KEYDELTA(10)
-
 INPUT_PORTS_END
 
 
@@ -1664,7 +1625,7 @@ static INPUT_PORTS_START( nbashowt )
 	PORT_BIT( 0x0010, IP_ACTIVE_LOW, IPT_BUTTON1 ) PORT_PLAYER(3) PORT_NAME("P3 A")
 	PORT_BIT( 0x0020, IP_ACTIVE_LOW, IPT_BUTTON2 ) PORT_PLAYER(3) PORT_NAME("P3 B")
 	PORT_BIT( 0x0040, IP_ACTIVE_LOW, IPT_BUTTON3 ) PORT_PLAYER(3) PORT_NAME("P3 Turbo")
-	PORT_BIT( 0x0f00, IP_ACTIVE_LOW, IPT_CUSTOM) PORT_CUSTOM_MEMBER(vegas_state, i40_r)
+	PORT_BIT( 0x0f00, IP_ACTIVE_LOW, IPT_CUSTOM) PORT_CUSTOM_MEMBER(FUNC(vegas_state::i40_r))
 	PORT_BIT( 0x1000, IP_ACTIVE_LOW, IPT_BUTTON1 ) PORT_PLAYER(4) PORT_NAME("P4 A")
 	PORT_BIT( 0x2000, IP_ACTIVE_LOW, IPT_BUTTON2 ) PORT_PLAYER(4) PORT_NAME("P4 B")
 	PORT_BIT( 0x4000, IP_ACTIVE_LOW, IPT_BUTTON3 ) PORT_PLAYER(4) PORT_NAME("P4 Turbo")
@@ -1698,7 +1659,6 @@ static INPUT_PORTS_START( nbashowt )
 
 	PORT_START("49WAYY_P4")
 	PORT_BIT( 0xff, 0x38, IPT_AD_STICK_Y ) PORT_MINMAX(0x00, 0x6f) PORT_SENSITIVITY(100) PORT_KEYDELTA(10) PORT_PLAYER(4)
-
 INPUT_PORTS_END
 
 
@@ -1728,8 +1688,8 @@ static INPUT_PORTS_START( sf2049 )
 	PORT_BIT( 0x0002, IP_ACTIVE_LOW, IPT_BUTTON10 ) PORT_NAME("View 2")
 	PORT_BIT( 0x0004, IP_ACTIVE_LOW, IPT_BUTTON11 ) PORT_NAME("View 3")
 	PORT_BIT( 0x0008, IP_ACTIVE_LOW, IPT_BUTTON12 ) PORT_NAME("Music")
-	PORT_BIT( 0x0070, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_CUSTOM_MEMBER(vegas_state, keypad_r)
-	PORT_BIT( 0x0f00, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_CUSTOM_MEMBER(vegas_state, gearshift_r)
+	PORT_BIT( 0x0070, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_CUSTOM_MEMBER(FUNC(vegas_state::keypad_r))
+	PORT_BIT( 0x0f00, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_CUSTOM_MEMBER(FUNC(vegas_state::gearshift_r))
 	PORT_BIT( 0xf080, IP_ACTIVE_LOW, IPT_UNUSED )
 
 	PORT_START("GEAR")
@@ -1825,7 +1785,7 @@ static INPUT_PORTS_START( cartfury )
 	PORT_BIT( 0x0020, IP_ACTIVE_LOW, IPT_BUTTON10 ) PORT_NAME("View 2")
 	PORT_BIT( 0x0040, IP_ACTIVE_LOW, IPT_BUTTON11 ) PORT_NAME("View 3")
 	PORT_BIT( 0x0080, IP_ACTIVE_LOW, IPT_BUTTON12 ) PORT_NAME("Boost")
-	PORT_BIT( 0x0f00, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_CUSTOM_MEMBER(vegas_state, gearshift_r)
+	PORT_BIT( 0x0f00, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_CUSTOM_MEMBER(FUNC(vegas_state::gearshift_r))
 	PORT_BIT( 0xf000, IP_ACTIVE_LOW, IPT_UNUSED)
 
 	PORT_START("GEAR")
@@ -1842,7 +1802,6 @@ static INPUT_PORTS_START( cartfury )
 
 	PORT_MODIFY("AN.2")
 	PORT_BIT( 0xff, 0x00, IPT_PEDAL2 ) PORT_NAME("Brake") PORT_SENSITIVITY(25) PORT_KEYDELTA(100) PORT_PLAYER(1)
-
 INPUT_PORTS_END
 
 /*************************************
@@ -1907,14 +1866,14 @@ void vegas_state::vegascore(machine_config &config)
 {
 	// basic machine hardware
 	R5000LE(config, m_maincpu, vegas_state::SYSTEM_CLOCK * 2);
-	m_maincpu->set_icache_size(16384);
-	m_maincpu->set_dcache_size(16384);
+	m_maincpu->set_icache_size(0x4000);
+	m_maincpu->set_dcache_size(0x4000);
 	m_maincpu->set_system_clock(vegas_state::SYSTEM_CLOCK);
 
 	// PCI Bus Devices
 	PCI_ROOT(config, "pci", 0);
 
-	VRC5074(config, m_nile, 100000000, m_maincpu);
+	VRC5074(config, m_nile, SYSTEM_CLOCK, m_maincpu);
 	m_nile->set_sdram_size(0, 0x00800000);
 	m_nile->set_map(2, address_map_constructor(&vegas_state::vegas_cs2_map, "vegas_cs2_map", this), this);
 	m_nile->set_map(3, address_map_constructor(&vegas_state::vegas_cs3_map, "vegas_cs3_map", this), this);
@@ -1958,7 +1917,6 @@ void vegas_state::hdd_config(device_t *device)
 	// Allow ultra dma
 	//uint16_t *identify_device = dynamic_cast<ide_hdd_device *>(device)->identify_device_buffer();
 	//identify_device[88] = 0x7f;
-
 }
 
 
@@ -1985,6 +1943,7 @@ void vegas_state::vegas32m(machine_config &config)
 void vegas_state::vegasban(machine_config &config)
 {
 	vegas32m(config);
+
 	voodoo_banshee_pci_device &voodoo(VOODOO_BANSHEE_PCI(config.replace(), PCI_ID_VIDEO, 0, m_maincpu, "screen"));
 	voodoo.set_fbmem(16);
 	voodoo.set_status_cycles(1000); // optimization to consume extra cycles when polling status
@@ -1995,9 +1954,10 @@ void vegas_state::vegasban(machine_config &config)
 void vegas_state::vegasv3(machine_config &config)
 {
 	vegas32m(config);
+
 	RM7000LE(config.replace(), m_maincpu, vegas_state::SYSTEM_CLOCK * 2.5);
-	m_maincpu->set_icache_size(16384);
-	m_maincpu->set_dcache_size(16384);
+	m_maincpu->set_icache_size(0x4000);
+	m_maincpu->set_dcache_size(0x4000);
 	m_maincpu->set_system_clock(vegas_state::SYSTEM_CLOCK);
 
 	voodoo_3_pci_device &voodoo(VOODOO_3_PCI(config.replace(), PCI_ID_VIDEO, 0, m_maincpu, "screen"));
@@ -2012,8 +1972,8 @@ void vegas_state::denver(machine_config &config)
 	vegascore(config);
 	RM7000LE(config.replace(), m_maincpu, vegas_state::SYSTEM_CLOCK * 2.5);
 
-	m_maincpu->set_icache_size(16384);
-	m_maincpu->set_dcache_size(16384);
+	m_maincpu->set_icache_size(0x4000);
+	m_maincpu->set_dcache_size(0x4000);
 	m_maincpu->set_system_clock(vegas_state::SYSTEM_CLOCK);
 	m_nile->set_sdram_size(0, 0x02000000);
 	m_nile->set_map(8, address_map_constructor(&vegas_state::vegas_cs8_map, "vegas_cs8_map", this), this);
@@ -2051,7 +2011,6 @@ void vegas_state::denver(machine_config &config)
 	ttys02.dsr_handler().set(m_uart2, FUNC(ins8250_uart_device::dsr_w));
 	ttys02.ri_handler().set(m_uart2, FUNC(ins8250_uart_device::ri_w));
 	ttys02.cts_handler().set(m_uart2, FUNC(ins8250_uart_device::cts_w));
-
 }
 
 // Per driver configs
@@ -2061,12 +2020,24 @@ void vegas_state::gauntleg(machine_config &config)
 	// Needs 250MHz MIPS or screen tearing occurs (See MT8064)
 	// Firmware frequency detection seems to have a bug, console reports 220MHz for a 200MHz cpu and 260MHz for a 250MHz cpu
 	vegas250(config);
-	dcs2_audio_2104_device &dcs(DCS2_AUDIO_2104(config, "dcs", 0));
-	dcs.set_dram_in_mb(4);
-	dcs.set_polling_offset(0x0b5d);
+
+	SPEAKER(config, "lspeaker").front_left();
+	SPEAKER(config, "rspeaker").front_right();
+
+	DCS2_AUDIO_2104(config, m_dcs, 0);
+	m_dcs->set_maincpu_tag(m_maincpu);
+	m_dcs->set_dram_in_mb(4);
+	m_dcs->set_polling_offset(0x0b5d);
+	m_dcs->add_route(0, "rspeaker", 1.0);
+	m_dcs->add_route(1, "lspeaker", 1.0);
 
 	MIDWAY_IOASIC(config, m_ioasic, 0);
-	m_ioasic->set_shuffle(MIDWAY_IOASIC_CALSPEED);
+	m_ioasic->in_port_cb<0>().set_ioport("DIPS");
+	m_ioasic->in_port_cb<1>().set_ioport("SYSTEM");
+	m_ioasic->in_port_cb<2>().set_ioport("IN1");
+	m_ioasic->in_port_cb<3>().set_ioport("IN2");
+	m_ioasic->set_dcs_tag(m_dcs);
+	m_ioasic->set_shuffle(midway_ioasic_device::SHUFFLE_CALSPEED);
 	m_ioasic->set_upper(340); // 340=39", 322=27" others?
 	m_ioasic->set_yearoffs(80);
 	m_ioasic->irq_handler().set(FUNC(vegas_state::ioasic_irq));
@@ -2077,12 +2048,24 @@ void vegas_state::gauntdl(machine_config &config)
 {
 	// Needs 250MHz MIPS or screen tearing occurs (See MT8064)
 	vegas250(config);
-	dcs2_audio_2104_device &dcs(DCS2_AUDIO_2104(config, "dcs", 0));
-	dcs.set_dram_in_mb(4);
-	dcs.set_polling_offset(0x0b5d);
+
+	SPEAKER(config, "lspeaker").front_left();
+	SPEAKER(config, "rspeaker").front_right();
+
+	DCS2_AUDIO_2104(config, m_dcs, 0);
+	m_dcs->set_maincpu_tag(m_maincpu);
+	m_dcs->set_dram_in_mb(4);
+	m_dcs->set_polling_offset(0x0b5d);
+	m_dcs->add_route(0, "rspeaker", 1.0);
+	m_dcs->add_route(1, "lspeaker", 1.0);
 
 	MIDWAY_IOASIC(config, m_ioasic, 0);
-	m_ioasic->set_shuffle(MIDWAY_IOASIC_GAUNTDL);
+	m_ioasic->in_port_cb<0>().set_ioport("DIPS");
+	m_ioasic->in_port_cb<1>().set_ioport("SYSTEM");
+	m_ioasic->in_port_cb<2>().set_ioport("IN1");
+	m_ioasic->in_port_cb<3>().set_ioport("IN2");
+	m_ioasic->set_dcs_tag(m_dcs);
+	m_ioasic->set_shuffle(midway_ioasic_device::SHUFFLE_GAUNTDL);
 	m_ioasic->set_upper(346); // others?
 	m_ioasic->set_yearoffs(80);
 	m_ioasic->irq_handler().set(FUNC(vegas_state::ioasic_irq));
@@ -2092,12 +2075,24 @@ void vegas_state::gauntdl(machine_config &config)
 void vegas_state::warfa(machine_config &config)
 {
 	vegas250(config);
-	dcs2_audio_2104_device &dcs(DCS2_AUDIO_2104(config, "dcs", 0));
-	dcs.set_dram_in_mb(4);
-	dcs.set_polling_offset(0x0b5d);
+
+	SPEAKER(config, "lspeaker").front_left();
+	SPEAKER(config, "rspeaker").front_right();
+
+	DCS2_AUDIO_2104(config, m_dcs, 0);
+	m_dcs->set_maincpu_tag(m_maincpu);
+	m_dcs->set_dram_in_mb(4);
+	m_dcs->set_polling_offset(0x0b5d);
+	m_dcs->add_route(0, "rspeaker", 1.0);
+	m_dcs->add_route(1, "lspeaker", 1.0);
 
 	MIDWAY_IOASIC(config, m_ioasic, 0);
-	m_ioasic->set_shuffle(MIDWAY_IOASIC_MACE);
+	m_ioasic->in_port_cb<0>().set_ioport("DIPS");
+	m_ioasic->in_port_cb<1>().set_ioport("SYSTEM");
+	m_ioasic->in_port_cb<2>().set_ioport("IN1");
+	m_ioasic->in_port_cb<3>().set_ioport("IN2");
+	m_ioasic->set_dcs_tag(m_dcs);
+	m_ioasic->set_shuffle(midway_ioasic_device::SHUFFLE_MACE);
 	m_ioasic->set_upper(337); // others?
 	m_ioasic->set_yearoffs(80);
 	m_ioasic->irq_handler().set(FUNC(vegas_state::ioasic_irq));
@@ -2107,12 +2102,24 @@ void vegas_state::warfa(machine_config &config)
 void vegas_state::tenthdeg(machine_config &config)
 {
 	vegas(config);
-	dcs2_audio_2115_device &dcs(DCS2_AUDIO_2115(config, "dcs", 0));
-	dcs.set_dram_in_mb(4);
-	dcs.set_polling_offset(0x0afb);
+
+	SPEAKER(config, "lspeaker").front_left();
+	SPEAKER(config, "rspeaker").front_right();
+
+	DCS2_AUDIO_2115(config, m_dcs, 0);
+	m_dcs->set_maincpu_tag(m_maincpu);
+	m_dcs->set_dram_in_mb(4);
+	m_dcs->set_polling_offset(0x0afb);
+	m_dcs->add_route(0, "rspeaker", 1.0);
+	m_dcs->add_route(1, "lspeaker", 1.0);
 
 	MIDWAY_IOASIC(config, m_ioasic, 0);
-	m_ioasic->set_shuffle(MIDWAY_IOASIC_GAUNTDL);
+	m_ioasic->in_port_cb<0>().set_ioport("DIPS");
+	m_ioasic->in_port_cb<1>().set_ioport("SYSTEM");
+	m_ioasic->in_port_cb<2>().set_ioport("IN1");
+	m_ioasic->in_port_cb<3>().set_ioport("IN2");
+	m_ioasic->set_dcs_tag(m_dcs);
+	m_ioasic->set_shuffle(midway_ioasic_device::SHUFFLE_GAUNTDL);
 	m_ioasic->set_upper(330); // others?
 	m_ioasic->set_yearoffs(80);
 	m_ioasic->irq_handler().set(FUNC(vegas_state::ioasic_irq));
@@ -2122,12 +2129,24 @@ void vegas_state::tenthdeg(machine_config &config)
 void vegas_state::roadburn(machine_config &config)
 {
 	vegas32m(config);
-	dcs2_audio_dsio_device &dcs(DCS2_AUDIO_DSIO(config, "dcs", 0));
-	dcs.set_dram_in_mb(4);
-	dcs.set_polling_offset(0x0ddd);
+
+	SPEAKER(config, "lspeaker").front_left();
+	SPEAKER(config, "rspeaker").front_right();
+
+	DCS2_AUDIO_DSIO(config, m_dcs, 0);
+	m_dcs->set_maincpu_tag(m_maincpu);
+	m_dcs->set_dram_in_mb(4);
+	m_dcs->set_polling_offset(0x0ddd);
+	m_dcs->add_route(0, "rspeaker", 1.0);
+	m_dcs->add_route(1, "lspeaker", 1.0);
 
 	MIDWAY_IOASIC(config, m_ioasic, 0);
-	m_ioasic->set_shuffle(MIDWAY_IOASIC_STANDARD);
+	m_ioasic->in_port_cb<0>().set_ioport("DIPS");
+	m_ioasic->in_port_cb<1>().set_ioport("SYSTEM");
+	m_ioasic->in_port_cb<2>().set_ioport("IN1");
+	m_ioasic->in_port_cb<3>().set_ioport("IN2");
+	m_ioasic->set_dcs_tag(m_dcs);
+	m_ioasic->set_shuffle(midway_ioasic_device::SHUFFLE_STANDARD);
 	m_ioasic->set_upper(325); // others?
 	m_ioasic->set_yearoffs(80);
 	m_ioasic->irq_handler().set(FUNC(vegas_state::ioasic_irq));
@@ -2137,12 +2156,24 @@ void vegas_state::roadburn(machine_config &config)
 void vegas_state::nbashowt(machine_config &config)
 {
 	vegasban(config);
-	dcs2_audio_2104_device &dcs(DCS2_AUDIO_2104(config, "dcs", 0));
-	dcs.set_dram_in_mb(4);
-	dcs.set_polling_offset(0x0b5d);
+
+	SPEAKER(config, "lspeaker").front_left();
+	SPEAKER(config, "rspeaker").front_right();
+
+	DCS2_AUDIO_2104(config, m_dcs, 0);
+	m_dcs->set_maincpu_tag(m_maincpu);
+	m_dcs->set_dram_in_mb(4);
+	m_dcs->set_polling_offset(0x0b5d);
+	m_dcs->add_route(0, "rspeaker", 1.0);
+	m_dcs->add_route(1, "lspeaker", 1.0);
 
 	MIDWAY_IOASIC(config, m_ioasic, 0);
-	m_ioasic->set_shuffle(MIDWAY_IOASIC_MACE);
+	m_ioasic->in_port_cb<0>().set_ioport("DIPS");
+	m_ioasic->in_port_cb<1>().set_ioport("SYSTEM");
+	m_ioasic->in_port_cb<2>().set_ioport("IN1");
+	m_ioasic->in_port_cb<3>().set_ioport("IN2");
+	m_ioasic->set_dcs_tag(m_dcs);
+	m_ioasic->set_shuffle(midway_ioasic_device::SHUFFLE_MACE);
 	// 528 494 478 development pic, 487 NBA
 	m_ioasic->set_upper(487); // or 478 or 487
 	m_ioasic->set_yearoffs(80);
@@ -2154,12 +2185,24 @@ void vegas_state::nbashowt(machine_config &config)
 void vegas_state::nbanfl(machine_config &config)
 {
 	vegasban(config);
-	dcs2_audio_2104_device &dcs(DCS2_AUDIO_2104(config, "dcs", 0));
-	dcs.set_dram_in_mb(4);
-	dcs.set_polling_offset(0x0b5d);
+
+	SPEAKER(config, "lspeaker").front_left();
+	SPEAKER(config, "rspeaker").front_right();
+
+	DCS2_AUDIO_2104(config, m_dcs, 0);
+	m_dcs->set_maincpu_tag(m_maincpu);
+	m_dcs->set_dram_in_mb(4);
+	m_dcs->set_polling_offset(0x0b5d);
+	m_dcs->add_route(0, "rspeaker", 1.0);
+	m_dcs->add_route(1, "lspeaker", 1.0);
 
 	MIDWAY_IOASIC(config, m_ioasic, 0);
-	m_ioasic->set_shuffle(MIDWAY_IOASIC_BLITZ99);
+	m_ioasic->in_port_cb<0>().set_ioport("DIPS");
+	m_ioasic->in_port_cb<1>().set_ioport("SYSTEM");
+	m_ioasic->in_port_cb<2>().set_ioport("IN1");
+	m_ioasic->in_port_cb<3>().set_ioport("IN2");
+	m_ioasic->set_dcs_tag(m_dcs);
+	m_ioasic->set_shuffle(midway_ioasic_device::SHUFFLE_BLITZ99);
 	m_ioasic->set_upper(498); // or 478 or 487
 	m_ioasic->set_yearoffs(80);
 	m_ioasic->irq_handler().set(FUNC(vegas_state::ioasic_irq));
@@ -2170,17 +2213,30 @@ void vegas_state::nbanfl(machine_config &config)
 void vegas_state::nbagold(machine_config &config)
 {
 	vegasban(config);
+
 	QED5271LE(config.replace(), m_maincpu, vegas_state::SYSTEM_CLOCK * 2.5);
 	m_maincpu->set_icache_size(32768);
 	m_maincpu->set_dcache_size(32768);
 	m_maincpu->set_system_clock(vegas_state::SYSTEM_CLOCK);
 	m_nile->set_sdram_size(0, 0x00800000);
-	dcs2_audio_2104_device &dcs(DCS2_AUDIO_2104(config, "dcs", 0));
-	dcs.set_dram_in_mb(4);
-	dcs.set_polling_offset(0x0b5d);
+
+	SPEAKER(config, "lspeaker").front_left();
+	SPEAKER(config, "rspeaker").front_right();
+
+	DCS2_AUDIO_2104(config, m_dcs, 0);
+	m_dcs->set_maincpu_tag(m_maincpu);
+	m_dcs->set_dram_in_mb(4);
+	m_dcs->set_polling_offset(0x0b5d);
+	m_dcs->add_route(0, "rspeaker", 1.0);
+	m_dcs->add_route(1, "lspeaker", 1.0);
 
 	MIDWAY_IOASIC(config, m_ioasic, 0);
-	m_ioasic->set_shuffle(MIDWAY_IOASIC_GAUNTDL);
+	m_ioasic->in_port_cb<0>().set_ioport("DIPS");
+	m_ioasic->in_port_cb<1>().set_ioport("SYSTEM");
+	m_ioasic->in_port_cb<2>().set_ioport("IN1");
+	m_ioasic->in_port_cb<3>().set_ioport("IN2");
+	m_ioasic->set_dcs_tag(m_dcs);
+	m_ioasic->set_shuffle(midway_ioasic_device::SHUFFLE_GAUNTDL);
 	m_ioasic->set_upper(109); // 494 109 ???
 	m_ioasic->set_yearoffs(80);
 	m_ioasic->irq_handler().set(FUNC(vegas_state::ioasic_irq));
@@ -2191,12 +2247,30 @@ void vegas_state::nbagold(machine_config &config)
 void vegas_state::sf2049(machine_config &config)
 {
 	denver(config);
-	dcs2_audio_denver_5ch_device &dcs(DCS2_AUDIO_DENVER_5CH(config, "dcs", 0));
-	dcs.set_dram_in_mb(8);
-	dcs.set_polling_offset(0x872);
+
+	SPEAKER(config, "flspeaker").front_left();
+	SPEAKER(config, "frspeaker").front_right();
+	SPEAKER(config, "rlspeaker").headrest_left();
+	SPEAKER(config, "rrspeaker").headrest_right();
+	SPEAKER(config, "subwoofer").backrest();
+
+	DCS2_AUDIO_DENVER_5CH(config, m_dcs, 0);
+	m_dcs->set_maincpu_tag(m_maincpu);
+	m_dcs->set_dram_in_mb(8);
+	m_dcs->set_polling_offset(0x872);
+	m_dcs->add_route(0, "flspeaker", 1.0);
+	m_dcs->add_route(1, "frspeaker", 1.0);
+	m_dcs->add_route(2, "rlspeaker", 1.0);
+	m_dcs->add_route(3, "rrspeaker", 1.0);
+	m_dcs->add_route(4, "subwoofer", 1.0);
 
 	MIDWAY_IOASIC(config, m_ioasic, 0);
-	m_ioasic->set_shuffle(MIDWAY_IOASIC_STANDARD);
+	m_ioasic->in_port_cb<0>().set_ioport("DIPS");
+	m_ioasic->in_port_cb<1>().set_ioport("SYSTEM");
+	m_ioasic->in_port_cb<2>().set_ioport("IN1");
+	m_ioasic->in_port_cb<3>().set_ioport("IN2");
+	m_ioasic->set_dcs_tag(m_dcs);
+	m_ioasic->set_shuffle(midway_ioasic_device::SHUFFLE_STANDARD);
 	m_ioasic->set_upper(336); // others?
 	m_ioasic->set_yearoffs(80);
 	m_ioasic->irq_handler().set(FUNC(vegas_state::ioasic_irq));
@@ -2207,12 +2281,30 @@ void vegas_state::sf2049(machine_config &config)
 void vegas_state::sf2049se(machine_config &config)
 {
 	denver(config);
-	dcs2_audio_denver_5ch_device &dcs(DCS2_AUDIO_DENVER_5CH(config, "dcs", 0));
-	dcs.set_dram_in_mb(8);
-	dcs.set_polling_offset(0x872);
+
+	SPEAKER(config, "flspeaker").front_left();
+	SPEAKER(config, "frspeaker").front_right();
+	SPEAKER(config, "rlspeaker").headrest_left();
+	SPEAKER(config, "rrspeaker").headrest_right();
+	SPEAKER(config, "subwoofer").backrest();
+
+	DCS2_AUDIO_DENVER_5CH(config, m_dcs, 0);
+	m_dcs->set_maincpu_tag(m_maincpu);
+	m_dcs->set_dram_in_mb(8);
+	m_dcs->set_polling_offset(0x872);
+	m_dcs->add_route(0, "flspeaker", 1.0);
+	m_dcs->add_route(1, "frspeaker", 1.0);
+	m_dcs->add_route(2, "rlspeaker", 1.0);
+	m_dcs->add_route(3, "rrspeaker", 1.0);
+	m_dcs->add_route(4, "subwoofer", 1.0);
 
 	MIDWAY_IOASIC(config, m_ioasic, 0);
-	m_ioasic->set_shuffle(MIDWAY_IOASIC_SFRUSHRK);
+	m_ioasic->in_port_cb<0>().set_ioport("DIPS");
+	m_ioasic->in_port_cb<1>().set_ioport("SYSTEM");
+	m_ioasic->in_port_cb<2>().set_ioport("IN1");
+	m_ioasic->in_port_cb<3>().set_ioport("IN2");
+	m_ioasic->set_dcs_tag(m_dcs);
+	m_ioasic->set_shuffle(midway_ioasic_device::SHUFFLE_SFRUSHRK);
 	m_ioasic->set_upper(352); // 352 336 others?
 	m_ioasic->set_yearoffs(80);
 	m_ioasic->irq_handler().set(FUNC(vegas_state::ioasic_irq));
@@ -2223,12 +2315,30 @@ void vegas_state::sf2049se(machine_config &config)
 void vegas_state::sf2049te(machine_config &config)
 {
 	denver(config);
-	dcs2_audio_denver_5ch_device &dcs(DCS2_AUDIO_DENVER_5CH(config, "dcs", 0));
-	dcs.set_dram_in_mb(8);
-	dcs.set_polling_offset(0x872);
+
+	SPEAKER(config, "flspeaker").front_left();
+	SPEAKER(config, "frspeaker").front_right();
+	SPEAKER(config, "rlspeaker").headrest_left();
+	SPEAKER(config, "rrspeaker").headrest_right();
+	SPEAKER(config, "subwoofer").backrest();
+
+	DCS2_AUDIO_DENVER_5CH(config, m_dcs, 0);
+	m_dcs->set_maincpu_tag(m_maincpu);
+	m_dcs->set_dram_in_mb(8);
+	m_dcs->set_polling_offset(0x872);
+	m_dcs->add_route(0, "flspeaker", 1.0);
+	m_dcs->add_route(1, "frspeaker", 1.0);
+	m_dcs->add_route(2, "rlspeaker", 1.0);
+	m_dcs->add_route(3, "rrspeaker", 1.0);
+	m_dcs->add_route(4, "subwoofer", 1.0);
 
 	MIDWAY_IOASIC(config, m_ioasic, 0);
-	m_ioasic->set_shuffle(MIDWAY_IOASIC_SFRUSHRK);
+	m_ioasic->in_port_cb<0>().set_ioport("DIPS");
+	m_ioasic->in_port_cb<1>().set_ioport("SYSTEM");
+	m_ioasic->in_port_cb<2>().set_ioport("IN1");
+	m_ioasic->in_port_cb<3>().set_ioport("IN2");
+	m_ioasic->set_dcs_tag(m_dcs);
+	m_ioasic->set_shuffle(midway_ioasic_device::SHUFFLE_SFRUSHRK);
 	m_ioasic->set_upper(348); // others?
 	m_ioasic->set_yearoffs(80);
 	m_ioasic->irq_handler().set(FUNC(vegas_state::ioasic_irq));
@@ -2239,12 +2349,24 @@ void vegas_state::sf2049te(machine_config &config)
 void vegas_state::cartfury(machine_config &config)
 {
 	vegasv3(config);
-	dcs2_audio_2104_device &dcs(DCS2_AUDIO_2104(config, "dcs", 0));
-	dcs.set_dram_in_mb(4);
-	dcs.set_polling_offset(0x0b5d);
+
+	SPEAKER(config, "lspeaker").front_left();
+	SPEAKER(config, "rspeaker").front_right();
+
+	DCS2_AUDIO_2104(config, m_dcs, 0);
+	m_dcs->set_maincpu_tag(m_maincpu);
+	m_dcs->set_dram_in_mb(4);
+	m_dcs->set_polling_offset(0x0b5d);
+	m_dcs->add_route(0, "rspeaker", 1.0);
+	m_dcs->add_route(1, "lspeaker", 1.0);
 
 	MIDWAY_IOASIC(config, m_ioasic, 0);
-	m_ioasic->set_shuffle(MIDWAY_IOASIC_CARNEVIL);
+	m_ioasic->in_port_cb<0>().set_ioport("DIPS");
+	m_ioasic->in_port_cb<1>().set_ioport("SYSTEM");
+	m_ioasic->in_port_cb<2>().set_ioport("IN1");
+	m_ioasic->in_port_cb<3>().set_ioport("IN2");
+	m_ioasic->set_dcs_tag(m_dcs);
+	m_ioasic->set_shuffle(midway_ioasic_device::SHUFFLE_CARNEVIL);
 	// 433, 495, 490 Development PIC
 	m_ioasic->set_upper(495/*433,  495 others? */);
 	m_ioasic->set_yearoffs(80);
@@ -2423,6 +2545,9 @@ ROM_START( roadburn ) // version 1.04 - verified on hardware
 
 	DISK_REGION( PCI_ID_IDE":ide:0:hdd" ) // GUTS 5/19/1999 GAME 5/19/1999
 	DISK_IMAGE( "road burners v1.04", 0, SHA1(30567241c000ee572a9cfb1b080c02a51a2b12d2) )
+
+	ROM_REGION( 0x2000, "serial_security_pic", 0 ) // security PIC (provides game ID code and serial number)
+	ROM_LOAD( "325_road_burners.u37", 0x0000, 0x2000, CRC(146c1ea1) SHA1(4bfda77f2ea6a421f59bbbd251b193a4e7743691) )
 ROM_END
 
 ROM_START( roadburn1 ) // version 1.0 - verified on hardware
@@ -2434,6 +2559,9 @@ ROM_START( roadburn1 ) // version 1.0 - verified on hardware
 
 	DISK_REGION( PCI_ID_IDE":ide:0:hdd" ) // GUTS 4/22/1999 GAME 4/22/1999
 	DISK_IMAGE( "roadburn", 0, SHA1(a62870cceafa6357d7d3505aca250c3f16087566) )
+
+	ROM_REGION( 0x2000, "serial_security_pic", 0 ) // security PIC (provides game ID code and serial number)
+	ROM_LOAD( "325_road_burners.u37", 0x0000, 0x2000, CRC(146c1ea1) SHA1(4bfda77f2ea6a421f59bbbd251b193a4e7743691) )
 ROM_END
 
 
@@ -2707,10 +2835,10 @@ GAME( 1999, nbanfl,     0,         nbanfl,   nbashowt, vegas_state, init_nbanfl,
 GAME( 2000, nbagold,    0,         nbagold,  nbashowt, vegas_state, init_nbagold,  ROT0, "Midway Games", "SportStation: NBA Showtime NBA on NBC Gold Edition (ver 3.0, Feb 18 2000) / NFL Blitz 2000 Gold Edition", MACHINE_SUPPORTS_SAVE ) // boot game dipswitch has no effect, so NFL Blitz 2000 version number not shown
 
 // Durango + Denver SIO + Voodoo 3
-GAMEL( 1999, sf2049,     0,        sf2049,   sf2049,   vegas_state, init_sf2049,   ROT0, "Atari Games",  "San Francisco Rush 2049", MACHINE_SUPPORTS_SAVE, layout_sf2049 )
-GAMEL( 2003, sf2049se,   0,        sf2049se, sf2049se, vegas_state, init_sf2049se, ROT0, "Atari Games",  "San Francisco Rush 2049: Special Edition", MACHINE_SUPPORTS_SAVE, layout_sf2049 )
-GAMEL( 2000, sf2049te,   0,        sf2049te, sf2049se, vegas_state, init_sf2049te, ROT0, "Atari Games",  "San Francisco Rush 2049: Tournament Edition", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE, layout_sf2049 )
-GAMEL( 2001, sf2049tea,  sf2049te, sf2049te, sf2049se, vegas_state, init_sf2049te, ROT0, "Atari Games",  "San Francisco Rush 2049: Tournament Edition Unlocked", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE, layout_sf2049 )
+GAMEL(1999, sf2049,     0,         sf2049,   sf2049,   vegas_state, init_sf2049,   ROT0, "Atari Games",  "San Francisco Rush 2049", MACHINE_SUPPORTS_SAVE, layout_sf2049 )
+GAMEL(2003, sf2049se,   0,         sf2049se, sf2049se, vegas_state, init_sf2049se, ROT0, "Atari Games",  "San Francisco Rush 2049: Special Edition", MACHINE_SUPPORTS_SAVE, layout_sf2049 )
+GAMEL(2000, sf2049te,   0,         sf2049te, sf2049se, vegas_state, init_sf2049te, ROT0, "Atari Games",  "San Francisco Rush 2049: Tournament Edition", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE, layout_sf2049 )
+GAMEL(2001, sf2049tea,  sf2049te,  sf2049te, sf2049se, vegas_state, init_sf2049te, ROT0, "Atari Games",  "San Francisco Rush 2049: Tournament Edition Unlocked", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE, layout_sf2049 )
 
 // Durango + Vegas SIO + Voodoo 3
 GAME( 2000, cartfury,   0,         cartfury, cartfury, vegas_state, init_cartfury, ROT0, "Midway Games", "CART Fury Championship Racing (ver 1.00)", MACHINE_SUPPORTS_SAVE )

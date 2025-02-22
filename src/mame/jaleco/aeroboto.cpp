@@ -75,9 +75,9 @@ public:
 	void formatz(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	// memory pointers
@@ -126,15 +126,13 @@ private:
 	void tilecolor_w(offs_t offset, uint8_t data);
 	TILE_GET_INFO_MEMBER(get_tile_info);
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	DECLARE_WRITE_LINE_MEMBER(vblank_irq);
+	void vblank_irq(int state);
 	void draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	void main_map(address_map &map);
-	void sound_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
 };
 
-
-// video
 
 // how the starfield ROM is interpreted: 0 = 256 x 256 x 1 linear bitmap, 1 = 8 x 8 x 1 x 1024 tilemap
 static constexpr uint8_t STARS_LAYOUT = 1;
@@ -333,8 +331,6 @@ uint32_t aeroboto_state::screen_update(screen_device &screen, bitmap_ind16 &bitm
 }
 
 
-// machine
-
 uint8_t aeroboto_state::_201_r()
 {
 	/* if you keep a button pressed during boot, the game will expect this
@@ -346,7 +342,7 @@ uint8_t aeroboto_state::_201_r()
 }
 
 
-WRITE_LINE_MEMBER(aeroboto_state::vblank_irq)
+void aeroboto_state::vblank_irq(int state)
 {
 	if (state)
 	{

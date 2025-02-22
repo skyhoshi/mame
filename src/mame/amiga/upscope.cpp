@@ -29,11 +29,15 @@
 #include "amiga.h"
 
 #include "cpu/m68000/m68000.h"
-#include "machine/amigafdc.h"
 #include "machine/i8255.h"
 #include "machine/nvram.h"
 
 #include "speaker.h"
+
+#define LOG_IO (1U << 1)
+
+#define VERBOSE (0)
+#include "logmacro.h"
 
 
 namespace {
@@ -68,24 +72,14 @@ private:
 	void coin_counter_w(uint8_t data);
 
 
-	void a500_mem(address_map &map);
-	void main_map(address_map &map);
-	void overlay_512kb_map(address_map &map);
+	void a500_mem(address_map &map) ATTR_COLD;
+	void main_map(address_map &map) ATTR_COLD;
+	void overlay_512kb_map(address_map &map) ATTR_COLD;
 
-	virtual void machine_reset() override;
+	virtual void machine_reset() override ATTR_COLD;
 
 	required_device<i8255_device> m_ppi;
 };
-
-
-/*************************************
- *
- *  Debugging
- *
- *************************************/
-
-#define LOG_IO          0
-
 
 
 /*************************************
@@ -143,7 +137,7 @@ void upscope_state::upscope_cia_1_porta_w(uint8_t data)
 		/* if SEL == 1 && BUSY == 0, we latch an address */
 		if ((data & 5) == 4)
 		{
-			if (LOG_IO) logerror("Latch address: %02X\n", m_parallel_data);
+			LOGMASKED(LOG_IO, "Latch address: %02X\n", m_parallel_data);
 			m_nvram_address_latch = m_parallel_data;
 		}
 
@@ -156,7 +150,7 @@ void upscope_state::upscope_cia_1_porta_w(uint8_t data)
 		/* if SEL == 0 && BUSY == 1, we write data to NVRAM */
 		else if ((data & 5) == 1)
 		{
-			if (LOG_IO) logerror("NVRAM data write @ %02X = %02X\n", m_nvram_address_latch, m_parallel_data);
+			LOGMASKED(LOG_IO, "NVRAM data write @ %02X = %02X\n", m_nvram_address_latch, m_parallel_data);
 			m_nvram[m_nvram_address_latch] = m_parallel_data;
 		}
 
@@ -173,7 +167,7 @@ void upscope_state::upscope_cia_1_porta_w(uint8_t data)
 		/* if SEL == 1, we read internal data registers */
 		if (data & 4)
 		{
-			if (LOG_IO) logerror("Internal register (%d) read\n", m_nvram_address_latch);
+			LOGMASKED(LOG_IO, "Internal register (%d) read\n", m_nvram_address_latch);
 			m_nvram_data_latch = m_ppi->read(m_nvram_address_latch & 0x03);
 		}
 
@@ -181,7 +175,7 @@ void upscope_state::upscope_cia_1_porta_w(uint8_t data)
 		else
 		{
 			m_nvram_data_latch = m_nvram[m_nvram_address_latch];
-			if (LOG_IO) logerror("NVRAM data read @ %02X = %02X\n", m_nvram_address_latch, m_nvram_data_latch);
+			LOGMASKED(LOG_IO, "NVRAM data read @ %02X = %02X\n", m_nvram_address_latch, m_nvram_data_latch);
 		}
 	}
 
@@ -279,7 +273,7 @@ void upscope_state::upscope(machine_config &config)
 	ADDRESS_MAP_BANK(config, m_overlay).set_map(&upscope_state::overlay_512kb_map).set_options(ENDIANNESS_BIG, 16, 22, 0x200000);
 	ADDRESS_MAP_BANK(config, m_chipset).set_map(&upscope_state::ocs_map).set_options(ENDIANNESS_BIG, 16, 9, 0x200);
 
-	AMIGA_COPPER(config, m_copper, amiga_state::CLK_7M_NTSC);
+	AGNUS_COPPER(config, m_copper, amiga_state::CLK_7M_NTSC);
 	m_copper->set_host_cpu_tag(m_maincpu);
 	m_copper->mem_read_cb().set(FUNC(amiga_state::chip_ram_r));
 	m_copper->set_ecs_mode(false);
@@ -318,7 +312,7 @@ void upscope_state::upscope(machine_config &config)
 	m_cia_1->pa_wr_callback().set(FUNC(upscope_state::upscope_cia_1_porta_w));
 
 	/* fdc */
-	AMIGA_FDC(config, m_fdc, amiga_state::CLK_7M_NTSC);
+	PAULA_FDC(config, m_fdc, amiga_state::CLK_7M_NTSC);
 	m_fdc->index_callback().set("cia_1", FUNC(mos8520_device::flag_w));
 	m_fdc->read_dma_callback().set(FUNC(amiga_state::chip_ram_r));
 	m_fdc->write_dma_callback().set(FUNC(amiga_state::chip_ram_w));

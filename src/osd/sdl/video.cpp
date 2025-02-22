@@ -62,7 +62,6 @@ bool sdl_osd_interface::video_init()
 	for (index = 0; index < video_config.numscreens; index++)
 	{
 		osd_window_config conf;
-		memset(&conf, 0, sizeof(conf));
 		get_resolution(options().resolution(), options().resolution(index), &conf, true);
 
 		// create window ...
@@ -142,7 +141,7 @@ void sdl_osd_interface::extract_video_config()
 		video_config.syncrefresh = 0;
 	}
 
-	if (video_config.prescale < 1 || video_config.prescale > 8)
+	if (video_config.prescale < 1 || video_config.prescale > 20)
 	{
 		osd_printf_warning("Invalid prescale option, reverting to '1'\n");
 		video_config.prescale = 1;

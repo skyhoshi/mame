@@ -26,21 +26,21 @@ public:
 
 protected:
 	// device-level overrides
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual void device_start() override;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
 
-	DECLARE_READ_LINE_MEMBER( t0_r );
-	DECLARE_READ_LINE_MEMBER( t1_r );
+	int t0_r();
+	int t1_r();
 	uint8_t p1_r();
 	uint8_t rom_r(offs_t offset);
 	void p1_w(uint8_t data);
 	void p2_w(uint8_t data);
 
-	DECLARE_WRITE_LINE_MEMBER(drq_w);
+	void drq_w(int state);
 
 private:
-	void speech_map(address_map &map);
-	void speech_portmap(address_map &map);
+	void speech_map(address_map &map) ATTR_COLD;
+	void speech_portmap(address_map &map) ATTR_COLD;
 
 	required_memory_region m_speech;
 	required_device<cpu_device> m_cpu;

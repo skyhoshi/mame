@@ -1,7 +1,7 @@
 // license:BSD-3-Clause
 // copyright-holders:Fabio Priuli
-#ifndef MAME_BUS_SEGA8_SLOT_H
-#define MAME_BUS_SEGA8_SLOT_H
+#ifndef MAME_BUS_SEGA8_SEGA8_SLOT_H
+#define MAME_BUS_SEGA8_SEGA8_SLOT_H
 
 #pragma once
 
@@ -131,9 +131,9 @@ public:
 	int get_cart_type(const uint8_t *ROM, uint32_t len) const;
 
 	void setup_ram();
-	void internal_header_logging(uint8_t *ROM, uint32_t len, uint32_t nvram_len);
+	void internal_header_logging(const uint8_t *ROM, uint32_t len, uint32_t nvram_len);
 	std::error_condition verify_cart(const uint8_t *magic, int size);
-	void set_lphaser_xoffset(uint8_t *rom, int size);
+	void set_lphaser_xoffset(const uint8_t *rom, int size);
 
 	void save_ram() { if (m_cart && m_cart->get_ram_size()) m_cart->save_ram(); }
 
@@ -153,7 +153,7 @@ protected:
 	sega8_cart_slot_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock, bool is_card = false);
 
 	// device_t implementation
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	int m_type;
 	bool const m_is_card;
@@ -353,4 +353,4 @@ void sg1000mk3_cart(device_slot_interface &device);
 void sms_cart(device_slot_interface &device);
 void gg_cart(device_slot_interface &device);
 
-#endif // MAME_BUS_SEGA8_SLOT_H
+#endif // MAME_BUS_SEGA8_SEGA8_SLOT_H

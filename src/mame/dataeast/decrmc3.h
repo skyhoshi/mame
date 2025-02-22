@@ -14,8 +14,8 @@
 
 ******************************************************************************/
 
-#ifndef MAME_DATAEAST_DECORMC3_H
-#define MAME_DATAEAST_DECORMC3_H
+#ifndef MAME_DATAEAST_DECRMC3_H
+#define MAME_DATAEAST_DECRMC3_H
 
 #pragma once
 
@@ -49,7 +49,6 @@ public:
 //  void set_endianness(endianness_t endianness);
 	void set_entries(u32 entries) { m_entries = entries; }
 	void set_indirect_entries(u32 entries) { m_indirect_entries = entries; }
-	void set_prom_region(const char *region) { m_prom_region.set_tag(region); }
 	template <typename T> void set_prom_region(T &&tag) { m_prom_region.set_tag(std::forward<T>(tag)); }
 
 	// palette RAM accessors
@@ -84,7 +83,7 @@ public:
 
 protected:
 	// device-level overrides
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	// device_palette_interface overrides
 	virtual u32 palette_entries() const noexcept override { return m_entries; }
@@ -111,4 +110,4 @@ private:
 	memory_array        m_paletteram_ext;       // extended memory
 };
 
-#endif  // MAME_DATAEAST_DECORMC3_H
+#endif  // MAME_DATAEAST_DECRMC3_H

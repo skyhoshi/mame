@@ -52,13 +52,13 @@ public:
 	void ibmpcjr(machine_config &config);
 
 private:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
-	void ibmpcjr_io(address_map &map);
-	void ibmpcjr_map(address_map &map);
-	void ibmpcjx_io(address_map &map);
-	void ibmpcjx_map(address_map &map);
+	void ibmpcjr_io(address_map &map) ATTR_COLD;
+	void ibmpcjr_map(address_map &map) ATTR_COLD;
+	void ibmpcjx_io(address_map &map) ATTR_COLD;
+	void ibmpcjx_map(address_map &map) ATTR_COLD;
 
 	TIMER_CALLBACK_MEMBER(delayed_irq);
 	TIMER_CALLBACK_MEMBER(watchdog_expired);
@@ -75,12 +75,12 @@ private:
 	required_device<upd765a_device> m_fdc;
 	required_device<pc_keyboard_device> m_keyboard;
 
-	DECLARE_WRITE_LINE_MEMBER(out2_changed);
-	DECLARE_WRITE_LINE_MEMBER(keyb_interrupt);
+	void out2_changed(int state);
+	void keyb_interrupt(int state);
 
 	void pc_nmi_enable_w(uint8_t data);
 	uint8_t pcjr_nmi_enable_r();
-	DECLARE_WRITE_LINE_MEMBER(pic8259_set_int_line);
+	void pic8259_set_int_line(int state);
 
 	void pcjr_ppi_portb_w(uint8_t data);
 	uint8_t pcjr_ppi_portc_r();
@@ -119,7 +119,7 @@ private:
 static INPUT_PORTS_START( ibmpcjr )
 	PORT_START("IN0") /* IN0 */
 	PORT_BIT ( 0xf0, 0xf0,   IPT_UNUSED )
-	PORT_BIT ( 0x08, 0x08,   IPT_CUSTOM ) PORT_VBLANK("pcvideo_pcjr:screen")
+	PORT_BIT ( 0x08, 0x08,   IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("pcvideo_pcjr:screen", FUNC(screen_device::vblank))
 	PORT_BIT ( 0x07, 0x07,   IPT_UNUSED )
 INPUT_PORTS_END
 
@@ -192,7 +192,7 @@ TIMER_CALLBACK_MEMBER(pcjr_state::kb_signal)
  *
  *************************************************************/
 
-WRITE_LINE_MEMBER(pcjr_state::pic8259_set_int_line)
+void pcjr_state::pic8259_set_int_line(int state)
 {
 	uint32_t pc = m_maincpu->pc();
 	if ( (pc == 0xF0453) || (pc == 0xFF196) )
@@ -216,7 +216,7 @@ void pcjr_state::pc_speaker_set_spkrdata(uint8_t data)
 	m_speaker->level_w(m_pc_spkrdata & m_pit_out2);
 }
 
-WRITE_LINE_MEMBER(pcjr_state::out2_changed)
+void pcjr_state::out2_changed(int state)
 {
 	m_pit_out2 = state ? 1 : 0;
 	m_speaker->level_w(m_pc_spkrdata & m_pit_out2);
@@ -261,7 +261,7 @@ WRITE_LINE_MEMBER(pcjr_state::out2_changed)
  *
  *************************************************************/
 
-WRITE_LINE_MEMBER(pcjr_state::keyb_interrupt)
+void pcjr_state::keyb_interrupt(int state)
 {
 	int data;
 

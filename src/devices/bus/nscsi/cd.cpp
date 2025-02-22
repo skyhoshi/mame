@@ -1,9 +1,14 @@
 // license:BSD-3-Clause
 // copyright-holders:Olivier Galibert
 #include "emu.h"
+#include "emuopts.h"
+
 #include "bus/nscsi/cd.h"
 
-#define VERBOSE 0
+#include "coreutil.h"
+#include "multibyte.h"
+
+#define VERBOSE (0)
 #include "logmacro.h"
 
 DEFINE_DEVICE_TYPE(NSCSI_CDROM, nscsi_cdrom_device, "scsi_cdrom", "SCSI CD-ROM")
@@ -17,6 +22,19 @@ DEFINE_DEVICE_TYPE(NSCSI_XM5401SUN, nscsi_toshiba_xm5401_sun_device, "nxm5401sun
 DEFINE_DEVICE_TYPE(NSCSI_XM5701, nscsi_toshiba_xm5701_device, "nxm5701", "XM-5701B 12x CD-ROM (New)")
 DEFINE_DEVICE_TYPE(NSCSI_XM5701SUN, nscsi_toshiba_xm5701_sun_device, "nxm5701sun", "XM-5701B Sun 12x CD-ROM (New)")
 DEFINE_DEVICE_TYPE(NSCSI_CDROM_APPLE, nscsi_cdrom_apple_device, "scsi_cdrom_apple", "Apple SCSI CD-ROM")
+
+// ZuluSCSI/BlueSCSI toolbox commands.  All are 10 bytes as of protocol version 0.
+static constexpr uint8_t TOOLBOX_LIST_FILES     = 0xd0;
+static constexpr uint8_t TOOLBOX_GET_FILE       = 0xd1;
+static constexpr uint8_t TOOLBOX_COUNT_FILES    = 0xd2;
+static constexpr uint8_t TOOLBOX_SEND_FILE_PREP = 0xd3;
+static constexpr uint8_t TOOLBOX_SEND_FILE_10   = 0xd4;
+static constexpr uint8_t TOOLBOX_SEND_FILE_END  = 0xd5;
+static constexpr uint8_t TOOLBOX_TOGGLE_DEBUG   = 0xd6;
+static constexpr uint8_t TOOLBOX_LIST_CDS       = 0xd7;
+static constexpr uint8_t TOOLBOX_SET_NEXT_CD    = 0xd8;
+static constexpr uint8_t TOOLBOX_LIST_DEVICES   = 0xd9;
+static constexpr uint8_t TOOLBOX_COUNT_CDS      = 0xda;
 
 nscsi_cdrom_device::nscsi_cdrom_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
 	nscsi_cdrom_device(mconfig, NSCSI_CDROM, tag, owner, "Sony", "CDU-76S", "1.0", 0x00, 0x05)
@@ -70,7 +88,9 @@ nscsi_toshiba_xm5701_sun_device::nscsi_toshiba_xm5701_sun_device(const machine_c
 
 // drive identifies as an original Apple CDSC (Sony CDU-8001 with custom firmware)
 nscsi_cdrom_apple_device::nscsi_cdrom_apple_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
-	nscsi_cdrom_device(mconfig, NSCSI_CDROM_APPLE, tag, owner, "Sony", "CD-ROM CDU-8001", "1.0", 0x00, 0x05)
+	nscsi_cdrom_device(mconfig, NSCSI_CDROM_APPLE, tag, owner, "SONY    ", "CD-ROM CDU-8002 ", "1.8g", 0x00, 0x05),
+	m_stopped(true),
+	m_stop_position(0)
 {
 }
 
@@ -78,6 +98,7 @@ nscsi_cdrom_device::nscsi_cdrom_device(const machine_config &mconfig, device_typ
 	: nscsi_full_device(mconfig, type, tag, owner, clock)
 	, image(*this, "image")
 	, cdda(*this, "cdda")
+	, m_removal_prevented(false)
 	, bytes_per_block(bytes_per_sector)
 	, lba(0)
 	, cur_sector(0)
@@ -88,18 +109,23 @@ void nscsi_cdrom_device::device_start()
 {
 	nscsi_full_device::device_start();
 
+	m_xfer_buffer.resize(8192);
+
 	save_item(NAME(sector_buffer));
 	save_item(NAME(lba));
 	save_item(NAME(cur_sector));
 	save_item(NAME(bytes_per_block));
 	save_item(NAME(mode_data_size));
+	save_item(NAME(m_xfer_position));
+	save_item(NAME(m_write_length));
+	save_item(NAME(m_write_offset));
+	save_item(NAME(m_write_is_setup));
 }
 
 void nscsi_cdrom_device::device_reset()
 {
 	nscsi_full_device::device_reset();
 	sequence_counter = image->sequence_counter();
-	cdda->set_cdrom(image);
 	lba = 0;
 	cur_sector = -1;
 	mode_data_size = 12;
@@ -108,7 +134,8 @@ void nscsi_cdrom_device::device_reset()
 void nscsi_cdrom_device::device_add_mconfig(machine_config &config)
 {
 	CDROM(config, image).set_interface("cdrom");
-	CDDA(config, "cdda");
+
+	CDDA(config, cdda).set_cdrom_tag(image);
 }
 
 int nscsi_cdrom_device::to_msf(int frame)
@@ -131,11 +158,26 @@ void nscsi_cdrom_device::set_block_size(u32 block_size)
 	bytes_per_block = block_size;
 };
 
+bool nscsi_cdrom_device::scsi_command_done(uint8_t command, uint8_t length)
+{
+	switch (command & 0xd0)
+	{
+	case 0xd0:  // ZuluSCSI/BlueSCSI toolbox commands
+		return length == 10;
+
+	default:
+		return nscsi_full_device::scsi_command_done(command, length);
+	}
+}
 
 uint8_t nscsi_cdrom_device::scsi_get_data(int id, int pos)
 {
+	if (id == 4)
+		return m_xfer_buffer[m_xfer_position++];
+
 	if(id != 2)
 		return nscsi_full_device::scsi_get_data(id, pos);
+
 	const int sector = (lba * bytes_per_block + pos) / bytes_per_sector;
 	const int extra_pos = (lba * bytes_per_block) % bytes_per_sector;
 	if(sector != cur_sector) {
@@ -150,6 +192,45 @@ uint8_t nscsi_cdrom_device::scsi_get_data(int id, int pos)
 
 void nscsi_cdrom_device::scsi_put_data(int id, int pos, uint8_t data)
 {
+	if (id == 4) {
+		m_xfer_buffer[m_xfer_position] = data;
+		m_xfer_position++;
+		if (m_write_is_setup) {
+			if (m_xfer_position == 33) {
+				osd_file::ptr file;
+				uint64_t filesize;
+				m_write_path.clear();
+				m_write_path = machine().options().share_directory();
+				m_write_path.append(PATH_SEPARATOR);
+				m_write_path.append((char *)&m_xfer_buffer[0]);
+				if (osd_file::open(m_write_path, OPEN_FLAG_CREATE | OPEN_FLAG_WRITE, file, filesize)) {
+					LOG("Open for write/creation failed for [%s]\n", m_write_path.c_str());
+					scsi_status_complete(SS_CHECK_CONDITION);
+					sense(false, SK_ILLEGAL_REQUEST, SK_ASC_INVALID_FIELD_IN_CDB);
+					return;
+				}
+			}
+		}
+		else
+		{
+			if (m_xfer_position == m_write_length) {
+				uint32_t actualWritten;
+				osd_file::ptr file;
+				uint64_t filesize;
+
+				LOG("flushing [%s] to disk at %08x\n", m_write_path.c_str(), m_write_offset * 512);
+				osd_file::open(m_write_path, OPEN_FLAG_WRITE, file, filesize);
+				file->write(&m_xfer_buffer[0], m_write_offset * 512, m_write_length, actualWritten);
+
+				if (actualWritten != m_write_length) {
+					scsi_status_complete(SS_CHECK_CONDITION);
+					sense(false, SK_ILLEGAL_REQUEST, SK_ASC_INVALID_FIELD_IN_CDB);
+				}
+			}
+		}
+		return;
+	}
+
 	if(id != 2) {
 		nscsi_full_device::scsi_put_data(id, pos, data);
 		return;
@@ -163,7 +244,7 @@ void nscsi_cdrom_device::scsi_put_data(int id, int pos, uint8_t data)
 		if(pos == mode_data_size - 1) {
 			// is there exactly one block descriptor?
 			if(mode_data[3] == 8)
-				set_block_size((mode_data[9] << 16) | (mode_data[10] << 8) | (mode_data[11] << 0));
+				set_block_size(get_u24be(&mode_data[9]));
 
 			// Size of block descriptor should change based on if it's mode select (6) or (10)
 			// TODO: Find a usage of mode select (10) for testing
@@ -183,6 +264,32 @@ void nscsi_cdrom_device::scsi_put_data(int id, int pos, uint8_t data)
 	}
 }
 
+void nscsi_cdrom_device::update_directory()
+{
+	std::string tmpPath(machine().options().share_directory());
+	osd::directory::ptr directory = osd::directory::open(tmpPath);
+
+	m_directory.clear();
+
+	if (directory != nullptr)
+	{
+		const osd::directory::entry *ourEntry;
+
+		while ((ourEntry = directory->read()) != nullptr)
+		{
+			m_directory.push_back(*ourEntry);
+
+			// API version 0 has a hard cap of 100 files
+			if (m_directory.size() >= 99)
+			{
+				break;
+			}
+		}
+
+		directory.reset();
+	}
+}
+
 void nscsi_cdrom_device::return_no_cd()
 {
 	sense(false, SK_NOT_READY, SK_ASC_MEDIUM_NOT_PRESENT);
@@ -194,7 +301,7 @@ void nscsi_cdrom_device::scsi_command()
 	int blocks;
 
 	// check for media change
-	if(	sequence_counter != image->sequence_counter() && (scsi_cmdbuf[0] != SC_INQUIRY))
+	if( sequence_counter != image->sequence_counter() && (scsi_cmdbuf[0] != SC_INQUIRY))
 	{
 		// clear media change condition
 		cur_sector = -1;
@@ -221,7 +328,7 @@ void nscsi_cdrom_device::scsi_command()
 			break;
 		}
 
-		lba = ((scsi_cmdbuf[1] & 0x1f)<<16) | (scsi_cmdbuf[2]<<8) | scsi_cmdbuf[3];
+		lba = get_u24be(&scsi_cmdbuf[1]) & 0x1fffff;
 		blocks = scsi_cmdbuf[4];
 		if(!blocks)
 			blocks = 256;
@@ -300,9 +407,9 @@ void nscsi_cdrom_device::scsi_command()
 		scsi_status_complete(SS_GOOD);
 		break;
 
-	case SC_RECIEVE_DIAG_RES: {
-		LOG("command RECIEVE DIAGNOSTICS RESULTS");
-		int size = (scsi_cmdbuf[3] << 8) | scsi_cmdbuf[4];
+	case SC_RECEIVE_DIAGNOSTIC_RESULTS: {
+		LOG("command RECEIVE DIAGNOSTIC RESULTS");
+		int size = get_u16be(&scsi_cmdbuf[3]);
 		int pos = 0;
 		scsi_cmdbuf[pos++] = 0;
 		scsi_cmdbuf[pos++] = 6;
@@ -318,9 +425,9 @@ void nscsi_cdrom_device::scsi_command()
 		break;
 	}
 
-	case SC_SEND_DIAGNOSTICS: {
-		LOG("command SEND DIAGNOSTICS");
-		int size = (scsi_cmdbuf[3] << 8) | scsi_cmdbuf[4];
+	case SC_SEND_DIAGNOSTIC: {
+		LOG("command SEND DIAGNOSTIC");
+		int size = get_u16be(&scsi_cmdbuf[3]);
 		if(scsi_cmdbuf[1] & 4) {
 			// Self-test
 			scsi_status_complete(SS_GOOD);
@@ -353,14 +460,10 @@ void nscsi_cdrom_device::scsi_command()
 		// get the last used block on the disc
 		const u32 temp = image->get_track_start(0xaa) * (bytes_per_sector / bytes_per_block) - 1;
 
-		scsi_cmdbuf[0] = (temp>>24) & 0xff;
-		scsi_cmdbuf[1] = (temp>>16) & 0xff;
-		scsi_cmdbuf[2] = (temp>>8) & 0xff;
-		scsi_cmdbuf[3] = (temp & 0xff);
+		put_u32be(&scsi_cmdbuf[0], temp);
 		scsi_cmdbuf[4] = 0;
 		scsi_cmdbuf[5] = 0;
-		scsi_cmdbuf[6] = (bytes_per_block>>8)&0xff;
-		scsi_cmdbuf[7] = (bytes_per_block & 0xff);
+		put_u16be(&scsi_cmdbuf[6], bytes_per_block);
 
 		scsi_data_in(SBUF_MAIN, 8);
 		scsi_status_complete(SS_GOOD);
@@ -368,8 +471,8 @@ void nscsi_cdrom_device::scsi_command()
 	}
 
 	case SC_READ_10:
-		lba = (scsi_cmdbuf[2]<<24) | (scsi_cmdbuf[3]<<16) | (scsi_cmdbuf[4]<<8) | scsi_cmdbuf[5];
-		blocks = (scsi_cmdbuf[7] << 8) | scsi_cmdbuf[8];
+		lba = get_u32be(&scsi_cmdbuf[2]);
+		blocks = get_u16be(&scsi_cmdbuf[7]);
 
 		LOG("command READ EXTENDED start=%08x blocks=%04x\n", lba, blocks);
 		if(!image->exists()) {
@@ -390,24 +493,27 @@ void nscsi_cdrom_device::scsi_command()
 			return;
 		}
 
-		int page = scsi_cmdbuf[2] & 0x3f;
-		int size = scsi_cmdbuf[4];
+		const int page = scsi_cmdbuf[2] & 0x3f;
+		const int size = scsi_cmdbuf[4];
+		const bool noBlockDesc = BIT(scsi_cmdbuf[1], 3);
 		int pos = 1;
 		scsi_cmdbuf[pos++] = 0x00; // medium type
 		scsi_cmdbuf[pos++] = 0x80; // WP, cache
 
 		// get the last used block on the disc
 		const u32 temp = image->exists() ? image->get_track_start(0xaa) * (bytes_per_sector / bytes_per_block) - 1 : 0;
-		scsi_cmdbuf[pos++] = 0x08; // Block descriptor length
+		scsi_cmdbuf[pos++] = noBlockDesc ? 0x00 : 0x08; // 0 or 8 bytes of block descriptor
 
-		scsi_cmdbuf[pos++] = 0x00; // density code
-		scsi_cmdbuf[pos++] = (temp>>16) & 0xff;
-		scsi_cmdbuf[pos++] = (temp>>8) & 0xff;
-		scsi_cmdbuf[pos++] = (temp & 0xff);
-		scsi_cmdbuf[pos++] = 0;
-		scsi_cmdbuf[pos++] = 0;
-		scsi_cmdbuf[pos++] = (bytes_per_block>>8)&0xff;
-		scsi_cmdbuf[pos++] = (bytes_per_block & 0xff);
+		if (!noBlockDesc)
+		{
+			scsi_cmdbuf[pos++] = 0x00; // density code
+			put_u24be(&scsi_cmdbuf[pos], temp);
+			pos += 3;
+			scsi_cmdbuf[pos++] = 0;
+			scsi_cmdbuf[pos++] = 0;
+			put_u16be(&scsi_cmdbuf[pos], bytes_per_block);
+			pos += 2;
+		}
 
 		bool fail = false;
 		int pmax = page == 0x3f ? 0x3e : page;
@@ -490,20 +596,38 @@ void nscsi_cdrom_device::scsi_command()
 				}
 				break;
 
-			default:
-				if (page != 0x3f) {
-					LOG("mode sense page %02x unhandled\n", p);
-					fail = true;
+			case 0x31: // magic BlueSCSI page; official clients require this to recognize a toolbox-capable device
+				{
+					// Yes this is lame for a GPLv3 project.
+					static const u8 bluescsi_magic[] =
+					{
+						"BlueSCSI is the BEST STOLEN FROM BLUESCSI\0"
+					};
+
+					scsi_cmdbuf[pos++] = 0x31; // page ID
+					scsi_cmdbuf[pos++] = 42;   // page length
+					memcpy(&scsi_cmdbuf[pos], bluescsi_magic, 42);
+					pos += 42;
 				}
 				break;
+
+				default:
+					if (page != 0x3f)
+					{
+						LOG("mode sense page %02x unhandled\n", p);
+						fail = true;
+					}
+					break;
 			}
 		}
-		scsi_cmdbuf[0] = pos;
-		if(pos > size)
-			pos = size;
+		scsi_cmdbuf[0] = pos - 1;   // return -1 for mode sense 6
 
 		if (!fail) {
-			scsi_data_in(0, pos);
+			if (size < pos)
+				scsi_data_in(0, size);
+			else
+				scsi_data_in(0, pos);
+
 			scsi_status_complete(SS_GOOD);
 		} else {
 			scsi_status_complete(SS_CHECK_CONDITION);
@@ -533,19 +657,13 @@ void nscsi_cdrom_device::scsi_command()
 			u32 tstart = image->get_track_start(0);
 			tstart = to_msf(tstart + 150);
 
-			scsi_cmdbuf[16] = (tstart >> 24) & 0xff;
-			scsi_cmdbuf[17] = (tstart >> 16) & 0xff;
-			scsi_cmdbuf[18] = (tstart >> 8) & 0xff;
-			scsi_cmdbuf[19] = (tstart & 0xff);
+			put_u32be(&scsi_cmdbuf[16], tstart);
 
 			// lead-out start time in MSF
 			tstart = image->get_track_start(0xaa);
 			tstart = to_msf(tstart + 150);
 
-			scsi_cmdbuf[20] = (tstart >> 24) & 0xff;
-			scsi_cmdbuf[21] = (tstart >> 16) & 0xff;
-			scsi_cmdbuf[22] = (tstart >> 8) & 0xff;
-			scsi_cmdbuf[23] = (tstart & 0xff);
+			put_u32be(&scsi_cmdbuf[20], tstart);
 		}
 
 		scsi_data_in(0, 34);
@@ -555,6 +673,7 @@ void nscsi_cdrom_device::scsi_command()
 	case SC_PREVENT_ALLOW_MEDIUM_REMOVAL:
 		// TODO: support eject prevention
 		LOG("command %s MEDIUM REMOVAL\n", (scsi_cmdbuf[4] & 0x1) ? "PREVENT" : "ALLOW");
+		m_removal_prevented = BIT(scsi_cmdbuf[4], 0);
 		scsi_status_complete(SS_GOOD);
 		break;
 
@@ -563,7 +682,7 @@ void nscsi_cdrom_device::scsi_command()
 		const bool subq = BIT(scsi_cmdbuf[2], 6);
 		const int param = scsi_cmdbuf[3];
 		const int track = scsi_cmdbuf[6];
-		const int alloc_length = (scsi_cmdbuf[7] << 8) | scsi_cmdbuf[8];
+		const int alloc_length = get_u16be(&scsi_cmdbuf[7]);
 
 		LOG("command READ SUB CHANNEL Param = %d, Track = %d, MSF = %d, SUBQ = %d\n", param, track, msf, subq);
 
@@ -606,19 +725,13 @@ void nscsi_cdrom_device::scsi_command()
 					if(msf)
 						frame = to_msf(frame);
 
-					scsi_cmdbuf[8] = BIT(frame, 24, 8); // Absolute CD Address
-					scsi_cmdbuf[9] = BIT(frame, 16, 8);
-					scsi_cmdbuf[10] = BIT(frame, 8, 8);
-					scsi_cmdbuf[11] = BIT(frame, 0, 8);
+					put_u32be(&scsi_cmdbuf[8], frame); // Absolute CD Address
 
 					frame = m_last_lba - image->get_track_start(scsi_cmdbuf[6] - 1);
 					if(msf)
 						frame = to_msf(frame);
 
-					scsi_cmdbuf[12] = BIT(frame, 24, 8); // Track Relative CD Address
-					scsi_cmdbuf[13] = BIT(frame, 16, 8);
-					scsi_cmdbuf[14] = BIT(frame, 8, 8);
-					scsi_cmdbuf[15] = BIT(frame, 0, 8);
+					put_u32be(&scsi_cmdbuf[12], frame); // Track Relative CD Address
 					break;
 				}
 
@@ -662,7 +775,7 @@ void nscsi_cdrom_device::scsi_command()
 		};
 
 		bool msf = (scsi_cmdbuf[1] & 0x2) != 0;
-		u16 size = (scsi_cmdbuf[7] << 7) | scsi_cmdbuf[8];
+		u16 size = get_u16be(&scsi_cmdbuf[7]);
 		u8 format = scsi_cmdbuf[2] & 15;
 
 		/// SFF8020 legacy format field (see T10/1836-D Revision 2g page 643)
@@ -696,8 +809,8 @@ void nscsi_cdrom_device::scsi_command()
 
 			// the returned TOC DATA LENGTH must be the full amount,
 			// regardless of how much we're able to pass back due to size
-			scsi_cmdbuf[pos++] = (len>>8) & 0xff;
-			scsi_cmdbuf[pos++] = (len & 0xff);
+			put_u16be(&scsi_cmdbuf[pos], len);
+			pos += 2;
 			scsi_cmdbuf[pos++] = 1;
 			scsi_cmdbuf[pos++] = image->get_last_track();
 
@@ -722,10 +835,8 @@ void nscsi_cdrom_device::scsi_command()
 				if(msf)
 					tstart = to_msf(tstart+150);
 
-				scsi_cmdbuf[pos++] = (tstart>>24) & 0xff;
-				scsi_cmdbuf[pos++] = (tstart>>16) & 0xff;
-				scsi_cmdbuf[pos++] = (tstart>>8) & 0xff;
-				scsi_cmdbuf[pos++] = (tstart & 0xff);
+				put_u32be(&scsi_cmdbuf[pos], tstart);
+				pos += 4;
 			}
 			break;
 		}
@@ -733,8 +844,8 @@ void nscsi_cdrom_device::scsi_command()
 		case 1: {
 			int len = 2 + (8 * 1);
 
-			scsi_cmdbuf[pos++] = (len>>8) & 0xff;
-			scsi_cmdbuf[pos++] = (len & 0xff);
+			put_u16be(&scsi_cmdbuf[pos], len);
+			pos += 2;
 			scsi_cmdbuf[pos++] = 1;
 			scsi_cmdbuf[pos++] = 1;
 
@@ -748,10 +859,8 @@ void nscsi_cdrom_device::scsi_command()
 			if (msf)
 				tstart = to_msf(tstart+150);
 
-			scsi_cmdbuf[pos++] = (tstart>>24) & 0xff;
-			scsi_cmdbuf[pos++] = (tstart>>16) & 0xff;
-			scsi_cmdbuf[pos++] = (tstart>>8) & 0xff;
-			scsi_cmdbuf[pos++] = (tstart & 0xff);
+			put_u32be(&scsi_cmdbuf[pos], tstart);
+			pos += 4;
 			break;
 		}
 
@@ -787,14 +896,14 @@ void nscsi_cdrom_device::scsi_command()
 		// TODO: Index isn't accounted for at all
 		const uint32_t start_track = scsi_cmdbuf[4];
 		const uint32_t end_track = cdda_sotc ? start_track : std::min(image->get_last_track(), (int)scsi_cmdbuf[7]);
-		const uint32_t m_lba = image->get_track_start(start_track - 1);
-		const uint32_t m_blocks = image->get_track_start(end_track) - m_lba;
-		const uint32_t track = image->get_track(m_lba);
+		const uint32_t lba = image->get_track_start(start_track - 1);
+		const uint32_t blocks = image->get_track_start(end_track) - lba;
+		const uint32_t track = image->get_track(lba);
 
 		if(image->get_track_type(track) == cdrom_file::CD_TRACK_AUDIO) {
-			LOG("Playing %d blocks from track %d (lba %d)\n", m_blocks, start_track, m_lba);
+			LOG("Playing %d blocks from track %d (lba %d)\n", blocks, start_track, lba);
 
-			cdda->start_audio(m_lba, m_blocks);
+			cdda->start_audio(lba, blocks);
 			scsi_status_complete(SS_GOOD);
 			sense(false, SK_NO_SENSE, 0x00, 0x11);
 		} else {
@@ -810,6 +919,124 @@ void nscsi_cdrom_device::scsi_command()
 		if (image->exists())
 			cdda->pause_audio(BIT(scsi_cmdbuf[8], 0) ^ 1);
 
+		scsi_status_complete(SS_GOOD);
+		break;
+
+	case TOOLBOX_COUNT_FILES:
+		LOG("TOOLBOX_COUNT_FILES\n");
+
+		update_directory();
+
+		scsi_cmdbuf[0] = m_directory.size();
+		scsi_data_in(0, 1);
+		scsi_status_complete(SS_GOOD);
+		break;
+
+	case TOOLBOX_LIST_FILES:
+	{
+		LOG("TOOLBOX_LIST_FILES\n");
+
+		// it's assumed clients will always do COUNT_FILES before LIST_FILES, because otherwise
+		// they'll have no idea how much data is coming.
+		int pos = 0;
+		int index = 0;
+
+		if (m_directory.size() > 0)
+		{
+			while (index < m_directory.size())
+			{
+				scsi_cmdbuf[pos] = index;
+				scsi_cmdbuf[pos + 1] = m_directory[index].type != osd::directory::entry::entry_type::DIR;
+				// There's a guaranteed null terminator one byte after the name field
+				strncpy(reinterpret_cast<char *>(&scsi_cmdbuf[pos + 2]), m_directory[index].name, 31);
+				scsi_cmdbuf[pos + 36] = (m_directory[index].size >> 24) & 0xff;
+				scsi_cmdbuf[pos + 37] = (m_directory[index].size >> 16) & 0xff;
+				scsi_cmdbuf[pos + 38] = (m_directory[index].size >> 8) & 0xff;
+				scsi_cmdbuf[pos + 39] = m_directory[index].size & 0xff;
+
+				LOG("%02d: %s %08x\n", index, m_directory[index].name, (uint32_t)m_directory[index].size);
+
+				index++;
+				pos += 40;
+			}
+		}
+
+		scsi_data_in(0, pos);
+		scsi_status_complete(SS_GOOD);
+		break;
+	}
+
+	case TOOLBOX_GET_FILE:
+	{
+		update_directory();
+
+		if (scsi_cmdbuf[1] >= m_directory.size())
+		{
+			LOG("TOOLBOX_GET_FILE: out of range file %d, %d available\n", scsi_cmdbuf[1], (int)m_directory.size());
+			scsi_status_complete(SS_CHECK_CONDITION);
+			sense(false, SK_ILLEGAL_REQUEST, SK_ASC_INVALID_FIELD_IN_CDB);
+			return;
+		}
+
+		uint32_t offset = scsi_cmdbuf[2] << 24 | scsi_cmdbuf[3] << 16 | scsi_cmdbuf[4] << 8 | scsi_cmdbuf[5];
+		LOG("TOOLBOX_GET_FILE: file # %d (%s), offset %08x\n", scsi_cmdbuf[1], m_directory[scsi_cmdbuf[1]].name, offset);
+
+		std::string tmpPath(machine().options().share_directory());
+		tmpPath.append(PATH_SEPARATOR);
+		tmpPath.append(m_directory[scsi_cmdbuf[1]].name);
+
+		osd_file::ptr file;
+		u64 size;
+		if (osd_file::open(tmpPath, OPEN_FLAG_READ, file, size))
+		{
+			LOG("Open failed for [%s]\n", tmpPath.c_str());
+			scsi_status_complete(SS_CHECK_CONDITION);
+			sense(false, SK_ILLEGAL_REQUEST, SK_ASC_INVALID_FIELD_IN_CDB);
+			return;
+		}
+		u32 actualRead;
+		file->read(&m_xfer_buffer[0], offset * 4096, 4096, actualRead);
+
+		if (actualRead == 0)
+		{
+			scsi_status_complete(SS_CHECK_CONDITION);
+			sense(false, SK_ILLEGAL_REQUEST, SK_ASC_INVALID_FIELD_IN_CDB);
+			return;
+		}
+
+		m_xfer_position = 0;
+		scsi_data_in(4, actualRead);
+		scsi_status_complete(SS_GOOD);
+		break;
+	}
+
+	case TOOLBOX_SEND_FILE_PREP:
+		LOG("TOOLBOX_SEND_FILE_PREP\n");
+		m_xfer_position = 0;
+		m_write_is_setup = true;
+		scsi_data_out(4, 33);
+		scsi_status_complete(SS_GOOD);
+		break;
+
+	case TOOLBOX_SEND_FILE_10:
+		m_xfer_position = 0;
+		m_write_is_setup = false;
+		m_write_length = scsi_cmdbuf[1] << 8 | scsi_cmdbuf[2];
+		m_write_offset = scsi_cmdbuf[3] << 16 | scsi_cmdbuf[4] << 8 | scsi_cmdbuf[5];
+		LOG("TOOLBOX_SEND_FILE_10 offset %08x len %04x\n", m_write_offset, m_write_length);
+		scsi_data_out(4, m_write_length);
+		scsi_status_complete(SS_GOOD);
+		break;
+
+	case TOOLBOX_SEND_FILE_END:
+		LOG("TOOLBOX_SEND_FILE_END\n");
+		scsi_status_complete(SS_GOOD);
+		break;
+
+	case TOOLBOX_COUNT_CDS:
+		LOG("TOOLBOX_COUNT_CDS\n");
+		scsi_cmdbuf[0] = 0;
+		scsi_data_in(0, 1);
 		scsi_status_complete(SS_GOOD);
 		break;
 
@@ -871,128 +1098,614 @@ bool nscsi_cdrom_sgi_device::scsi_command_done(uint8_t command, uint8_t length)
 		return length == 10;
 
 	default:
-		return nscsi_full_device::scsi_command_done(command, length);
+		return nscsi_cdrom_device::scsi_command_done(command, length);
 	}
 }
 
+// Apple CDSC commands, from "Apple CD-ROM SCSI Command Set", version 1.4, February 15, 1988.
+// These are related to the Sony CDU-541 commands but customized by Apple.
 enum apple_scsi_command_e : uint8_t {
-	APPLE_READ_TOC         = 0xc1,
-	APPLE_READ_SUB_CHANNEL = 0xc2,
-	APPLE_READ_HEADER      = 0xc3,
-	APPLE_PLAYBACK_STATUS  = 0xc4,
-	APPLE_PAUSE            = 0xc5,
-	APPLE_PLAY_TRACK       = 0xc6,
-	APPLE_PLAY_MSF         = 0xc7,
-	APPLE_PLAY_AUDIO       = 0xc8,
-	APPLE_PLAYBACK_CONTROL = 0xc9
+	APPLE_EJECT            = 0xc0,      // EJECT DISC
+	APPLE_READ_TOC         = 0xc1,      // READ TOC
+	APPLE_READ_Q_SUBCODE   = 0xc2,      // READ Q SUBCODE
+	APPLE_READ_HEADER      = 0xc3,      // READ HEADER
+	APPLE_AUDIO_TRK_SEARCH = 0xc8,      // AUDIO TRACK SEARCH
+	APPLE_AUDIO_PLAY       = 0xc9,      // AUDIO PLAY
+	APPLE_AUDIO_PAUSE      = 0xca,      // AUDIO PAUSE
+	APPLE_AUDIO_STOP       = 0xcb,      // AUDIO STOP
+	APPLE_AUDIO_STATUS     = 0xcc,      // AUDIO STATUS
+	APPLE_AUDIO_SCAN       = 0xcd,      // AUDIO SCAN
+	APPLE_AUDIO_CONTROL    = 0xce
 };
 
+void nscsi_cdrom_apple_device::device_start()
+{
+	nscsi_cdrom_device::device_start();
+
+	save_item(NAME(m_stopped));
+	save_item(NAME(m_stop_position));
+}
+
 /*
-   The Apple II SCSI Card firmware demands that ASC on a failing TEST_UNIT_READY be either 0x28 or 0xb0.
-   0x28 is MEDIA_CHANGED, 0xb0 is vendor-specific.  If the drive returns the normal 0x3A for disc-not-present,
+   The Apple II SCSI Card firmware demands that ASC on a failing TEST_UNIT_READY be either 0x28 or 0xB0.
+   0x28 is MEDIA_CHANGED, 0xB0 is vendor-specific.  If the drive returns the normal 0x3A for disc-not-present,
    the firmware assumes the drive is broken and retries the TEST_UNIT_READY for 60 seconds before giving up
    and booting the machine.
+
+   MacOS will see the normal 0x3A disc-not-present and simply disbelieve it and hammer on the drive while
+   asking the user to format it because it's unreadable.  0xB0 makes it behave as expected.
 */
+
+void nscsi_cdrom_apple_device::return_no_cd()
+{
+	sense(false, SK_NOT_READY, 0xb0);
+	scsi_status_complete(SS_CHECK_CONDITION);
+}
+
 void nscsi_cdrom_apple_device::scsi_command()
 {
+	#if 1
+	if (scsi_cmdbuf[0] != 8 && scsi_cmdbuf[0] != 0x28 && scsi_cmdbuf[0] != 0 && scsi_cmdbuf[0] != 0x03)
+	{
+		LOG("CD command: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+			   scsi_cmdbuf[0], scsi_cmdbuf[1], scsi_cmdbuf[2],
+			   scsi_cmdbuf[3], scsi_cmdbuf[4], scsi_cmdbuf[5],
+			   scsi_cmdbuf[6], scsi_cmdbuf[7], scsi_cmdbuf[8],
+			   scsi_cmdbuf[9]);
+	}
+	#endif
 	switch (scsi_cmdbuf[0]) {
 	case SC_TEST_UNIT_READY:
-		LOG("command TEST UNIT READY (AppleCD)\n");
+		//LOG("command TEST UNIT READY (AppleCD)\n");
 		if(image->exists())
 		{
 			scsi_status_complete(SS_GOOD);
 		}
 		else
 		{
-			sense(false, SK_NOT_READY, 0xb0);
-			scsi_status_complete(SS_CHECK_CONDITION);
+			return_no_cd();
 		}
 		break;
 
-	case APPLE_READ_TOC: {
-		u16 size = (scsi_cmdbuf[7] << 7) | scsi_cmdbuf[8];
-		bool msf = false; // TODO: LBAMSF bit from Page Code Eight parameter block
+	case SC_INQUIRY:
+		{
+			int lun = get_lun(scsi_cmdbuf[1] >> 5);
+			LOG("command INQUIRY lun=%d EVPD=%d page=%d alloc=%02x link=%02x\n",
+				lun, scsi_cmdbuf[1] & 1, scsi_cmdbuf[2], scsi_cmdbuf[4], scsi_cmdbuf[5]);
 
-		LOG("command READ TOC (AppleCD), size=%d, msf=%d\n", size, msf);
+			int page = scsi_cmdbuf[2];
+			int size = scsi_cmdbuf[4];
+			switch (page)
+			{
+			case 0:
+				std::fill_n(scsi_cmdbuf, size, 0);
 
-		if(!image->exists()) {
+				// data taken from the ROM of an AppleCD 150
+				scsi_cmdbuf[0] = 0x05;   // device is present, device is CD/DVD (MMC-3)
+				scsi_cmdbuf[1] = 0x80;       // media is removable
+				scsi_cmdbuf[2] = 0x01;
+				scsi_cmdbuf[3] = 0x01;
+				scsi_cmdbuf[4] = 0x31;       // additional length
+				memcpy((char *)&scsi_cmdbuf[8],  "SONY    ", 8);
+				memcpy((char *)&scsi_cmdbuf[16], "CD-ROM CDU-8002 ", 16);
+				memcpy((char *)&scsi_cmdbuf[32], "1.8g", 4);
+				scsi_cmdbuf[39] = 0xd0;
+				scsi_cmdbuf[40] = 0x90;
+				scsi_cmdbuf[41] = 0x27;
+				scsi_cmdbuf[42] = 0x3e;
+				scsi_cmdbuf[43] = 0x01;
+				scsi_cmdbuf[44] = 0x04;
+				scsi_cmdbuf[45] = 0x91;
+				scsi_cmdbuf[47] = 0x18;
+				scsi_cmdbuf[48] = 0x06;
+				scsi_cmdbuf[49] = 0xf0;
+				scsi_cmdbuf[50] = 0xfe;
+
+				scsi_data_in(SBUF_MAIN, size);
+				break;
+			}
+			scsi_status_complete(SS_GOOD);
+		}
+		break;
+
+	case APPLE_READ_TOC:
+		{
+			if (!image->exists())
+			{
+				return_no_cd();
+				break;
+			}
+
+			u16 size = get_u16be(&scsi_cmdbuf[7]);
+			LOG("command READ TOC (AppleCD), size=%d, track=%d, type1=%02x type2=%02x\n", size, scsi_cmdbuf[2], scsi_cmdbuf[9], scsi_cmdbuf[5]);
+
+			// cmdbuf 9 bits 6 & 7:
+			// 00 = first and last track # in BCD
+			// 01 = starting address of the lead-out in M/S/F
+			// 10 = starting address of a range of tracks from a starting track
+			// 11 = reserved
+			const uint8_t operation = scsi_cmdbuf[9] & 0xc0;
+			if (operation == 0x80)
+			{
+				// get TOC info for 1 or more tracks from a specified starting track
+				assert(scsi_cmdbuf[5] > 0);
+
+				const int start_track = bcd_2_dec(scsi_cmdbuf[5]) - 1;
+				const int num_trks = size / 4;
+				int pos = 0;
+
+				for (int trk = 0; trk < num_trks; trk++)
+				{
+					// Coverity: The emulated program could conceivably request a buffer size for
+					// more tracks than exist, but we must still return the requested amount of data.
+					if ((trk + start_track) < image->get_last_track())
+					{
+						const uint32_t start_lba = image->get_track_start(trk + start_track);
+						const uint32_t start_frame = to_msf(start_lba);
+
+						scsi_cmdbuf[pos++] = image->get_adr_control(trk + start_track);
+						scsi_cmdbuf[pos++] = dec_2_bcd(BIT(start_frame, 16, 8)); // minutes
+						scsi_cmdbuf[pos++] = dec_2_bcd(BIT(start_frame, 8, 8));  // seconds
+						scsi_cmdbuf[pos++] = dec_2_bcd(BIT(start_frame, 0, 8));  // frames
+					}
+					else    // keep returning the last track if necessary
+					{
+						const uint32_t start_lba = image->get_track_start(image->get_last_track());
+						const uint32_t start_frame = to_msf(start_lba);
+
+						scsi_cmdbuf[pos++] = image->get_adr_control(image->get_last_track());
+						scsi_cmdbuf[pos++] = dec_2_bcd(BIT(start_frame, 16, 8)); // minutes
+						scsi_cmdbuf[pos++] = dec_2_bcd(BIT(start_frame, 8, 8));  // seconds
+						scsi_cmdbuf[pos++] = dec_2_bcd(BIT(start_frame, 0, 8));  // frames
+					}
+				}
+
+				scsi_data_in(SBUF_MAIN, pos);
+				scsi_status_complete(SS_GOOD);
+			}
+			else if (operation == 0x40)    // get MSF of the start of the leadout
+			{
+				const int track = image->get_last_track();
+				const uint32_t frame = to_msf(image->get_track_start(track));
+				scsi_cmdbuf[0] = dec_2_bcd(BIT(frame, 16, 8)); // minutes
+				scsi_cmdbuf[1] = dec_2_bcd(BIT(frame, 8, 8));  // seconds
+				scsi_cmdbuf[2] = dec_2_bcd(BIT(frame, 0, 8));  // frames
+				scsi_cmdbuf[3] = 0;
+
+				scsi_data_in(SBUF_MAIN, 4);
+				scsi_status_complete(SS_GOOD);
+			}
+			else if (operation == 0x00) // get start and end track numbers
+			{
+				scsi_cmdbuf[0] = 1;
+				scsi_cmdbuf[1] = dec_2_bcd(image->get_last_track());
+				scsi_cmdbuf[2] = 0;
+				scsi_cmdbuf[3] = 0;
+
+				scsi_data_in(SBUF_MAIN, 4);
+				scsi_status_complete(SS_GOOD);
+			}
+		}
+		break;
+
+	case APPLE_AUDIO_STATUS:
+		LOG("command APPLE AUDIO STATUS, type %02x, want %d bytes\n", scsi_cmdbuf[3], scsi_cmdbuf[8]);
+
+		if (!image->exists())
+		{
 			return_no_cd();
 			break;
 		}
 
-		int pos = 0;
+		// Audio status codes, adapted from CDRemote.equ in GS/OS 6.0.1 (matches Sony CDU-541 as well)
+		enum cd_status_t: u8
+		{
+			PLAYING = 0,        // Audio is playing
+			PAUSED,             // Audio is paused
+			PLAYING_MUTED,      // Playing, but muted
+			REACHED_END,        // Playback reached the end
+			ERROR,              // an error occured
+			VOID                // really "idle"
+		};
 
-		int start_track = scsi_cmdbuf[5];
-		int end_track = image->get_last_track();
+		{
+			const int type = scsi_cmdbuf[3];
 
-		int tracks;
-		if(start_track == 0)
-			tracks = end_track + 1;
-		else if(start_track <= end_track)
-			tracks = (end_track - start_track) + 2;
-		else if(start_track <= 0xaa)
-			tracks = 1;
-		else
-			tracks = 0;
+			scsi_cmdbuf[2] = image->get_adr_control(image->get_track(cdda->get_audio_lba()));
 
-		int len = 2 + (tracks * 8);
+			const uint32_t frame = to_msf(cdda->get_audio_lba());
+			scsi_cmdbuf[3] = dec_2_bcd(BIT(frame, 16, 8));  // minute
+			scsi_cmdbuf[4] = dec_2_bcd(BIT(frame, 8, 8));   // second
+			scsi_cmdbuf[5] = dec_2_bcd(BIT(frame, 0, 8));   // frame
 
-		// the returned TOC DATA LENGTH must be the full amount,
-		// regardless of how much we're able to pass back due to size
-		scsi_cmdbuf[pos++] = (len>>8) & 0xff;
-		scsi_cmdbuf[pos++] = (len & 0xff);
-		scsi_cmdbuf[pos++] = 1;
-		scsi_cmdbuf[pos++] = image->get_last_track();
+			if (type == 0)
+			{
+				scsi_cmdbuf[1] = 0;
+				if (m_stopped)
+				{
+					scsi_cmdbuf[0] = VOID;
+				}
+				else
+				{
+					if (cdda->audio_ended())
+					{
+						scsi_cmdbuf[0] = REACHED_END;
+					}
+					else
+					{
+						if (cdda->audio_active())
+						{
+							if (cdda->audio_paused())
+							{
+								scsi_cmdbuf[0] = PAUSED;
+							}
+							else
+							{
+								scsi_cmdbuf[0] = PLAYING;
+							}
+						}
+						else
+						{
+							scsi_cmdbuf[0] = VOID;
+						}
+					}
+				}
+			}
+			else if (type == 1) // "volume status"
+			{
+				scsi_cmdbuf[0] = (u8)(cdda->output_gain(0) * 255.0f);
+				scsi_cmdbuf[1] = (u8)(cdda->output_gain(1) * 255.0f);
 
-		if (start_track == 0)
-			start_track = 1;
+				// Other 4 bytes unknown in this mode, going with the same as type 0 for now
+			}
+		}
+		scsi_data_in(SBUF_MAIN, 6);
+		scsi_status_complete(SS_GOOD);
+		break;
 
-		for(int i = 0; i < tracks; i++) {
-			int track = start_track + i;
-			int cdrom_track = track - 1;
-			if(i == tracks-1) {
-				track = 0xaa;
-				cdrom_track = 0xaa;
+	case APPLE_READ_Q_SUBCODE:
+		{
+			LOG("command READ SUB CHANNEL\n");
+
+			scsi_cmdbuf[0] = 0; // Control nibble
+			scsi_cmdbuf[1] = 0; // Track
+			scsi_cmdbuf[2] = 0; // Index
+			scsi_cmdbuf[3] = 0; // Relative Minute
+			scsi_cmdbuf[4] = 0; // Relative Second
+			scsi_cmdbuf[5] = 0; // Relative Frame
+			scsi_cmdbuf[6] = 0; // AMinute
+			scsi_cmdbuf[7] = 0; // ASecond
+			scsi_cmdbuf[8] = 0; // AFrame
+
+			const int track = image->get_track(cdda->get_audio_lba());
+			scsi_cmdbuf[1] = dec_2_bcd(track+1);
+			scsi_cmdbuf[2] = 1; // Index
+
+			const uint32_t track_start = image->get_track_start(track);
+			uint32_t cur_lba = cdda->get_audio_lba();
+
+			if (cur_lba < track_start)
+			{
+				cur_lba = track_start;
 			}
 
-			scsi_cmdbuf[pos++] = track;
-			scsi_cmdbuf[pos++] = image->get_adr_control(cdrom_track);
+			const uint32_t relframe = to_msf(cur_lba - track_start);
+			scsi_cmdbuf[3] = dec_2_bcd(BIT(relframe, 16, 8)); // minute
+			scsi_cmdbuf[4] = dec_2_bcd(BIT(relframe, 8, 8));    // second
+			scsi_cmdbuf[5] = dec_2_bcd(BIT(relframe, 0, 8));    // frame
 
-			u32 tstart = image->get_track_start(cdrom_track);
+			const uint32_t frame = to_msf(cur_lba);
+			scsi_cmdbuf[6] = dec_2_bcd(BIT(frame, 16, 8)); // minute
+			scsi_cmdbuf[7] = dec_2_bcd(BIT(frame, 8, 8));   // second
+			scsi_cmdbuf[8] = dec_2_bcd(BIT(frame, 0, 8));   // frame
 
-			if(msf)
-				tstart = to_msf(tstart+150);
-
-			scsi_cmdbuf[pos++] = (tstart>>24) & 0xff;
-			scsi_cmdbuf[pos++] = (tstart>>16) & 0xff;
-			scsi_cmdbuf[pos++] = (tstart>>8) & 0xff;
-			scsi_cmdbuf[pos++] = (tstart & 0xff);
-		}
-
-		if(pos) {
-			if(pos > size)
-				pos = size;
-
-			scsi_data_in(0, pos);
+			scsi_data_in(SBUF_MAIN, 9);
 			scsi_status_complete(SS_GOOD);
-		} else {
-			// report unit attention condition
-			scsi_status_complete(SS_CHECK_CONDITION);
-			sense(false, SK_ILLEGAL_REQUEST);
-			break;
 		}
 		break;
-	}
 
-	case APPLE_READ_SUB_CHANNEL:
-	case APPLE_READ_HEADER:
-	case APPLE_PLAYBACK_STATUS:
-	case APPLE_PAUSE:
-	case APPLE_PLAY_TRACK:
-	case APPLE_PLAY_MSF:
-	case APPLE_PLAY_AUDIO:
-	case APPLE_PLAYBACK_CONTROL:
-		// TODO
+	// This command does not change the play or pause status.
+	case APPLE_AUDIO_TRK_SEARCH:
+		{
+			const uint8_t val = scsi_cmdbuf[5];
+			const uint8_t start_track = (((val & 0xf0) >> 4) * 10) + (val & 0x0f);
+
+			cdda->cancel_scan();
+			if (cdda->audio_paused())
+			{
+				cdda->pause_audio(0);
+			}
+
+			uint32_t start_lba = 0;
+
+			// cmdbuf[9] bits 6 & 7:
+			// 00 = search address is LBA
+			// 01 = search address is M/S/F
+			// 10 = search address is track number
+			if (scsi_cmdbuf[9] == 0x40)
+			{
+				LOG("command APPLE AUDIO TRACK SEARCH MSF = %02x:%02x:%02x\n", scsi_cmdbuf[5], scsi_cmdbuf[6], scsi_cmdbuf[7]);
+				const uint32_t msf = (bcd_2_dec(scsi_cmdbuf[5]) << 16) | (bcd_2_dec(scsi_cmdbuf[6]) << 8) | bcd_2_dec(scsi_cmdbuf[7]);
+				start_lba = cdrom_file::msf_to_lba(msf);
+			}
+			else if (scsi_cmdbuf[9] == 0x80)
+			{
+				LOG("command APPLE AUDIO TRACK SEARCH track = %d\n", start_track);
+				if (start_track == 0)
+				{
+					cdda->stop_audio();
+					scsi_status_complete(SS_GOOD);
+					return;
+				}
+				else
+				{
+					start_lba = image->get_track_start(start_track - 1);
+					m_stop_position = image->get_track_start(start_track);  // does this actually update the stop position?
+				}
+			}
+			else if (scsi_cmdbuf[9] == 0x00)    // LBA
+			{
+				start_lba = (scsi_cmdbuf[5] << 24) | (scsi_cmdbuf[4] << 16) | (scsi_cmdbuf[3] << 8) || scsi_cmdbuf[2];
+			}
+			else
+			{
+				logerror("nscsi_cdrom_apple_device: Unknown APPLE AUDIO PLAY address mode %02x\n", scsi_cmdbuf[9]);
+			}
+
+			// PLAY / PAUSE bit
+			if ((scsi_cmdbuf[1] & 0x10) == 0x10)
+			{
+				cdda->start_audio(start_lba, m_stop_position - start_lba);
+			}
+			else
+			{
+				cdda->start_audio(start_lba, m_stop_position - start_lba);
+				cdda->pause_audio(true);
+			}
+			m_stopped = false;
+
+			scsi_status_complete(SS_GOOD);
+		}
+		break;
+
+	case APPLE_AUDIO_PLAY:
+		{
+			const uint8_t val = scsi_cmdbuf[5];
+			const uint8_t start_track = (((val & 0xf0) >> 4) * 10) + (val & 0x0f);
+
+			cdda->cancel_scan();
+			if (cdda->audio_paused())
+			{
+				cdda->pause_audio(0);
+			}
+
+			// cmdbuf[9] bits 6 & 7:
+			// 00 = address is LBA
+			// 01 = address is M/S/F
+			// 10 = address is track number
+			uint32_t address = 0;
+			if (scsi_cmdbuf[9] == 0x80)
+			{
+				LOG("command APPLE AUDIO PLAY track = %d\n", start_track);
+
+				// The Mac version of Apple CD-ROM Explorer issues PLAY on track 0 to stop
+				if (start_track == 0)
+				{
+					cdda->stop_audio();
+					m_stopped = true;
+					scsi_status_complete(SS_GOOD);
+					return;
+				}
+				else
+				{
+					address = image->get_track_start(start_track - 1);
+				}
+			}
+			else if (scsi_cmdbuf[9] == 0x40)
+			{
+				LOG("command APPLE AUDIO PLAY TRACK MSF = %02x:%02x:%02x\n", scsi_cmdbuf[3], scsi_cmdbuf[4], scsi_cmdbuf[5]);
+
+				const uint32_t msf = (bcd_2_dec(scsi_cmdbuf[3]) << 16) | (bcd_2_dec(scsi_cmdbuf[4]) << 8) | bcd_2_dec(scsi_cmdbuf[5]);
+				address = cdrom_file::msf_to_lba(msf);
+			}
+			else if (scsi_cmdbuf[9] == 0x00)
+			{
+				address = (scsi_cmdbuf[5] << 24) | (scsi_cmdbuf[4] << 16) | (scsi_cmdbuf[3] << 8) || scsi_cmdbuf[2];
+				LOG("command APPLE AUDIO PLAY lba = %d\n", address);
+			}
+			else
+			{
+				fatalerror("nscsi_cdrom_apple_device: unknown mode for APPLE AUDIO PLAY %02x\n", scsi_cmdbuf[9]);
+			}
+
+			// cmdbuf[1] & 0x10:
+			// 0 = address is the starting address, stop address was set by a STOP command
+			// 1 = address is the stop address, start address was set by a TRACK SEARCH command
+			if (scsi_cmdbuf[1] & 0x10)
+			{
+				const auto start = cdda->get_audio_lba();
+				cdda->start_audio(start, address - start);
+			}
+			else
+			{
+				cdda->start_audio(address, m_stop_position - address);
+				m_stopped = false;
+			}
+			scsi_status_complete(SS_GOOD);
+		}
+		break;
+
+	case APPLE_AUDIO_SCAN:
+		/*
+		    3/4/5 = MSF of starting position
+		    1 = 00 for forward scan, 0x10 for reverse
+		    Scan ends with a PAUSE OFF command.
+		*/
+		LOG("command APPLE_AUDIO_SCAN: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+			scsi_cmdbuf[0], scsi_cmdbuf[1], scsi_cmdbuf[2],
+			scsi_cmdbuf[3], scsi_cmdbuf[4], scsi_cmdbuf[5],
+			scsi_cmdbuf[6], scsi_cmdbuf[7], scsi_cmdbuf[8],
+			scsi_cmdbuf[9]);
+
+		if (!m_stopped)
+		{
+			uint32_t start_lba = 0;
+			switch (scsi_cmdbuf[9] & 0xc0)
+			{
+			case 0x00: // stop at LBA
+				start_lba = (scsi_cmdbuf[5] << 24) | (scsi_cmdbuf[4] << 16) | (scsi_cmdbuf[3] << 8) || scsi_cmdbuf[2];
+				LOG("command APPLE AUDIO SCAN at LBA %d\n", m_stop_position);
+				break;
+
+			case 0x40: // stop at MSF
+			{
+				const uint32_t msf = (bcd_2_dec(scsi_cmdbuf[5]) << 16) | (bcd_2_dec(scsi_cmdbuf[6]) << 8) | bcd_2_dec(scsi_cmdbuf[7]);
+				start_lba = cdrom_file::msf_to_lba(msf);
+				LOG("command APPLE AUDIO SCAN at MSF %02x:%02x:%02x\n", scsi_cmdbuf[5], scsi_cmdbuf[6], scsi_cmdbuf[7]);
+			}
+			break;
+
+			case 0x80: // stop at track number
+			{
+				const uint8_t start_track = bcd_2_dec(scsi_cmdbuf[5]);
+				if (start_track >= image->get_last_track())
+				{
+					start_lba = image->get_track_start(0xaa);
+				}
+				else
+				{
+					start_lba = image->get_track_start(start_track + 1);
+				}
+				start_lba--;
+				LOG("command APPLE AUDIO SCAN at end of track %d (LBA %d)\n", start_track, m_stop_position);
+			}
+			break;
+
+			default:
+				logerror("nscsi_cdrom_apple_device: Unknown APPLE AUDIO SCAN address mode %02x\n", scsi_cmdbuf[9]);
+				break;
+			}
+
+			// begin seeking from the specified address
+			cdda->set_audio_lba(start_lba);
+
+			if ((scsi_cmdbuf[1] & 0x10) == 0)
+			{
+				cdda->scan_forward();
+			}
+			else
+			{
+				cdda->scan_reverse();
+			}
+		}
+		scsi_status_complete(SS_GOOD);
+		break;
+
+	case APPLE_AUDIO_PAUSE:
+		LOG("command APPLE AUDIO PAUSE, on/off=%02x\n", scsi_cmdbuf[1]);
+		if (scsi_cmdbuf[1] == 0x10)
+		{
+			// set pause
+			if (!cdda->audio_paused())
+			{
+				cdda->pause_audio(1);
+			}
+		}
+		else
+		{
+			// release pause and stop scanning
+			cdda->cancel_scan();
+			if (cdda->audio_paused())
+			{
+				cdda->pause_audio(0);
+			}
+		}
+		scsi_status_complete(SS_GOOD);
+		break;
+
+	case APPLE_AUDIO_STOP:
+		switch (scsi_cmdbuf[9] & 0xc0)
+		{
+			case 0x00:  // stop at LBA
+				m_stop_position = (scsi_cmdbuf[5] << 24) | (scsi_cmdbuf[4] << 16) | (scsi_cmdbuf[3] << 8) || scsi_cmdbuf[2];
+				LOG("command APPLE AUDIO STOP at LBA %d\n", m_stop_position);
+				break;
+
+			case 0x40: // stop at MSF
+				{
+					const uint32_t msf = (bcd_2_dec(scsi_cmdbuf[5]) << 16) | (bcd_2_dec(scsi_cmdbuf[6]) << 8) | bcd_2_dec(scsi_cmdbuf[7]);
+					m_stop_position = cdrom_file::msf_to_lba(msf);
+					LOG("command APPLE AUDIO STOP at MSF %02x:%02x:%02x\n", scsi_cmdbuf[5], scsi_cmdbuf[6], scsi_cmdbuf[7]);
+				}
+				break;
+
+			case 0x80: // stop at track number
+				{
+					const uint8_t start_track = bcd_2_dec(scsi_cmdbuf[5]);
+					if (start_track >= image->get_last_track())
+					{
+						m_stop_position = image->get_track_start(0xaa);
+					}
+					else
+					{
+						m_stop_position = image->get_track_start(start_track + 1);
+					}
+					m_stop_position--;
+					LOG("command APPLE AUDIO STOP at end of track %d (LBA %d)\n", start_track, m_stop_position);
+				}
+				break;
+
+			default:
+				logerror("nscsi_cdrom_apple_device: Unknown APPLE AUDIO STOP address mode %02x\n", scsi_cmdbuf[9]);
+				break;
+		}
+
+		if ((!m_stopped) && (cdda->get_audio_lba() >= m_stop_position))
+		{
+			m_stopped = true;
+			cdda->stop_audio();
+		}
+
+		scsi_status_complete(SS_GOOD);
+		break;
+
+	case APPLE_AUDIO_CONTROL:
+		LOG("command APPLE AUDIO CONTROL, size %d\n", scsi_cmdbuf[8]);
+
+		if (image->exists())
+		{
+			scsi_data_out(3, scsi_cmdbuf[8]);
+			scsi_status_complete(SS_GOOD);
+		}
+		else
+		{
+			return_no_cd();
+		}
+		break;
+
+	case APPLE_EJECT:
+		LOG("command APPLE EJECT\n");
+		if (!m_removal_prevented)
+		{
+			cdda->stop_audio();
+			m_stopped = true;
+			image->unload();
+			sense(false, SK_NOT_READY, SK_ASC_MEDIUM_NOT_PRESENT);
+			scsi_status_complete(SS_GOOD);
+		}
+		else
+		{
+			LOG("Eject not allowed by PREVENT_ALLOW_MEDIA_REMOVAL\n");
+			sense(false, SK_ILLEGAL_REQUEST, 0x80);     // "Prevent bit is set"
+			scsi_status_complete(SS_CHECK_CONDITION);
+		}
+		break;
+
+	case SC_READ_6:
+	case SC_READ_10:
+	case SC_READ_12:
+		cdda->stop_audio();
+		m_stopped = true;
 		[[fallthrough]];
 
 	default:
@@ -1003,19 +1716,31 @@ void nscsi_cdrom_apple_device::scsi_command()
 
 bool nscsi_cdrom_apple_device::scsi_command_done(uint8_t command, uint8_t length)
 {
-	switch (command) {
-	case APPLE_READ_TOC:
-	//case APPLE_READ_SUB_CHANNEL:
-	//case APPLE_READ_HEADER:
-	//case APPLE_PLAYBACK_STATUS:
-	//case APPLE_PAUSE:
-	//case APPLE_PLAY_TRACK:
-	//case APPLE_PLAY_MSF:
-	//case APPLE_PLAY_AUDIO:
-	//case APPLE_PLAYBACK_CONTROL:
-		return length == 10;
+	switch (command & 0xf0)
+	{
+		case 0xc0:
+			return length == 10;
 
-	default:
-		return nscsi_full_device::scsi_command_done(command, length);
+		default:
+			return nscsi_cdrom_device::scsi_command_done(command, length);
 	}
+}
+
+void nscsi_cdrom_apple_device::scsi_put_data(int id, int pos, uint8_t data)
+{
+	if (id != 3)
+	{
+		nscsi_cdrom_device::scsi_put_data(id, pos, data);
+		return;
+	}
+
+	if (pos == 0)
+	{
+		cdda->set_output_gain(0, data / 255.0f);
+	}
+	else if (pos == 1)
+	{
+		cdda->set_output_gain(1, data / 255.0f);
+	}
+
 }

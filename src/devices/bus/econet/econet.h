@@ -35,8 +35,8 @@ public:
 	void add_device(device_econet_interface &target, int address);
 
 	// writes for host (driver_device)
-	DECLARE_WRITE_LINE_MEMBER( host_clk_w );
-	DECLARE_WRITE_LINE_MEMBER( host_data_w );
+	void host_clk_w(int state);
+	void host_data_w(int state);
 
 	// writes for peripherals (device_t)
 	void clk_w(device_t *device, int state);
@@ -66,8 +66,8 @@ protected:
 	};
 
 	// device_t implementation
-	virtual void device_start() override;
-	virtual void device_stop() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_stop() override ATTR_COLD;
 
 	std::vector<daisy_entry> m_device_list;
 
@@ -99,7 +99,7 @@ public:
 	}
 
 	// device-level overrides
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	// inline configuration
 	template <typename T> void set_econet_tag(T &&tag) { m_econet.set_tag(std::forward<T>(tag)); }

@@ -42,8 +42,8 @@ public:
 
 private:
 	void output_digits();
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 	void ctrl_w(uint8_t data);
 	void port3_w(uint8_t data);
 	void led_strobe_w(uint8_t data);
@@ -58,9 +58,9 @@ private:
 	uint8_t   m_ctrl = 0;
 	uint8_t   m_lcd_latch = 0;
 	uint32_t  m_digit_latch = 0;
-	void piggypas_io(address_map &map);
-	void piggypas_map(address_map &map);
-	void fidlstix_io(address_map &map);
+	void piggypas_io(address_map &map) ATTR_COLD;
+	void piggypas_map(address_map &map) ATTR_COLD;
+	void fidlstix_io(address_map &map) ATTR_COLD;
 };
 
 
@@ -159,7 +159,7 @@ static INPUT_PORTS_START( piggypas )
 	PORT_BIT(0x01, IP_ACTIVE_LOW, IPT_COIN3)
 	PORT_BIT(0x02, IP_ACTIVE_LOW, IPT_START1)
 	PORT_BIT(0x04, IP_ACTIVE_LOW, IPT_COIN4)
-	PORT_BIT(0x08, IP_ACTIVE_LOW, IPT_CUSTOM)  PORT_READ_LINE_DEVICE_MEMBER("ticket", ticket_dispenser_device, line_r)
+	PORT_BIT(0x08, IP_ACTIVE_LOW, IPT_CUSTOM)  PORT_READ_LINE_DEVICE_MEMBER("ticket", FUNC(ticket_dispenser_device::line_r))
 	PORT_BIT(0x10, IP_ACTIVE_LOW, IPT_COIN2)
 	PORT_BIT(0x20, IP_ACTIVE_HIGH, IPT_KEYPAD)  PORT_NAME("Gate sensor")   PORT_CODE(KEYCODE_G)
 	PORT_BIT(0x40, IP_ACTIVE_HIGH, IPT_UNUSED)
@@ -176,7 +176,7 @@ static INPUT_PORTS_START( piggypas )
 	PORT_BIT(0x80, IP_ACTIVE_LOW, IPT_SERVICE)  PORT_NAME("Program")
 
 	PORT_START("IN2")
-	PORT_BIT(0x08, IP_ACTIVE_LOW, IPT_BUTTON1) PORT_CHANGED_MEMBER(DEVICE_SELF, piggypas_state, ball_sensor, 0) // ball sensor
+	PORT_BIT(0x08, IP_ACTIVE_LOW, IPT_BUTTON1) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(piggypas_state::ball_sensor), 0) // ball sensor
 INPUT_PORTS_END
 
 
@@ -212,7 +212,7 @@ void piggypas_state::piggypas(machine_config &config)
 
 	screen_device &screen(SCREEN(config, "screen", SCREEN_TYPE_LCD));
 	screen.set_refresh_hz(50);
-	screen.set_screen_update("hd44780", FUNC(hd44780_device::screen_update));
+	screen.set_screen_update(m_hd44780, FUNC(hd44780_device::screen_update));
 	screen.set_size(16*6, 8);
 	screen.set_visarea(0, 16*6-1, 0, 8-1);
 	screen.set_palette("palette");
@@ -220,9 +220,9 @@ void piggypas_state::piggypas(machine_config &config)
 	PALETTE(config, "palette").set_entries(2);
 	config.set_default_layout(layout_piggypas);
 
-	hd44780_device &hd44780(HD44780(config, "hd44780"));
-	hd44780.set_lcd_size(1, 16);
-	hd44780.set_pixel_update_cb(FUNC(piggypas_state::piggypas_pixel_update));
+	HD44780(config, m_hd44780, 270'000); // TODO: clock not measured, datasheet typical clock used
+	m_hd44780->set_lcd_size(1, 16);
+	m_hd44780->set_pixel_update_cb(FUNC(piggypas_state::piggypas_pixel_update));
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
@@ -235,7 +235,7 @@ void piggypas_state::piggypas(machine_config &config)
 	ppi.out_pb_callback().set(FUNC(piggypas_state::ctrl_w));
 	ppi.in_pc_callback().set_ioport("IN0");
 
-	TICKET_DISPENSER(config, "ticket", attotime::from_msec(100), TICKET_MOTOR_ACTIVE_HIGH, TICKET_STATUS_ACTIVE_HIGH);
+	TICKET_DISPENSER(config, "ticket", attotime::from_msec(100));
 }
 
 void piggypas_state::fidlstix(machine_config &config)

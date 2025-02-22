@@ -131,7 +131,7 @@ public:
 	void lamps_w(offs_t offset, uint8_t data) { m_lamps_out_cb[offset](data); }
 
 protected:
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 private:
 	devcb_write8::array<8> m_lamps_out_cb;
@@ -407,7 +407,7 @@ private:
 	// unknown access
 	void ioport4_w(uint8_t data);
 
-	DECLARE_WRITE_LINE_MEMBER( sio0_w );
+	void sio0_w(int state);
 
 	uint8_t m_port7 = 0;
 	uint8_t m_port1 = 0;
@@ -439,11 +439,11 @@ private:
 	TILE_GET_INFO_MEMBER(get_hng64_tile2_16x16_info);
 	TILE_GET_INFO_MEMBER(get_hng64_tile3_8x8_info);
 	TILE_GET_INFO_MEMBER(get_hng64_tile3_16x16_info);
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 	uint32_t screen_update_hng64(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
-	DECLARE_WRITE_LINE_MEMBER(screen_vblank_hng64);
+	void screen_vblank_hng64(int state);
 	TIMER_DEVICE_CALLBACK_MEMBER(hng64_irq);
 	void do_dma(address_space &space);
 
@@ -503,12 +503,12 @@ private:
 	void reset_sound();
 	void reset_net();
 
-	DECLARE_WRITE_LINE_MEMBER(dma_hreq_cb);
+	void dma_hreq_cb(int state);
 	uint8_t dma_memr_cb(offs_t offset);
 	void dma_iow3_cb(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(tcu_tm0_cb);
-	DECLARE_WRITE_LINE_MEMBER(tcu_tm1_cb);
-	DECLARE_WRITE_LINE_MEMBER(tcu_tm2_cb);
+	void tcu_tm0_cb(int state);
+	void tcu_tm1_cb(int state);
+	void tcu_tm2_cb(int state);
 
 
 
@@ -529,11 +529,11 @@ private:
 	uint16_t sound_latch[2]{};
 	void hng64_audio(machine_config &config);
 	void hng64_network(machine_config &config);
-	void hng_comm_io_map(address_map &map);
-	void hng_comm_map(address_map &map);
-	void hng_map(address_map &map);
-	void hng_sound_io(address_map &map);
-	void hng_sound_map(address_map &map);
+	void hng_comm_io_map(address_map &map) ATTR_COLD;
+	void hng_comm_map(address_map &map) ATTR_COLD;
+	void hng_map(address_map &map) ATTR_COLD;
+	void hng_sound_io(address_map &map) ATTR_COLD;
+	void hng_sound_map(address_map &map) ATTR_COLD;
 };
 
 #endif // MAME_SNK_HNG64_H

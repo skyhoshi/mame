@@ -23,16 +23,16 @@ public:
 	void regs_w(offs_t offset, uint8_t data);
 	uint8_t regs_r(offs_t offset);
 
-	DECLARE_WRITE_LINE_MEMBER(eeprom_cs_in);
-	DECLARE_WRITE_LINE_MEMBER(eeprom_clk_in);
-	DECLARE_WRITE_LINE_MEMBER(eeprom_data_in);
+	void eeprom_cs_in(int state);
+	void eeprom_clk_in(int state);
+	void eeprom_data_in(int state);
 
 	auto eeprom_data_out() { return m_eeprom_data_out.bind(); }
 
 private:
 	// device-level overrides
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 	enum
 	{

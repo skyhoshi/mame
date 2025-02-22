@@ -92,7 +92,7 @@ public:
 	DECLARE_INPUT_CHANGED_MEMBER(trigger_nmi);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	required_device<z80_device> m_maincpu;
@@ -105,22 +105,22 @@ private:
 	required_ioport_array<6> m_inputs;
 	output_finder<> m_halt_led;
 
-	void lc80_mem(address_map &map);
-	void lc80a_mem(address_map &map);
-	void lc80e_mem(address_map &map);
-	void lc80_2_mem(address_map &map);
-	void lc80_io(address_map &map);
+	u8 m_matrix = 0;
 
-	DECLARE_WRITE_LINE_MEMBER(halt_w) { m_halt_led = state; }
-	DECLARE_WRITE_LINE_MEMBER(ctc_z0_w);
-	DECLARE_WRITE_LINE_MEMBER(ctc_z1_w);
-	DECLARE_WRITE_LINE_MEMBER(ctc_z2_w);
+	void lc80_mem(address_map &map) ATTR_COLD;
+	void lc80a_mem(address_map &map) ATTR_COLD;
+	void lc80e_mem(address_map &map) ATTR_COLD;
+	void lc80_2_mem(address_map &map) ATTR_COLD;
+	void lc80_io(address_map &map) ATTR_COLD;
+
+	void halt_w(int state) { m_halt_led = state; }
+	void ctc_z0_w(int state);
+	void ctc_z1_w(int state);
+	void ctc_z2_w(int state);
 	void pio1_pa_w(u8 data);
 	u8 pio1_pb_r();
 	void pio1_pb_w(u8 data);
 	u8 pio2_pb_r();
-
-	u8 m_matrix = 0;
 };
 
 
@@ -211,22 +211,22 @@ static INPUT_PORTS_START( lc80 )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_NAME("ADR") PORT_CODE(KEYCODE_COMMA) PORT_CHAR(',')
 
 	PORT_START("SPECIAL")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_NAME("RES") PORT_CODE(KEYCODE_F1) PORT_CHANGED_MEMBER(DEVICE_SELF, lc80_state, trigger_reset, 0)
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_NAME("NMI") PORT_CODE(KEYCODE_F2) PORT_CHANGED_MEMBER(DEVICE_SELF, lc80_state, trigger_nmi, 0)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_NAME("RES") PORT_CODE(KEYCODE_F1) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(lc80_state::trigger_reset), 0)
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_NAME("NMI") PORT_CODE(KEYCODE_F2) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(lc80_state::trigger_nmi), 0)
 INPUT_PORTS_END
 
 
 // Z80-CTC Interface
 
-WRITE_LINE_MEMBER(lc80_state::ctc_z0_w)
+void lc80_state::ctc_z0_w(int state)
 {
 }
 
-WRITE_LINE_MEMBER(lc80_state::ctc_z1_w)
+void lc80_state::ctc_z1_w(int state)
 {
 }
 
-WRITE_LINE_MEMBER(lc80_state::ctc_z2_w)
+void lc80_state::ctc_z2_w(int state)
 {
 }
 

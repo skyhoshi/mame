@@ -57,13 +57,13 @@ private:
 	void shanghai_palette(palette_device &palette) const;
 	INTERRUPT_GEN_MEMBER(half_vblank_irq);
 
-	void hd63484_map(address_map &map);
-	void kothello_map(address_map &map);
-	void kothello_sound_map(address_map &map);
-	void shangha2_map(address_map &map);
-	void shangha2_portmap(address_map &map);
-	void shanghai_map(address_map &map);
-	void shanghai_portmap(address_map &map);
+	void hd63484_map(address_map &map) ATTR_COLD;
+	void kothello_map(address_map &map) ATTR_COLD;
+	void kothello_sound_map(address_map &map) ATTR_COLD;
+	void shangha2_map(address_map &map) ATTR_COLD;
+	void shangha2_portmap(address_map &map) ATTR_COLD;
+	void shanghai_map(address_map &map) ATTR_COLD;
+	void shanghai_portmap(address_map &map) ATTR_COLD;
 
 	required_device<cpu_device> m_maincpu;
 	required_device<screen_device> m_screen;
@@ -589,6 +589,11 @@ ROM_START( shanghaij )
 	ROM_LOAD16_BYTE( "shg-27a.ic27", 0xc0000, 0x10000, CRC(41af0945) SHA1(dfc4638a17f716ccc8e59f275571d6dc1093a745) )
 	ROM_LOAD16_BYTE( "shg-37b.ic37", 0xe0001, 0x10000, CRC(3f192da0) SHA1(e70d5da5d702e9bf9ac6b77df62bcf51894aadcf) ) // 0xD58C == 0x00
 	ROM_LOAD16_BYTE( "shg-36b.ic36", 0xe0000, 0x10000, CRC(a1d6af96) SHA1(01c4c22bf03b3d260fffcbc6dfc5f2dd2bcba14a) )
+
+	// these come from a bootleg board (GD-8062) with identical ROM content. To be verified if they are the same for an original board, too
+	ROM_REGION( 0x400, "plds", ROMREGION_ERASE00 )
+	ROM_LOAD( "ampal16l8apc.ic57",    0x000, 0x104, CRC(5b680d26) SHA1(fdb9572f6e471598df82de7cda0e693e31be55a5) )
+	ROM_LOAD( "tibpal16l8-25cn.ic26", 0x200, 0x104, NO_DUMP ) // protected
 ROM_END
 
 ROM_START( shangha2 )

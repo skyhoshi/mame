@@ -56,8 +56,8 @@ public:
 	void arcadia(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	int m_line = 0;
@@ -123,13 +123,13 @@ private:
 	required_device<palette_device> m_palette;
 	required_device<screen_device> m_screen;
 
-	DECLARE_READ_LINE_MEMBER(vsync_r);
+	int vsync_r();
 	uint8_t video_r(offs_t offset);
 	void video_w(offs_t offset, uint8_t data);
 	void palette_init(palette_device &palette) const;
 	uint32_t screen_update_arcadia(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	INTERRUPT_GEN_MEMBER(video_line);
-	void arcadia_mem(address_map &map);
+	void arcadia_mem(address_map &map) ATTR_COLD;
 
 	void draw_char(uint8_t *ch, int charcode, int y, int x);
 	void vh_draw_line(int y, uint8_t chars1[16]);

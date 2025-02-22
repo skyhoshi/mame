@@ -43,12 +43,12 @@
 
     1995  Print Club (Vol.1)         Atlus             ?                C2
     1995  Print Club (Vol.2)         Atlus             ?                C2
+    1996  Print Club (Vol.3)         Atlus             317-5030         C2
     1996  Print Club (Vol.4)         Atlus             ?                C2
     1996  Print Club (Vol.5)         Atlus             ?                C2
 
 
-    Notes:
-            Bloxeed doesn't Read from the Protection Chip at all; all of the other games do.
+    Notes:  Bloxeed doesn't read from the protection chip at all; all of the other games do.
             Currently the protection chip is mostly understood, and needs a table of 256
             4-bit values for each game. In all cases except for Poto Poto and Puyo Puyo 2,
             the table is embedded in the code. Workarounds for the other 2 cases are
@@ -63,6 +63,86 @@
             - Correct ROM labels for: ssonicbr, ooparts, headonch
             - Does ooparts actually use upd samples? PCB has the same rom as tfrceac
             - Is the joystick hack for ooparts unofficial, or done by Sega for location test?
+            - Puyo Puyo 2 VS link capabilities
+
+    The "Print Club" boards used by Atlus are variants of the C2 board. Important differences:
+            - XL2 is 52.867MHz, instead of 53.693MHz.
+            - The 315-5242 DAC is on a riser board called 837-7694. It has two 74LS273 ICs
+              between the original DAC location and its spot on the riser.
+            - There is a daughterboard attached to CN4, which is also populated in the reverse
+              orientation compared to a normal C2 with CN4 populated (in terms of the polarizing
+              key orientation).
+            - The daughterboard is labeled 839-0805, and contains a TC82C55AM IO control IC,
+              as well as some 74 series glue logic and passives. This board talks to other
+              devices used in the print club machine. This board has a 1990 stamp on it, which
+              dates it much earlier than the known Atlus Print Club games.
+            - There is a larger board responsible for RGB multiplexing and encoding, named
+              837-10507-01. It takes RGB in from both the C2 PCB and (presumably) the camera.
+              ICs of note include Sony V7040, Sony CXA1688M, SBX1744-01 (submodule).
+              It has two sets of RCA jacks, likely for NTSC-compatible camera input.
+            - The wiring harness has power connections and monitor connections similar to or
+              directly compatible with that of a Sega New Astro City monitor and power supply.
+
+            With XL2 replaced, the DAC brought down from the riser, CN4 rotated 180 degrees, and
+            the I/O daughterboard disconnected, it becomes a normal C2 PCB.
+
+    Notes regarding Puyo Puyo 2's link capabilities (Mike Moffitt 2024-05-24):
+
+    Puyo Puyo 2 boards often (but not always) have CN4 populated. There exists a daughterboard
+    that can be installed to allow two PCBs to be networked for a four player mode. A video has
+    been shown that confirms this functionality works, but supposedly this peripheral was not
+    released by Compile/Sega and thus never reached mass production. A reproduction exists but
+    is not for sale, and documentation of its functionality does not yet exist.
+
+    From what I can tell, the daughtercard at CN4 is mapped into odd bytes at $880100. I think
+    it is a small amount of RAM, shared with a Z80 processor or compatible microcontroller.
+
+    Puyo Puyo 2 has a task that runs periodically to assess the status of the versus network.
+    Its initialization looks like this as far as I can tell at the time of writing:
+
+    CommMessage := $880101
+    CommStatus  := $88010F
+    CommCommand := $880111
+    CommControl := $880131
+
+            - Write $01 to CommControl, then write $00 six frames later (reset message?)
+            - Sleep for 120 frames (two seconds)
+            - Go back to top if the current frame count is not a multiple of 4...
+            - Write $FC to CommCommand (signature request)
+            - Look for a signature string "PUYO2Z80" from CommMessage (on odd bytes)
+              If the signature has a mismatch, the process begins from the top.
+              From this point the test menu will show that the comm board status is OK.
+            - Write $FD to CommCommand (CRC request)
+              If the result is zero, the test menu will clear the CRC error and proceed.
+            - Now the string "PUYO268K" is written out to CommMessage (on odd bytes), across
+              eight frames (one char per frame). Each write looks like this:
+                  * Write $FF to CommCommand
+                  * Write $01 to CommStatus
+                  * Write $FD to CommCommand
+                  * Write the character to CommMessage + (2 * index)
+                  * Increment index, yield for one frame
+            - Once again check that the current frame count is a multiple of 4, and if not,
+              abort and go to the top of this process.
+            - Command $FD is written once more (CRC request?) and we expect to see $FF in all
+              eight characters of CommMessage
+            - The test routine marks the board as good, but not yet the loop test.
+            - Yield for one frame.
+            - Command $FE is written to CommCommand, and it's expected that CommMessage's first
+              byte is $00, otherwise the process rests.
+            - With the $00 response identified, the status has the loop OK bit set, and the link
+              status is entirely satisfactory. The test menu then proceeds to allow TX/RX.
+            - The link task accepts a new routine pointer and stores it in its TCB to handle comms.
+
+    This task runs in the background, doing this init periodically if a link isn't established.
+    The test menu only exposes the current status but doesn't do anything to affect it, aside
+    from letting the user manually reset the link status.
+
+    The string would imply that there should be a Z80 system on the board, and some shared RAM.
+    The 68000 side does not write a program of any sort to this IO area, so it's unlikely the
+    Z80 software is packed into the C2 code anywhere (and I cannot find the PUYO2Z80 string).
+
+    How the TX/RX works is not yet understood.
+
 
     Thanks: (in no particular order) to any MameDev that helped me out .. (OG, Mish etc.)
             Charles MacDonald for his C2Emu .. without it working out what were bugs in my code
@@ -90,16 +170,20 @@
 #include "screen.h"
 #include "speaker.h"
 
+#define LOG_PROTECTION (1U << 1)
+#define LOG_PALETTE    (1U << 2)
+
+#define VERBOSE (0)
+#include "logmacro.h"
+
 
 namespace {
 
 #define XL1_CLOCK           XTAL(640'000)
 #define XL2_CLOCK           XTAL(53'693'175)
+// The Print Club PCBs use a slightly different master clock, likely for genlock compatibility.
+#define XL2_CLOCK_PCLUB     XTAL(52'867'000)
 
-
-#define LOG_PROTECTION      0
-#define LOG_PALETTE         0
-#define LOG_IOCHIP          0
 
 typedef device_delegate<int (int in)> segac2_prot_delegate;
 
@@ -148,8 +232,8 @@ public:
 	void init_zunkyou();
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	int m_segac2_enable_display;
 
@@ -184,9 +268,9 @@ protected:
 	int m_segac2_sp_pal_lookup[4];
 	void recompute_palette_tables();
 
-	DECLARE_WRITE_LINE_MEMBER(vdp_sndirqline_callback_c2);
-	DECLARE_WRITE_LINE_MEMBER(vdp_lv6irqline_callback_c2);
-	DECLARE_WRITE_LINE_MEMBER(vdp_lv4irqline_callback_c2);
+	void vdp_sndirqline_callback_c2(int state);
+	void vdp_lv6irqline_callback_c2(int state);
+	void vdp_lv4irqline_callback_c2(int state);
 	IRQ_CALLBACK_MEMBER(int_callback);
 
 	uint8_t io_portc_r();
@@ -201,7 +285,7 @@ protected:
 	void prot_w(uint8_t data);
 	void counter_timer_w(uint8_t data);
 	uint16_t ichirjbl_prot_r();
-	DECLARE_WRITE_LINE_MEMBER(segac2_irq2_interrupt);
+	void segac2_irq2_interrupt(int state);
 
 	int prot_func_dummy(int in);
 	int prot_func_columns(int in);
@@ -222,8 +306,8 @@ protected:
 	int prot_func_puyopuy2(int in);
 	int prot_func_zunkyou(int in);
 
-	void segac_map(address_map &map);
-	void segac2_map(address_map &map);
+	void segac_map(address_map &map) ATTR_COLD;
+	void segac2_map(address_map &map) ATTR_COLD;
 };
 
 
@@ -249,11 +333,14 @@ public:
 		: segac2_state(mconfig, type, tag)
 	{ }
 
+	void pclub(machine_config &config);
+
 	static constexpr feature_type unemulated_features() { return feature::CAMERA | feature::PRINTER; }
 
 	void init_pclub();
 	void init_pclubj();
 	void init_pclubjv2();
+	void init_pclubjv3();
 	void init_pclubjv4();
 	void init_pclubjv5();
 
@@ -265,6 +352,7 @@ private:
 
 	int prot_func_pclub(int in);
 	int prot_func_pclubjv2(int in);
+	int prot_func_pclubjv3(int in);
 	int prot_func_pclubjv4(int in);
 	int prot_func_pclubjv5(int in);
 };
@@ -561,7 +649,7 @@ void segac2_state::control_w(uint8_t data)
 /* protection chip reads */
 uint8_t segac2_state::prot_r()
 {
-	if (LOG_PROTECTION) logerror("%06X:protection r=%02X\n", m_maincpu->pcbase(), m_prot_read_buf);
+	LOGMASKED(LOG_PROTECTION, "%06X:protection r=%02X\n", m_maincpu->pcbase(), m_prot_read_buf);
 	return m_prot_read_buf | 0xf0;
 }
 
@@ -581,7 +669,7 @@ void segac2_state::prot_w(uint8_t data)
 
 	/* determine the value to return, should a read occur */
 	m_prot_read_buf = m_prot_func(table_index);
-	if (LOG_PROTECTION) logerror("%06X:protection w=%02X, new result=%02X\n", m_maincpu->pcbase(), data & 0x0f, m_prot_read_buf);
+	LOGMASKED(LOG_PROTECTION, "%06X:protection w=%02X, new result=%02X\n", m_maincpu->pcbase(), data & 0x0f, m_prot_read_buf);
 
 	/* if the palette changed, force an update */
 	if (new_sp_palbase != m_sp_palbase || new_bg_palbase != m_bg_palbase)
@@ -590,7 +678,7 @@ void segac2_state::prot_w(uint8_t data)
 		m_sp_palbase = new_sp_palbase;
 		m_bg_palbase = new_bg_palbase;
 		recompute_palette_tables();
-		if (LOG_PALETTE && m_screen) logerror("Set palbank: %d/%d (scan=%d)\n", m_bg_palbase, m_sp_palbase, m_screen->vpos());
+		if (m_screen) LOGMASKED(LOG_PALETTE, "Set palbank: %d/%d (scan=%d)\n", m_bg_palbase, m_sp_palbase, m_screen->vpos());
 	}
 }
 
@@ -1002,7 +1090,7 @@ static INPUT_PORTS_START( wwmarine )
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_UNKNOWN )
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_UNKNOWN )
 	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_UNKNOWN )
-	PORT_BIT( 0xc0, 0x00, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(wwmarine_state, read_wheel)
+	PORT_BIT( 0xc0, 0x00, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(wwmarine_state::read_wheel))
 
 	PORT_MODIFY("P2")
 	PORT_BIT( 0xff, IP_ACTIVE_LOW, IPT_UNUSED )
@@ -1717,27 +1805,27 @@ uint32_t segac2_state::screen_update_segac2_new(screen_device &screen, bitmap_rg
     Interrupt handling
 ******************************************************************************/
 
-WRITE_LINE_MEMBER(segac2_state::segac2_irq2_interrupt)
+void segac2_state::segac2_irq2_interrupt(int state)
 {
 	//printf("sound irq %d\n", state);
 	m_maincpu->set_input_line(2, state ? ASSERT_LINE : CLEAR_LINE);
 }
 
 // the main interrupt on C2 comes from the vdp line used to drive the z80 interrupt on a regular genesis(!)
-WRITE_LINE_MEMBER(segac2_state::vdp_sndirqline_callback_c2)
+void segac2_state::vdp_sndirqline_callback_c2(int state)
 {
 	if (state == ASSERT_LINE)
 		m_maincpu->set_input_line(6, HOLD_LINE);
 }
 
 // the line usually used to drive irq6 is not connected
-WRITE_LINE_MEMBER(segac2_state::vdp_lv6irqline_callback_c2)
+void segac2_state::vdp_lv6irqline_callback_c2(int state)
 {
 	//
 }
 
 // the scanline interrupt seems connected as usual
-WRITE_LINE_MEMBER(segac2_state::vdp_lv4irqline_callback_c2)
+void segac2_state::vdp_lv4irqline_callback_c2(int state)
 {
 	if (state == ASSERT_LINE)
 		m_maincpu->set_input_line(4, HOLD_LINE);
@@ -1847,6 +1935,13 @@ void segac2_state::ribbit(machine_config& config)
 	// Ribbit does random measure of UPD7759 sample #A playback time and reset to round 1 if it's not in expected range (see routine @1D8D2)
 	// current UPD code is too fast, add slight delay
 	m_upd7759->set_start_delay(250);
+}
+
+void pclub_state::pclub(machine_config& config)
+{
+	segac2(config);
+	// Print Club boards use a different crystal, possibly for better compatibility with the camera timings.
+	m_maincpu->set_clock(XL2_CLOCK_PCLUB/6);
 }
 
 
@@ -2064,8 +2159,18 @@ ROM_END
 
 ROM_START( wwanpanm ) /* Waku Waku Anpanman - 834-8191 sticker */
 	ROM_REGION( 0x200000, "maincpu", 0 )
-	ROM_LOAD16_BYTE( "epr-14123a.ic32", 0x000000, 0x040000, CRC(0e4f38c6) SHA1(2913fbde9a7e6428bab05c6e550c3e2d79c9f211) )
-	ROM_LOAD16_BYTE( "epr-14122a.ic31", 0x000001, 0x040000, CRC(01b8fe20) SHA1(8d21c346b141a298074d199ce2bc4094217e8c25) )
+	ROM_LOAD16_BYTE( "epr-14123a.ic32", 0x000000, 0x040000, CRC(0e4f38c6) SHA1(2913fbde9a7e6428bab05c6e550c3e2d79c9f211) ) // same as the original revision
+	ROM_LOAD16_BYTE( "epr-14122a.ic31", 0x000001, 0x040000, CRC(01b8fe20) SHA1(8d21c346b141a298074d199ce2bc4094217e8c25) ) // just two bytes + the checksum bytes changed from the original revision
+
+	ROM_REGION( 0x040000, "upd", 0 )
+	ROM_LOAD( "epr-14121.ic4", 0x000000, 0x040000, CRC(69adf3a1) SHA1(63233e723ab9be8d5663651cb2e6e54b64a7bb8e) )
+ROM_END
+
+
+ROM_START( wwanpanmo ) /* Waku Waku Anpanman - 837-7204 PCB */
+	ROM_REGION( 0x200000, "maincpu", 0 )
+	ROM_LOAD16_BYTE( "epr-14123.ic32", 0x000000, 0x040000, CRC(0e4f38c6) SHA1(2913fbde9a7e6428bab05c6e550c3e2d79c9f211) )
+	ROM_LOAD16_BYTE( "epr-14122.ic31", 0x000001, 0x040000, CRC(20c0db3b) SHA1(de3b599d3d348008752a9691f72255e6f63d9d27) )
 
 	ROM_REGION( 0x040000, "upd", 0 )
 	ROM_LOAD( "epr-14121.ic4", 0x000000, 0x040000, CRC(69adf3a1) SHA1(63233e723ab9be8d5663651cb2e6e54b64a7bb8e) )
@@ -2433,6 +2538,18 @@ ROM_START( pclubjv2 ) /* Print Club vol.2 (c)1995 Atlus */
 ROM_END
 
 
+ROM_START( pclubjv3 ) /* Print Club vol.3 (c)1996 Atlus */
+	ROM_REGION( 0x200000, "maincpu", 0 )
+	ROM_LOAD16_BYTE( "ic32-p3jsp.ic32", 0x000000, 0x080000, CRC(cb5b6221) SHA1(43c1352bfcaa4012019ae58742a5d09c3c4e5a8f) )
+	ROM_LOAD16_BYTE( "ic31-p3jsp.ic31", 0x000001, 0x080000, CRC(cdec8418) SHA1(7b5d6316182ec89230984b617ce0404ea0f1c331) )
+	ROM_LOAD16_BYTE( "ic34-p3jsp.ic34", 0x100000, 0x080000, CRC(c33f71a3) SHA1(21f9de9db4504307d5290c11dc86bfed9ee23ef0) )
+	ROM_LOAD16_BYTE( "ic33-p3jsp.ic33", 0x100001, 0x080000, CRC(c8da13e4) SHA1(38434f628b43549a234cf612f8a22993c76c20f0) )
+
+	ROM_REGION( 0x080000, "upd", 0 )
+	ROM_LOAD( "epr18169.4", 0x000000, 0x080000, CRC(5c00ccfb) SHA1(d043ffa6528bb9b76774c96df4edf8222a1878a4) )
+ROM_END
+
+
 ROM_START( pclubjv4 ) /* Print Club vol.4 (c)1996 Atlus */
 	ROM_REGION( 0x200000, "maincpu", 0 )
 	ROM_LOAD16_BYTE( "p4jsm.u32", 0x000000, 0x080000, CRC(36ff5f80) SHA1(33872aa00c8ca3f54dd7503a44562fbdad92df7d) )
@@ -2503,10 +2620,10 @@ int segac2_state::prot_func_dummy(int in)
 /* 317-0149 */
 int segac2_state::prot_func_columns(int in)
 {
-	int const b0 = BIT( in,2) ^ ((BIT(~in,0) && BIT( in,7)) || (BIT( in,4) && BIT( in,6)));
-	int const b1 = BIT(~in,0) ^ (BIT( in,2) || (BIT( in,5) && BIT(~in,6) && BIT( in,7)));
-	int const b2 = BIT( in,3) ^ ((BIT( in,0) && BIT( in,1)) || (BIT( in,4) && BIT( in,6)));
-	int const b3 = BIT( in,1) ^ ((BIT( in,0) && BIT( in,1)) || (BIT( in,4) && BIT( in,5)) || (BIT(~in,6) && BIT( in,7)));   // 1 repeated
+	int const b0 = BIT( in,2) ^ ((BIT(~in,0) & BIT( in,7)) | (BIT( in,4) & BIT( in,6)));
+	int const b1 = BIT(~in,0) ^ (BIT( in,2) | (BIT( in,5) & BIT(~in,6) & BIT( in,7)));
+	int const b2 = BIT( in,3) ^ ((BIT( in,0) & BIT( in,1)) | (BIT( in,4) & BIT( in,6)));
+	int const b3 = BIT( in,1) ^ ((BIT( in,0) & BIT( in,1)) | (BIT( in,4) & BIT( in,5)) | (BIT(~in,6) & BIT( in,7)));   // 1 repeated
 
 	return (b3 << 3) | (b2 << 2) | (b1 << 1) | b0;
 }
@@ -2514,10 +2631,10 @@ int segac2_state::prot_func_columns(int in)
 /* 317-0160 */
 int segac2_state::prot_func_columns2(int in)
 {
-	int const b0 =  BIT( in,2) ^ (BIT( in,1) || (BIT( in,4) && BIT( in,5)));
-	int const b1 = (BIT( in,0) && BIT( in,3) && BIT( in,4)) ^ (BIT( in,6) || (BIT( in,5) && BIT( in,7)));
-	int const b2 = (BIT( in,3) && BIT(~in,2) && BIT( in,4)) ^ (BIT( in,5) || (BIT( in,0) && BIT( in,1)) || (BIT( in,4) && BIT( in,6))); // 4 repeated
-	int const b3 = (BIT( in,1) && BIT( in,0) && BIT( in,2)) ^ ((BIT( in,4) && BIT(~in,6)) || (BIT( in,6) && BIT( in,7)));   // 6 repeated
+	int const b0 =  BIT( in,2) ^ (BIT( in,1) | (BIT( in,4) & BIT( in,5)));
+	int const b1 = (BIT( in,0) & BIT( in,3) & BIT( in,4)) ^ (BIT( in,6) | (BIT( in,5) & BIT( in,7)));
+	int const b2 = (BIT( in,3) & BIT(~in,2) & BIT( in,4)) ^ (BIT( in,5) | (BIT( in,0) & BIT( in,1)) | (BIT( in,4) & BIT( in,6))); // 4 repeated
+	int const b3 = (BIT( in,1) & BIT( in,0) & BIT( in,2)) ^ ((BIT( in,4) & BIT(~in,6)) | (BIT( in,6) & BIT( in,7)));   // 6 repeated
 
 	return (b3 << 3) | (b2 << 2) | (b1 << 1) | b0;
 }
@@ -2525,10 +2642,10 @@ int segac2_state::prot_func_columns2(int in)
 /* 317-0172 */
 int segac2_state::prot_func_tfrceac(int in)
 {
-	int const b0 = BIT(~in,2) ^ ((BIT( in,0) && BIT(~in,7)) || (BIT( in,3) && BIT( in,4)));
-	int const b1 = (BIT( in,4) && BIT(~in,5) && BIT( in,7)) ^ ((BIT(~in,0) || BIT(~in,3)) && (BIT(~in,6) || BIT(~in,7)));   // not in the form x1 XOR (x2 OR x3 OR x4)
-	int const b2 = BIT( in,2) ^ ((BIT( in,4) && BIT(~in,5) && BIT( in,7)) || (BIT(~in,1) && BIT( in,6)));
-	int const b3 = BIT( in,0) ^ ((BIT( in,1) && BIT( in,4) && BIT( in,6)) || (BIT( in,1) && BIT( in,4) && BIT( in,7))); // 1,4 repeated
+	int const b0 = BIT(~in,2) ^ ((BIT( in,0) & BIT(~in,7)) | (BIT( in,3) & BIT( in,4)));
+	int const b1 = (BIT( in,4) & BIT(~in,5) & BIT( in,7)) ^ ((BIT(~in,0) | BIT(~in,3)) & (BIT(~in,6) | BIT(~in,7)));   // not in the form x1 XOR (x2 OR x3 OR x4)
+	int const b2 = BIT( in,2) ^ ((BIT( in,4) & BIT(~in,5) & BIT( in,7)) | (BIT(~in,1) & BIT( in,6)));
+	int const b3 = BIT( in,0) ^ ((BIT( in,1) & BIT( in,4) & BIT( in,6)) | (BIT( in,1) & BIT( in,4) & BIT( in,7))); // 1,4 repeated
 
 	return (b3 << 3) | (b2 << 2) | (b1 << 1) | b0;
 }
@@ -2536,10 +2653,10 @@ int segac2_state::prot_func_tfrceac(int in)
 /* 317-0173 */
 int segac2_state::prot_func_borench(int in)
 {
-	int const b0 = (BIT( in,1) && BIT( in,2) && BIT( in,3) && BIT( in,7))   ^ (BIT( in,5) || (BIT(~in,0) && BIT(~in,4)));
-	int const b1 = (BIT(~in,2) && BIT( in,3) && BIT( in,5))                 ^ (BIT( in,1) || (BIT( in,0) && BIT(~in,4)));
-	int const b2 = (BIT( in,1) && BIT(~in,4) && BIT(~in,6))                 ^ (BIT( in,2) || BIT( in,3) || (BIT( in,5) && BIT( in,7)));
-	int const b3 = (BIT(~in,0) && BIT( in,5) && (BIT( in,6) || BIT( in,7))) ^ (BIT( in,1) || (BIT( in,3) && BIT( in,4)));   // not in the form x1 XOR (x2 OR x3 OR x4)
+	int const b0 = (BIT( in,1) & BIT( in,2) & BIT( in,3) & BIT( in,7))   ^ (BIT( in,5) | (BIT(~in,0) & BIT(~in,4)));
+	int const b1 = (BIT(~in,2) & BIT( in,3) & BIT( in,5))                ^ (BIT( in,1) | (BIT( in,0) & BIT(~in,4)));
+	int const b2 = (BIT( in,1) & BIT(~in,4) & BIT(~in,6))                ^ (BIT( in,2) | BIT( in,3) | (BIT( in,5) & BIT( in,7)));
+	int const b3 = (BIT(~in,0) & BIT( in,5) & (BIT( in,6) | BIT( in,7))) ^ (BIT( in,1) | (BIT( in,3) & BIT( in,4)));   // not in the form x1 XOR (x2 OR x3 OR x4)
 
 	return (b3 << 3) | (b2 << 2) | (b1 << 1) | b0;
 }
@@ -2547,10 +2664,10 @@ int segac2_state::prot_func_borench(int in)
 /* 317-0178 */
 int segac2_state::prot_func_ribbit(int in)
 {
-	int const b0 = (BIT( in,0) && BIT( in,4)) ^ ((BIT( in,1) && BIT( in,2)) || BIT( in,3) || BIT(~in,5));
-	int const b1 = (BIT( in,1) && BIT( in,5)) ^ ((BIT( in,2) && BIT( in,3)) || BIT( in,0) || BIT(~in,6));
-	int const b2 = (BIT( in,2) && BIT( in,7)) ^ ((BIT( in,3) && BIT( in,0)) || BIT(~in,1) || BIT( in,7));
-	int const b3 = (BIT( in,3) && BIT( in,6)) ^ ((BIT( in,0) && BIT( in,1)) || BIT(~in,2) || BIT( in,4));
+	int const b0 = (BIT( in,0) & BIT( in,4)) ^ ((BIT( in,1) & BIT( in,2)) | BIT( in,3) | BIT(~in,5));
+	int const b1 = (BIT( in,1) & BIT( in,5)) ^ ((BIT( in,2) & BIT( in,3)) | BIT( in,0) | BIT(~in,6));
+	int const b2 = (BIT( in,2) & BIT( in,7)) ^ ((BIT( in,3) & BIT( in,0)) | BIT(~in,1) | BIT( in,7));
+	int const b3 = (BIT( in,3) & BIT( in,6)) ^ ((BIT( in,0) & BIT( in,1)) | BIT(~in,2) | BIT( in,4));
 
 	return (b3 << 3) | (b2 << 2) | (b1 << 1) | b0;
 }
@@ -2558,10 +2675,10 @@ int segac2_state::prot_func_ribbit(int in)
 /* 317-0193 */
 int segac2_state::prot_func_twinsqua(int in)
 {
-	int const b0 = (BIT( in,2) && BIT(~in,5)) ^ (BIT( in,3) || BIT(~in,4));
-	int const b1 = (BIT( in,0) && BIT(~in,2) && BIT( in,4)) ^ (BIT(~in,0) || BIT(~in,4) || BIT(~in,6)); // 0,4 repeated
-	int const b2 = (BIT( in,3) && BIT(~in,5)) ^ (BIT( in,4) && BIT( in,7));
-	int const b3 =  BIT( in,1) ^ ((BIT(~in,3) && BIT(~in,6)) || (BIT( in,4) && BIT(~in,6)) || (BIT(~in,1) && BIT( in,3) && BIT(~in,4)));    // 1,3,4,6 repeated
+	int const b0 = (BIT( in,2) & BIT(~in,5)) ^ (BIT( in,3) | BIT(~in,4));
+	int const b1 = (BIT( in,0) & BIT(~in,2) & BIT( in,4)) ^ (BIT(~in,0) | BIT(~in,4) | BIT(~in,6)); // 0,4 repeated
+	int const b2 = (BIT( in,3) & BIT(~in,5)) ^ (BIT( in,4) & BIT( in,7));
+	int const b3 =  BIT( in,1) ^ ((BIT(~in,3) & BIT(~in,6)) | (BIT( in,4) & BIT(~in,6)) | (BIT(~in,1) & BIT( in,3) & BIT(~in,4)));    // 1,3,4,6 repeated
 
 	return (b3 << 3) | (b2 << 2) | (b1 << 1) | b0;
 }
@@ -2569,10 +2686,10 @@ int segac2_state::prot_func_twinsqua(int in)
 /* 317-0203 */
 int segac2_state::prot_func_puyo(int in)
 {
-	int const b0 = (BIT(~in,3) && BIT( in,7)) ^ ((BIT(~in,0) && BIT(~in,1)) || (BIT(~in,1) && BIT(~in,4))); // 1 repeated
-	int const b1 = (BIT( in,3) && BIT( in,5)) ^ (BIT(~in,2) || BIT( in,4) || BIT( in,6));
-	int const b2 = (BIT(~in,2) && BIT(~in,5)) ^ (BIT( in,1) || BIT(~in,3) || BIT(~in,6));
-	int const b3 =  BIT( in,1)                ^ ((BIT( in,0) && BIT( in,3) && BIT( in,7)) || BIT( in,4));
+	int const b0 = (BIT(~in,3) & BIT( in,7)) ^ ((BIT(~in,0) & BIT(~in,1)) | (BIT(~in,1) & BIT(~in,4))); // 1 repeated
+	int const b1 = (BIT( in,3) & BIT( in,5)) ^ (BIT(~in,2) | BIT( in,4) | BIT( in,6));
+	int const b2 = (BIT(~in,2) & BIT(~in,5)) ^ (BIT( in,1) | BIT(~in,3) | BIT(~in,6));
+	int const b3 =  BIT( in,1)               ^ ((BIT( in,0) & BIT( in,3) & BIT( in,7)) | BIT( in,4));
 
 	return (b3 << 3) | (b2 << 2) | (b1 << 1) | b0;
 }
@@ -2580,10 +2697,10 @@ int segac2_state::prot_func_puyo(int in)
 /* 317-0211 */
 int segac2_state::prot_func_tantr(int in)
 {
-	int const b0 = (BIT( in,0) && BIT( in,4)) ^ ( BIT( in,5) || BIT(~in,6)  || (BIT(~in,3) && BIT( in,7)));
-	int const b1 = (BIT( in,2) && BIT( in,6)) ^ ((BIT( in,1) && BIT( in,5)) || (BIT( in,3) && BIT( in,4)));
-	int const b2 = (BIT(~in,0) && BIT( in,2)) ^ ( BIT( in,4) || BIT( in,7)  || (BIT( in,1) && BIT(~in,5)));
-	int const b3 = (BIT(~in,2) && BIT( in,7)) ^ ( BIT(~in,0) || BIT( in,1)  || (BIT( in,3) && BIT( in,6)));
+	int const b0 = (BIT( in,0) & BIT( in,4)) ^ ( BIT( in,5) | BIT(~in,6)  | (BIT(~in,3) & BIT( in,7)));
+	int const b1 = (BIT( in,2) & BIT( in,6)) ^ ((BIT( in,1) & BIT( in,5)) | (BIT( in,3) & BIT( in,4)));
+	int const b2 = (BIT(~in,0) & BIT( in,2)) ^ ( BIT( in,4) | BIT( in,7)  | (BIT( in,1) & BIT(~in,5)));
+	int const b3 = (BIT(~in,2) & BIT( in,7)) ^ ( BIT(~in,0) | BIT( in,1)  | (BIT( in,3) & BIT( in,6)));
 
 	return (b3 << 3) | (b2 << 2) | (b1 << 1) | b0;
 }
@@ -2591,10 +2708,10 @@ int segac2_state::prot_func_tantr(int in)
 /* 317-???? */
 int segac2_state::prot_func_tantrkor(int in)
 {
-	int const b0 = (BIT(~in,1) && BIT(~in,7)) ^ (BIT(~in,2) && BIT(~in,4));
-	int const b1 = (BIT( in,2) && BIT( in,6)) ^ (BIT( in,0) && BIT( in,1));
-	int const b2 = (BIT(~in,3) && BIT(~in,6)) ^ (BIT( in,1) || BIT(~in,4));
-	int const b3 = (BIT(~in,0) && BIT(~in,2)) ^ (BIT( in,5) && BIT(~in,6));
+	int const b0 = (BIT(~in,1) & BIT(~in,7)) ^ (BIT(~in,2) & BIT(~in,4));
+	int const b1 = (BIT( in,2) & BIT( in,6)) ^ (BIT( in,0) & BIT( in,1));
+	int const b2 = (BIT(~in,3) & BIT(~in,6)) ^ (BIT( in,1) | BIT(~in,4));
+	int const b3 = (BIT(~in,0) & BIT(~in,2)) ^ (BIT( in,5) & BIT(~in,6));
 
 	return (b3 << 3) | (b2 << 2) | (b1 << 1) | b0;
 }
@@ -2602,10 +2719,10 @@ int segac2_state::prot_func_tantrkor(int in)
 /* 317-0218 */
 int segac2_state::prot_func_potopoto(int in)
 {
-	int const b0 = (BIT(~in,2) && BIT(~in,4)) ^ (BIT(~in,1) && BIT( in,3));
-	int const b1 = (BIT( in,0) && BIT( in,5)) ^ (BIT( in,2) || BIT(~in,7));
-	int const b2 = (BIT( in,0) && BIT( in,6)) ^ (BIT(~in,1) && BIT( in,7));
-	int const b3 = (BIT( in,0) && BIT(~in,7)) ^ (BIT(~in,1) && BIT(~in,6));
+	int const b0 = (BIT(~in,2) & BIT(~in,4)) ^ (BIT(~in,1) & BIT( in,3));
+	int const b1 = (BIT( in,0) & BIT( in,5)) ^ (BIT( in,2) | BIT(~in,7));
+	int const b2 = (BIT( in,0) & BIT( in,6)) ^ (BIT(~in,1) & BIT( in,7));
+	int const b3 = (BIT( in,0) & BIT(~in,7)) ^ (BIT(~in,1) & BIT(~in,6));
 
 	return (b3 << 3) | (b2 << 2) | (b1 << 1) | b0;
 }
@@ -2613,10 +2730,10 @@ int segac2_state::prot_func_potopoto(int in)
 /* 317-0219 */
 int segac2_state::prot_func_stkclmnj(int in)
 {
-	int const b0 = (BIT( in,1) && BIT( in,4)) ^ (BIT( in,5) && BIT( in,2));
-	int const b1 = (BIT(~in,2) && BIT( in,6)) ^ (BIT(~in,5) && BIT( in,7));
-	int const b2 = (BIT(~in,3) && BIT( in,6)) ^ (BIT(~in,5) && BIT(~in,1));
-	int const b3 = (BIT(~in,3) && BIT( in,5)) ^ (BIT(~in,6) || BIT(~in,7));
+	int const b0 = (BIT( in,1) & BIT( in,4)) ^ (BIT( in,5) & BIT( in,2));
+	int const b1 = (BIT(~in,2) & BIT( in,6)) ^ (BIT(~in,5) & BIT( in,7));
+	int const b2 = (BIT(~in,3) & BIT( in,6)) ^ (BIT(~in,5) & BIT(~in,1));
+	int const b3 = (BIT(~in,3) & BIT( in,5)) ^ (BIT(~in,6) | BIT(~in,7));
 
 	return (b3 << 3) | (b2 << 2) | (b1 << 1) | b0;
 }
@@ -2624,10 +2741,10 @@ int segac2_state::prot_func_stkclmnj(int in)
 /* 317-0223 */
 int segac2_state::prot_func_stkclmns(int in)
 {
-	int const b0 = (BIT( in,2) && BIT( in,4)) ^ (BIT( in,1) || BIT(~in,3));
-	int const b1 = (BIT( in,0) && BIT( in,5)) ^ (BIT( in,2) && BIT( in,7));
-	int const b2 = (BIT( in,0) && BIT(~in,6)) ^ (BIT( in,1) && BIT(~in,7));
-	int const b3 = (BIT( in,0) && BIT(~in,7)) ^ (BIT(~in,1) && BIT( in,6));
+	int const b0 = (BIT( in,2) & BIT( in,4)) ^ (BIT( in,1) | BIT(~in,3));
+	int const b1 = (BIT( in,0) & BIT( in,5)) ^ (BIT( in,2) & BIT( in,7));
+	int const b2 = (BIT( in,0) & BIT(~in,6)) ^ (BIT( in,1) & BIT(~in,7));
+	int const b3 = (BIT( in,0) & BIT(~in,7)) ^ (BIT(~in,1) & BIT( in,6));
 
 	return (b3 << 3) | (b2 << 2) | (b1 << 1) | b0;
 }
@@ -2635,10 +2752,10 @@ int segac2_state::prot_func_stkclmns(int in)
 /* 317-0224 */
 int segac2_state::prot_func_ichirj(int in)
 {
-	int const b0 = (BIT( in,2) && BIT( in,4)) ^ (BIT(~in,5) && BIT(~in,2));
-	int const b1 = (BIT( in,2) && BIT(~in,6)) ^ (BIT( in,5) && BIT( in,7));
-	int const b2 = (BIT(~in,3) && BIT( in,6)) ^ (BIT(~in,5) && BIT(~in,1));
-	int const b3 = (BIT(~in,1) && BIT( in,5)) ^ (BIT(~in,5) && BIT( in,7));
+	int const b0 = (BIT( in,2) & BIT( in,4)) ^ (BIT(~in,5) & BIT(~in,2));
+	int const b1 = (BIT( in,2) & BIT(~in,6)) ^ (BIT( in,5) & BIT( in,7));
+	int const b2 = (BIT(~in,3) & BIT( in,6)) ^ (BIT(~in,5) & BIT(~in,1));
+	int const b3 = (BIT(~in,1) & BIT( in,5)) ^ (BIT(~in,5) & BIT( in,7));
 
 	return (b3 << 3) | (b2 << 2) | (b1 << 1) | b0;
 }
@@ -2646,10 +2763,10 @@ int segac2_state::prot_func_ichirj(int in)
 /* 317-???? */
 int segac2_state::prot_func_ichir(int in)
 {
-	int const b0 = (BIT(~in,2) && BIT( in,4)) ^ (BIT( in,5) && BIT(~in,2));
-	int const b1 = (BIT( in,1) && BIT( in,6)) ^ (BIT( in,5) || BIT( in,7));
-	int const b2 = (BIT(~in,3) && BIT( in,6)) ^ (BIT(~in,5) && BIT(~in,3));
-	int const b3 = (BIT( in,0) && BIT(~in,5)) ^ (BIT( in,5) && BIT( in,7));
+	int const b0 = (BIT(~in,2) & BIT( in,4)) ^ (BIT( in,5) & BIT(~in,2));
+	int const b1 = (BIT( in,1) & BIT( in,6)) ^ (BIT( in,5) | BIT( in,7));
+	int const b2 = (BIT(~in,3) & BIT( in,6)) ^ (BIT(~in,5) & BIT(~in,3));
+	int const b3 = (BIT( in,0) & BIT(~in,5)) ^ (BIT( in,5) & BIT( in,7));
 
 	return (b3 << 3) | (b2 << 2) | (b1 << 1) | b0;
 }
@@ -2657,10 +2774,10 @@ int segac2_state::prot_func_ichir(int in)
 /* 317-???? */
 int segac2_state::prot_func_ichirk(int in)
 {
-	int const b0 = (BIT(~in,2) && BIT( in,4)) ^ (BIT( in,5) && BIT(~in,1));
-	int const b1 = (BIT( in,0) && BIT( in,6)) ^ (BIT( in,5) && BIT( in,4));
-	int const b2 = (BIT(~in,1) && BIT(~in,6)) ^ (BIT(~in,5) && BIT( in,3));
-	int const b3 = (BIT( in,1) && BIT( in,5)) ^ (BIT( in,6) && BIT( in,7));
+	int const b0 = (BIT(~in,2) & BIT( in,4)) ^ (BIT( in,5) & BIT(~in,1));
+	int const b1 = (BIT( in,0) & BIT( in,6)) ^ (BIT( in,5) & BIT( in,4));
+	int const b2 = (BIT(~in,1) & BIT(~in,6)) ^ (BIT(~in,5) & BIT( in,3));
+	int const b3 = (BIT( in,1) & BIT( in,5)) ^ (BIT( in,6) & BIT( in,7));
 
 	return (b3 << 3) | (b2 << 2) | (b1 << 1) | b0;
 }
@@ -2668,20 +2785,20 @@ int segac2_state::prot_func_ichirk(int in)
 /* 317-0228 */
 int segac2_state::prot_func_puyopuy2(int in)
 {
-	int const b0 = (BIT(~in,0) && BIT(~in,7)) ^ (BIT( in,1) || BIT(~in,4) || BIT(~in,6));
-	int const b1 = (BIT( in,0) && BIT(~in,6)) ^ (BIT( in,3) && BIT( in,5));
-	int const b2 = (BIT(~in,4) && BIT(~in,7)) ^ (BIT( in,0) || BIT(~in,6));
-	int const b3 = (BIT(~in,1) && BIT( in,4)) ^ (BIT( in,2) && BIT(~in,3));
+	int const b0 = (BIT(~in,0) & BIT(~in,7)) ^ (BIT( in,1) | BIT(~in,4) | BIT(~in,6));
+	int const b1 = (BIT( in,0) & BIT(~in,6)) ^ (BIT( in,3) & BIT( in,5));
+	int const b2 = (BIT(~in,4) & BIT(~in,7)) ^ (BIT( in,0) | BIT(~in,6));
+	int const b3 = (BIT(~in,1) & BIT( in,4)) ^ (BIT( in,2) & BIT(~in,3));
 
 	return (b3 << 3) | (b2 << 2) | (b1 << 1) | b0;
 }
 
 int segac2_state::prot_func_zunkyou(int in)
 {
-	int const b0 = (BIT(~in,1) && BIT( in,6)) ^ (BIT(~in,5) && BIT( in,7));
-	int const b1 = (BIT( in,0) && BIT(~in,5)) ^ (BIT(~in,3) || BIT( in,4));
-	int const b2 = (BIT( in,2) && BIT(~in,3)) ^ (BIT( in,4) && BIT(~in,5));
-	int const b3 = (BIT( in,0) && BIT(~in,4)) ^ (BIT(~in,2) && BIT(~in,6));
+	int const b0 = (BIT(~in,1) & BIT( in,6)) ^ (BIT(~in,5) & BIT( in,7));
+	int const b1 = (BIT( in,0) & BIT(~in,5)) ^ (BIT(~in,3) | BIT( in,4));
+	int const b2 = (BIT( in,2) & BIT(~in,3)) ^ (BIT( in,4) & BIT(~in,5));
+	int const b3 = (BIT( in,0) & BIT(~in,4)) ^ (BIT(~in,2) & BIT(~in,6));
 
 	return (b3 << 3) | (b2 << 2) | (b1 << 1) | b0;
 }
@@ -2693,30 +2810,41 @@ int pclub_state::prot_func_pclub(int in)
 
 int pclub_state::prot_func_pclubjv2(int in)
 {
-	int const b0 = (BIT( in,3) && BIT(~in,4)) ^ ((BIT(~in,1) && BIT(~in,7)) || BIT( in,6));
-	int const b1 = (BIT( in,0) && BIT( in,5)) ^  (BIT( in,2) && BIT(~in,6));
-	int const b2 = (BIT(~in,1) && BIT( in,6)) ^  (BIT( in,3) || BIT(~in,5)  || BIT(~in,1)); // 1 repeated
-	int const b3 = (BIT(~in,2) && BIT(~in,7)) ^  (BIT(~in,0) || BIT(~in,4));
+	int const b0 = (BIT( in,3) & BIT(~in,4)) ^ ((BIT(~in,1) & BIT(~in,7)) | BIT( in,6));
+	int const b1 = (BIT( in,0) & BIT( in,5)) ^  (BIT( in,2) & BIT(~in,6));
+	int const b2 = (BIT(~in,1) & BIT( in,6)) ^  (BIT( in,3) | BIT(~in,5)  | BIT(~in,1)); // 1 repeated
+	int const b3 = (BIT(~in,2) & BIT(~in,7)) ^  (BIT(~in,0) | BIT(~in,4));
+
+	return (b3 << 3) | (b2 << 2) | (b1 << 1) | b0;
+}
+
+int pclub_state::prot_func_pclubjv3(int in)
+{
+	// TODO: Determine correctly. This is just copied from V2 as a placeholder.
+	int const b0 = (BIT( in,3) & BIT(~in,4)) ^ ((BIT(~in,1) & BIT(~in,7)) | BIT( in,6));
+	int const b1 = (BIT( in,0) & BIT( in,5)) ^  (BIT( in,2) & BIT(~in,6));
+	int const b2 = (BIT(~in,1) & BIT( in,6)) ^  (BIT( in,3) | BIT(~in,5)  | BIT(~in,1)); // 1 repeated
+	int const b3 = (BIT(~in,2) & BIT(~in,7)) ^  (BIT(~in,0) | BIT(~in,4));
 
 	return (b3 << 3) | (b2 << 2) | (b1 << 1) | b0;
 }
 
 int pclub_state::prot_func_pclubjv4(int in)
 {
-	int const b0 = (BIT(~in,2) && BIT( in,4)) ^ (BIT( in,1) && BIT(~in,6) && BIT(~in,3));
-	int const b1 = (BIT(~in,3) && BIT(~in,4)) ^ (BIT( in,0) && BIT( in,5) && BIT(~in,6));
-	int const b2 =  BIT(~in,0)                ^ (BIT( in,3) && BIT( in,4));
-	int const b3 = (BIT(~in,1) && BIT( in,7)) ^ (BIT( in,5) && BIT(~in,7)); // 7 repeated
+	int const b0 = (BIT(~in,2) & BIT( in,4)) ^ (BIT( in,1) & BIT(~in,6) & BIT(~in,3));
+	int const b1 = (BIT(~in,3) & BIT(~in,4)) ^ (BIT( in,0) & BIT( in,5) & BIT(~in,6));
+	int const b2 =  BIT(~in,0)               ^ (BIT( in,3) & BIT( in,4));
+	int const b3 = (BIT(~in,1) & BIT( in,7)) ^ (BIT( in,5) & BIT(~in,7)); // 7 repeated
 
 	return (b3 << 3) | (b2 << 2) | (b1 << 1) | b0;
 }
 
 int pclub_state::prot_func_pclubjv5(int in)
 {
-	int const b0 = (BIT(~in,1) && BIT( in,5)) ^ (BIT(~in,2) && BIT(~in,6));
-	int const b1 = (BIT(~in,0) && BIT( in,4)) ^ (BIT(~in,3) && BIT(~in,7));
-	int const b2 = (BIT(~in,3) && BIT( in,7)) ^ (BIT(~in,0) || BIT(~in,4));
-	int const b3 = (BIT(~in,2) && BIT( in,6)) ^ (BIT(~in,1) && BIT(~in,5));
+	int const b0 = (BIT(~in,1) & BIT( in,5)) ^ (BIT(~in,2) & BIT(~in,6));
+	int const b1 = (BIT(~in,0) & BIT( in,4)) ^ (BIT(~in,3) & BIT(~in,7));
+	int const b2 = (BIT(~in,3) & BIT( in,7)) ^ (BIT(~in,0) | BIT(~in,4));
+	int const b3 = (BIT(~in,2) & BIT( in,6)) ^ (BIT(~in,1) & BIT(~in,5));
 
 	return (b3 << 3) | (b2 << 2) | (b1 << 1) | b0;
 }
@@ -2851,6 +2979,12 @@ void pclub_state::init_pclubjv2()
 	init_pclub();
 }
 
+void pclub_state::init_pclubjv3()
+{
+	set_prot_func(segac2_prot_delegate(*this, FUNC(pclub_state::prot_func_pclubjv3)));
+	init_pclub();
+}
+
 void pclub_state::init_pclubjv4()
 {
 	set_prot_func(segac2_prot_delegate(*this, FUNC(pclub_state::prot_func_pclubjv4)));
@@ -2928,6 +3062,7 @@ GAME( 1994, tantrbl2,   tantr,    segac,      ichir,    segac2_state,    init_ta
 GAME( 1994, tantrbl3,   tantr,    segac,      ichir,    segac2_state,    init_tantr,    ROT0,   "bootleg", "Puzzle & Action: Tant-R (Japan) (bootleg set 3)", 0 ) // Common bootleg in Europe, C board, no samples
 
 GAME( 1992, wwanpanm,   0,        segac2,     wwmarine, wwmarine_state,  init_noprot,   ROT0,   "Sega", "Waku Waku Anpanman (Rev A)", 0 )
+GAME( 1992, wwanpanmo,  wwanpanm, segac2,     wwmarine, wwmarine_state,  init_noprot,   ROT0,   "Sega", "Waku Waku Anpanman", 0 )
 GAME( 1992, wwmarine,   0,        segac2,     wwmarine, wwmarine_state,  init_noprot,   ROT0,   "Sega", "Waku Waku Marine", 0 )
 
 // not really sure how this should hook up, things like the 'sold out' flags could be mechanical sensors, or from another MCU / CPU board in the actual popcorn part of the machine?
@@ -2956,11 +3091,13 @@ GAME( 1994, zunkyou,    0,        segac2,     zunkyou,  segac2_state,    init_zu
 GAME( 1994, headonch,   0,        segac2,     headonch, segac2_state,    init_noprot,   ROT0,   "hack", "Monita to Rimoko no Head On Channel (prototype, hack)", 0 )
 
 /* Atlus Print Club 'Games' (C-2 Hardware) requires printer and camera emulation */
-GAME( 1995, pclubj,     0,        segac2,     pclub,    pclub_state,     init_pclubj,   ROT0,   "Atlus", "Print Club (Japan Vol.1)", MACHINE_NOT_WORKING )
+GAME( 1995, pclubj,     0,        pclub,      pclub,    pclub_state,     init_pclubj,   ROT0,   "Atlus", "Print Club (Japan Vol.1)", MACHINE_NOT_WORKING )
 
-GAME( 1995, pclubjv2,   0,        segac2,     pclubjv2, pclub_state,     init_pclubjv2, ROT0,   "Atlus", "Print Club (Japan Vol.2)", MACHINE_NOT_WORKING )
-GAME( 1995, pclub,      pclubjv2, segac2,     pclubjv2, pclub_state,     init_pclubj,   ROT0,   "Atlus", "Print Club (World)", MACHINE_NOT_WORKING ) // based on Japan Vol.2 but no Vol.2 subtitle
+GAME( 1995, pclubjv2,   0,        pclub,      pclubjv2, pclub_state,     init_pclubjv2, ROT0,   "Atlus", "Print Club (Japan Vol.2)", MACHINE_NOT_WORKING )
+GAME( 1995, pclub,      pclubjv2, pclub,      pclubjv2, pclub_state,     init_pclubj,   ROT0,   "Atlus", "Print Club (World)", MACHINE_NOT_WORKING ) // based on Japan Vol.2 but no Vol.2 subtitle
 
-GAME( 1996, pclubjv4,   0,        segac2,     pclubjv2, pclub_state,     init_pclubjv4, ROT0,   "Atlus", "Print Club (Japan Vol.4)", MACHINE_NOT_WORKING )
+GAME( 1995, pclubjv3,   0,        pclub,      pclubjv2, pclub_state,     init_pclubjv3, ROT0,   "Atlus", "Print Club (Japan Vol.3)", MACHINE_NOT_WORKING )
 
-GAME( 1996, pclubjv5,   0,        segac2,     pclubjv2, pclub_state,     init_pclubjv5, ROT0,   "Atlus", "Print Club (Japan Vol.5)", MACHINE_NOT_WORKING )
+GAME( 1996, pclubjv4,   0,        pclub,      pclubjv2, pclub_state,     init_pclubjv4, ROT0,   "Atlus", "Print Club (Japan Vol.4)", MACHINE_NOT_WORKING )
+
+GAME( 1996, pclubjv5,   0,        pclub,      pclubjv2, pclub_state,     init_pclubjv5, ROT0,   "Atlus", "Print Club (Japan Vol.5)", MACHINE_NOT_WORKING )

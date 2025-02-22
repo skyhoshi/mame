@@ -34,7 +34,7 @@
 
 #include "cpu/m6502/m6502.h"
 #include "imagedev/floppy.h"
-#include "machine/mos6530n.h"
+#include "machine/mos6530.h"
 #include "machine/ram.h"
 #include "sound/spkrdev.h"
 
@@ -71,7 +71,7 @@ public:
 	void beta(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 	uint8_t riot_pa_r();
 	void riot_pa_w(uint8_t data);
@@ -83,7 +83,7 @@ protected:
 
 	TIMER_CALLBACK_MEMBER(led_refresh);
 
-	void beta_mem(address_map &map);
+	void beta_mem(address_map &map) ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -113,8 +113,8 @@ private:
 
 void beta_state::beta_mem(address_map &map)
 {
-	map(0x0000, 0x007f).mirror(0x7f00).m(M6532_TAG, FUNC(mos6532_new_device::ram_map));
-	map(0x0080, 0x00ff).mirror(0x7f00).m(M6532_TAG, FUNC(mos6532_new_device::io_map));
+	map(0x0000, 0x007f).mirror(0x7f00).m(M6532_TAG, FUNC(mos6532_device::ram_map));
+	map(0x0080, 0x00ff).mirror(0x7f00).m(M6532_TAG, FUNC(mos6532_device::io_map));
 	map(0x8000, 0x87ff).mirror(0x7800).rom();
 }
 
@@ -159,7 +159,7 @@ static INPUT_PORTS_START( beta )
 	PORT_BIT( 0xe0, IP_ACTIVE_LOW, IPT_UNUSED )
 
 	PORT_START("SPECIAL")
-	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("RESET") PORT_CODE(KEYCODE_R) PORT_CHANGED_MEMBER(DEVICE_SELF, beta_state, trigger_reset, 0)
+	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("RESET") PORT_CODE(KEYCODE_R) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(beta_state::trigger_reset), 0)
 INPUT_PORTS_END
 
 /* M6532 Interface */
@@ -360,7 +360,7 @@ void beta_state::beta(machine_config &config)
 	SPEAKER_SOUND(config, m_speaker).add_route(ALL_OUTPUTS, "mono", 0.25);
 
 	/* devices */
-	mos6532_new_device &m6532(MOS6532_NEW(config, M6532_TAG, XTAL(4'000'000)/4));
+	mos6532_device &m6532(MOS6532(config, M6532_TAG, XTAL(4'000'000)/4));
 	m6532.pa_rd_callback().set(FUNC(beta_state::riot_pa_r));
 	m6532.pa_wr_callback().set(FUNC(beta_state::riot_pa_w));
 	m6532.pb_rd_callback().set(FUNC(beta_state::riot_pb_r));

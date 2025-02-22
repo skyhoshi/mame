@@ -126,13 +126,13 @@ protected:
 	void m68k_shared_1_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 	uint16_t dsp0_status_r();
 	void dsp0_control_w(uint16_t data);
-	DECLARE_READ_LINE_MEMBER(dsp0_bio_r);
+	int dsp0_bio_r();
 	void dsp0_bank_w(uint16_t data);
 	uint16_t analog_r();
 
-	virtual void machine_reset() override;
-	virtual void video_start() override;
-	virtual void video_reset() override;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
+	virtual void video_reset() override ATTR_COLD;
 
 	uint32_t screen_update_atarisy4(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
@@ -144,9 +144,9 @@ protected:
 	void load_ldafile(address_space &space, const uint8_t *file);
 	void load_hexfile(address_space &space, const uint8_t *file);
 
-	void main_map(address_map &map);
-	void dsp0_map(address_map &map);
-	void dsp0_io_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void dsp0_map(address_map &map) ATTR_COLD;
+	void dsp0_io_map(address_map &map) ATTR_COLD;
 
 	required_device<cpu_device> m_maincpu;
 	required_device<tms32010_device> m_dsp0;
@@ -193,14 +193,14 @@ public:
 protected:
 	uint16_t dsp1_status_r();
 	void dsp1_control_w(uint16_t data);
-	DECLARE_READ_LINE_MEMBER(dsp1_bio_r);
+	int dsp1_bio_r();
 	void dsp1_bank_w(uint16_t data);
 
-	virtual void machine_reset() override;
+	virtual void machine_reset() override ATTR_COLD;
 
-	void airrace_map(address_map &map);
-	void dsp1_map(address_map &map);
-	void dsp1_io_map(address_map &map);
+	void airrace_map(address_map &map) ATTR_COLD;
+	void dsp1_map(address_map &map) ATTR_COLD;
+	void dsp1_io_map(address_map &map) ATTR_COLD;
 
 private:
 	required_device<tms32010_device> m_dsp1;
@@ -641,7 +641,7 @@ void atarisy4_state::dsp0_control_w(uint16_t data)
 	m_csr[0] = data;
 }
 
-READ_LINE_MEMBER(atarisy4_state::dsp0_bio_r)
+int atarisy4_state::dsp0_bio_r()
 {
 	return BIT(m_csr[0], 2);
 }
@@ -675,7 +675,7 @@ void airrace_state::dsp1_control_w(uint16_t data)
 	m_csr[1] = data;
 }
 
-READ_LINE_MEMBER(airrace_state::dsp1_bio_r)
+int airrace_state::dsp1_bio_r()
 {
 	return BIT(m_csr[1], 2);
 }

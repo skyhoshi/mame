@@ -65,9 +65,8 @@ ksm|DVK KSM,
 #include "screen.h"
 
 
-//#define LOG_GENERAL (1U <<  0) //defined in logmacro.h already
-#define LOG_KEYBOARD  (1U <<  1)
-#define LOG_DEBUG     (1U <<  2)
+#define LOG_KEYBOARD  (1U << 1)
+#define LOG_DEBUG     (1U << 2)
 
 //#define VERBOSE (LOG_DEBUG)
 //#define LOG_OUTPUT_FUNC osd_printf_info
@@ -114,23 +113,23 @@ public:
 private:
 	TIMER_DEVICE_CALLBACK_MEMBER(scanline_callback);
 
-	virtual void machine_reset() override;
-	virtual void machine_start() override;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void machine_start() override ATTR_COLD;
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
 	TIMER_CALLBACK_MEMBER(clock_brg);
 
-	DECLARE_WRITE_LINE_MEMBER(write_keyboard_clock);
+	void write_keyboard_clock(int state);
 
-	DECLARE_WRITE_LINE_MEMBER(write_brga);
-	DECLARE_WRITE_LINE_MEMBER(write_brgb);
-	DECLARE_WRITE_LINE_MEMBER(write_brgc);
+	void write_brga(int state);
+	void write_brgb(int state);
+	void write_brgc(int state);
 
 	void ksm_ppi_porta_w(uint8_t data);
 	void ksm_ppi_portc_w(uint8_t data);
 
-	void ksm_io(address_map &map);
-	void ksm_mem(address_map &map);
+	void ksm_io(address_map &map) ATTR_COLD;
+	void ksm_mem(address_map &map) ATTR_COLD;
 
 	uint32_t draw_scanline(uint16_t *p, uint16_t offset, uint8_t scanline);
 	rectangle m_tmpclip;
@@ -227,7 +226,7 @@ TIMER_CALLBACK_MEMBER(ksm_state::clock_brg)
 
 void ksm_state::machine_reset()
 {
-	memset(&m_video, 0, sizeof(m_video));
+	m_video = decltype(m_video)();
 	brga = 0;
 	brgb = 0;
 	brgc = 0;
@@ -257,19 +256,19 @@ void ksm_state::ksm_ppi_portc_w(uint8_t data)
 	update_brg(brga, brgb, brgc);
 }
 
-WRITE_LINE_MEMBER(ksm_state::write_keyboard_clock)
+void ksm_state::write_keyboard_clock(int state)
 {
 	m_i8251kbd->write_txc(state);
 	m_i8251kbd->write_rxc(state);
 }
 
-WRITE_LINE_MEMBER(ksm_state::write_brga)
+void ksm_state::write_brga(int state)
 {
 	brga = state;
 	update_brg(brga, brgb, brgc);
 }
 
-WRITE_LINE_MEMBER(ksm_state::write_brgb)
+void ksm_state::write_brgb(int state)
 {
 	brgb = state;
 	update_brg(brga, brgb, brgc);

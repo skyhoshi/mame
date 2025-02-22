@@ -20,10 +20,10 @@ public:
 	auto rx_cb() { return m_rx_cb.bind(); }
 
 protected:
-	virtual void device_start() override;
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual const tiny_rom_entry *device_rom_region() const override;
-	virtual ioport_constructor device_input_ports() const override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual const tiny_rom_entry *device_rom_region() const override ATTR_COLD;
+	virtual ioport_constructor device_input_ports() const override ATTR_COLD;
 
 private:
 	enum {
@@ -42,6 +42,7 @@ private:
 	required_ioport_array<2> m_joy;
 	required_ioport m_mousex;
 	required_ioport m_mousey;
+	required_ioport m_mouseb;
 	required_ioport m_config;
 
 	uint16_t m_keylatch;
@@ -54,8 +55,6 @@ private:
 	int m_tx;
 	int m_joy_disabled;
 	emu_timer *m_mouse_timer;
-
-	void map(address_map &map);
 
 	TIMER_CALLBACK_MEMBER(mouse_tick);
 

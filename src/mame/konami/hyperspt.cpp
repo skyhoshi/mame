@@ -61,12 +61,12 @@ public:
 	void base(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
-	void common_map(address_map &map);
-	void common_sound_map(address_map &map);
-	void hyperspt_common_main_map(address_map &map);
+	void common_map(address_map &map) ATTR_COLD;
+	void common_sound_map(address_map &map) ATTR_COLD;
+	void hyperspt_common_main_map(address_map &map) ATTR_COLD;
 
 	// memory pointers
 	required_shared_ptr<uint8_t> m_spriteram;
@@ -94,17 +94,16 @@ private:
 	void konami_sn76496_w(uint8_t data) { m_sn->write(m_sn76496_latch); }
 
 	uint8_t m_irq_mask = 0U;
-	template <uint8_t Which> DECLARE_WRITE_LINE_MEMBER(coin_counter_w);
-	DECLARE_WRITE_LINE_MEMBER(irq_mask_w);
+	template <uint8_t Which> void coin_counter_w(int state);
+	void irq_mask_w(int state);
 	void videoram_w(offs_t offset, uint8_t data);
 	void colorram_w(offs_t offset, uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(flipscreen_w);
 
 	void palette(palette_device &palette) const;
 
 	TILE_GET_INFO_MEMBER(get_bg_tile_info);
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	DECLARE_WRITE_LINE_MEMBER(vblank_irq);
+	void vblank_irq(int state);
 	void draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect);
 };
 
@@ -121,7 +120,7 @@ public:
 private:
 	required_device<vlm5030_device> m_vlm;
 
-	void sound_map(address_map &map);
+	void sound_map(address_map &map) ATTR_COLD;
 };
 
 class hypersptb_state : public base_state
@@ -132,8 +131,8 @@ public:
 	void hypersptb(machine_config &config);
 
 private:
-	void sound_map(address_map &map);
-	void adpcm_map(address_map &map);
+	void sound_map(address_map &map) ATTR_COLD;
+	void adpcm_map(address_map &map) ATTR_COLD;
 };
 
 class roadf_state : public base_state
@@ -145,17 +144,15 @@ public:
 	void roadfu(machine_config &config);
 
 protected:
-	virtual void video_start() override;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	TILE_GET_INFO_MEMBER(get_bg_tile_info);
 
-	void main_map(address_map &map);
-	void sound_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
 };
 
-
-// video
 
 /***************************************************************************
 
@@ -244,12 +241,6 @@ void base_state::colorram_w(offs_t offset, uint8_t data)
 	m_bg_tilemap->mark_tile_dirty(offset);
 }
 
-WRITE_LINE_MEMBER(base_state::flipscreen_w)
-{
-	flip_screen_set(state);
-	machine().tilemap().mark_all_dirty();
-}
-
 TILE_GET_INFO_MEMBER(base_state::get_bg_tile_info)
 {
 	int const code = m_videoram[tile_index] + ((m_colorram[tile_index] & 0x80) << 1) + ((m_colorram[tile_index] & 0x40) << 3);
@@ -334,8 +325,6 @@ void roadf_state::video_start()
 }
 
 
-// machine
-
 void base_state::machine_start()
 {
 	save_item(NAME(m_irq_mask));
@@ -343,12 +332,12 @@ void base_state::machine_start()
 }
 
 template <uint8_t Which>
-WRITE_LINE_MEMBER(base_state::coin_counter_w)
+void base_state::coin_counter_w(int state)
 {
 	machine().bookkeeping().coin_counter_w(Which, state);
 }
 
-WRITE_LINE_MEMBER(base_state::irq_mask_w)
+void base_state::irq_mask_w(int state)
 {
 	m_irq_mask = state;
 	if (!m_irq_mask)
@@ -614,7 +603,7 @@ static GFXDECODE_START( gfx_roadf )
 	GFXDECODE_ENTRY( "tiles",   0, roadf_charlayout,   16*16, 16 )
 GFXDECODE_END
 
-WRITE_LINE_MEMBER(base_state::vblank_irq)
+void base_state::vblank_irq(int state)
 {
 	if (state && m_irq_mask)
 		m_maincpu->set_input_line(0, ASSERT_LINE);
@@ -628,7 +617,7 @@ void base_state::base(machine_config &config)
 	Z80(config, m_audiocpu, XTAL(14'318'181) / 4);        // verified on PCB
 
 	ls259_device &mainlatch(LS259(config, "mainlatch")); // F2
-	mainlatch.q_out_cb<0>().set(FUNC(base_state::flipscreen_w));
+	mainlatch.q_out_cb<0>().set(FUNC(base_state::flip_screen_set));
 	mainlatch.q_out_cb<1>().set(m_soundbrd, FUNC(trackfld_audio_device::sh_irqtrigger_w)); // SOUND ON
 	mainlatch.q_out_cb<2>().set_nop(); // END
 	mainlatch.q_out_cb<3>().set(FUNC(base_state::coin_counter_w<0>)); // COIN 1

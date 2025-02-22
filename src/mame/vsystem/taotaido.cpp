@@ -120,8 +120,8 @@ public:
 	void taotaido(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -146,7 +146,8 @@ private:
 	uint8_t m_bgbank[8]{};
 	tilemap_t *m_bg_tilemap = nullptr;
 
-	uint16_t pending_command_r();
+	uint16_t soundlatch_pending_r();
+	void soundlatch_pending_w(int state);
 	void unknown_output_w(uint8_t data);
 	void sh_bankswitch_w(uint8_t data);
 	void spritebank_w(offs_t offset, uint8_t data);
@@ -157,15 +158,13 @@ private:
 	TILEMAP_MAPPER_MEMBER(tilemap_scan_rows);
 
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	DECLARE_WRITE_LINE_MEMBER(screen_vblank);
+	void screen_vblank(int state);
 	uint32_t tile_callback(uint32_t code);
-	void main_map(address_map &map);
-	void sound_map(address_map &map);
-	void sound_port_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
+	void sound_port_map(address_map &map) ATTR_COLD;
 };
 
-
-// video
 
 // sprite tile codes 0x4000 - 0x7fff get remapped according to the content of these registers
 void taotaido_state::spritebank_w(offs_t offset, uint8_t data)
@@ -217,7 +216,7 @@ TILE_GET_INFO_MEMBER(taotaido_state::bg_tile_info)
 
 	code |= m_bgbank[bank] << 9;
 
-	tileinfo.set(1, code, col, 0);
+	tileinfo.set(0, code, col, 0);
 }
 
 TILEMAP_MAPPER_MEMBER(taotaido_state::tilemap_scan_rows)
@@ -272,7 +271,7 @@ uint32_t taotaido_state::screen_update(screen_device &screen, bitmap_ind16 &bitm
 	return 0;
 }
 
-WRITE_LINE_MEMBER(taotaido_state::screen_vblank)
+void taotaido_state::screen_vblank(int state)
 {
 	// rising edge
 	if (state)
@@ -288,18 +287,26 @@ WRITE_LINE_MEMBER(taotaido_state::screen_vblank)
 }
 
 
-// machine
-
 void taotaido_state::machine_start()
 {
 	m_soundbank->configure_entries(0, 4, memregion("audiocpu")->base(), 0x8000);
 }
 
 
-uint16_t taotaido_state::pending_command_r()
+uint16_t taotaido_state::soundlatch_pending_r()
 {
 	// Only bit 0 is tested
 	return m_soundlatch->pending_r();
+}
+
+void taotaido_state::soundlatch_pending_w(int state)
+{
+	m_audiocpu->set_input_line(INPUT_LINE_NMI, state ? ASSERT_LINE : CLEAR_LINE);
+
+	// sound comms is 2-way (see soundlatch_pending_r),
+	// NMI routine is very short, so briefly set perfect_quantum to make sure that the timing is right
+	if (state)
+		machine().scheduler().perfect_quantum(attotime::from_usec(100));
 }
 
 void taotaido_state::unknown_output_w(uint8_t data)
@@ -325,7 +332,7 @@ void taotaido_state::main_map(address_map &map)
 	map(0xffff20, 0xffff21).nopw(); // unknown - flip screen related
 	map(0xffff40, 0xffff47).w(FUNC(taotaido_state::spritebank_w));
 	map(0xffffc1, 0xffffc1).w(m_soundlatch, FUNC(generic_latch_8_device::write)); // seems right
-	map(0xffffe0, 0xffffe1).r(FUNC(taotaido_state::pending_command_r)); // guess - seems to be needed for all the sounds to work
+	map(0xffffe0, 0xffffe1).r(FUNC(taotaido_state::soundlatch_pending_r)); // guess - seems to be needed for all the sounds to work
 }
 
 // sound CPU - same as aerofgt
@@ -541,8 +548,11 @@ INPUT_PORTS_END
 
 
 static GFXDECODE_START( gfx_taotaido )
-	GFXDECODE_ENTRY( "sprites", 0, gfx_16x16x4_packed_lsb, 0x000, 256 )
 	GFXDECODE_ENTRY( "bgtiles", 0, gfx_16x16x4_packed_lsb, 0x300, 256 )
+GFXDECODE_END
+
+static GFXDECODE_START( gfx_taotaido_spr )
+	GFXDECODE_ENTRY( "sprites", 0, gfx_16x16x4_packed_lsb, 0x000, 256 )
 GFXDECODE_END
 
 
@@ -586,17 +596,15 @@ void taotaido_state::taotaido(machine_config &config)
 
 	PALETTE(config, "palette").set_format(palette_device::xRGB_555, 0x800);
 
-	VSYSTEM_SPR(config, m_spr, 0);
+	VSYSTEM_SPR(config, m_spr, 0, "palette", gfx_taotaido_spr);
 	m_spr->set_tile_indirect_cb(FUNC(taotaido_state::tile_callback));
-	m_spr->set_gfx_region(0);
-	m_spr->set_gfxdecode_tag(m_gfxdecode);
 
 	// sound hardware
 	SPEAKER(config, "lspeaker").front_left();
 	SPEAKER(config, "rspeaker").front_right();
 
 	GENERIC_LATCH_8(config, m_soundlatch);
-	m_soundlatch->data_pending_callback().set_inputline(m_audiocpu, INPUT_LINE_NMI);
+	m_soundlatch->data_pending_callback().set(FUNC(taotaido_state::soundlatch_pending_w));
 	m_soundlatch->set_separate_acknowledge(true);
 
 	ym2610_device &ymsnd(YM2610(config, "ymsnd", 8'000'000));

@@ -143,8 +143,8 @@ public:
 	void sub(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -162,7 +162,7 @@ private:
 
 	tilemap_t *m_tilemap = nullptr;
 
-	DECLARE_WRITE_LINE_MEMBER(int_mask_w);
+	void int_mask_w(int state);
 	void nmi_mask_w(uint8_t data);
 
 	void sub_palette(palette_device &palette) const;
@@ -173,17 +173,15 @@ private:
 
 	void draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect);
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	DECLARE_WRITE_LINE_MEMBER(main_irq);
+	void main_irq(int state);
 	INTERRUPT_GEN_MEMBER(sound_irq);
 
-	void main_io_map(address_map &map);
-	void main_program_map(address_map &map);
-	void sound_io_map(address_map &map);
-	void sound_program_map(address_map &map);
+	void main_io_map(address_map &map) ATTR_COLD;
+	void main_program_map(address_map &map) ATTR_COLD;
+	void sound_io_map(address_map &map) ATTR_COLD;
+	void sound_program_map(address_map &map) ATTR_COLD;
 };
 
-
-// video
 
 void sub_state::sub_palette(palette_device &palette) const
 {
@@ -293,8 +291,6 @@ uint32_t sub_state::screen_update(screen_device &screen, bitmap_ind16 &bitmap, c
 }
 
 
-// machine
-
 void sub_state::machine_start()
 {
 	save_item(NAME(m_int_en));
@@ -302,7 +298,7 @@ void sub_state::machine_start()
 }
 
 
-WRITE_LINE_MEMBER(sub_state::int_mask_w)
+void sub_state::int_mask_w(int state)
 {
 	m_int_en = state;
 	if (!m_int_en)
@@ -468,7 +464,7 @@ static GFXDECODE_START( gfx_sub )
 	GFXDECODE_ENTRY( "sprites", 0, tiles16x32_layout, 0, 0x80 )
 GFXDECODE_END
 
-WRITE_LINE_MEMBER(sub_state::main_irq)
+void sub_state::main_irq(int state)
 {
 	if (state && m_int_en)
 		m_maincpu->set_input_line(0, ASSERT_LINE);

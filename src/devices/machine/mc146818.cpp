@@ -12,7 +12,7 @@
 *********************************************************************/
 
 #include "emu.h"
-#include "machine/mc146818.h"
+#include "mc146818.h"
 
 #include "coreutil.h"
 
@@ -56,22 +56,22 @@ ds1397_device::ds1397_device(const machine_config &mconfig, const char *tag, dev
 }
 
 mc146818_device::mc146818_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock)
-	: device_t(mconfig, type, tag, owner, clock),
-		device_nvram_interface(mconfig, *this),
-		device_rtc_interface(mconfig, *this),
-		m_region(*this, DEVICE_SELF),
-		m_index(0),
-		m_clock_timer(nullptr),
-		m_update_timer(nullptr),
-		m_periodic_timer(nullptr),
-		m_write_irq(*this),
-		m_write_sqw(*this),
-		m_century_index(-1),
-		m_epoch(0),
-		m_binary(false),
-		m_hour(false),
-		m_sqw_state(false),
-		m_tuc(0)
+	: device_t(mconfig, type, tag, owner, clock)
+	, device_nvram_interface(mconfig, *this)
+	, device_rtc_interface(mconfig, *this)
+	, m_region(*this, DEVICE_SELF)
+	, m_index(0)
+	, m_clock_timer(nullptr)
+	, m_update_timer(nullptr)
+	, m_periodic_timer(nullptr)
+	, m_write_irq(*this)
+	, m_write_sqw(*this)
+	, m_century_index(-1)
+	, m_epoch(0)
+	, m_binary(false)
+	, m_hour(false)
+	, m_sqw_state(false)
+	, m_tuc(0)
 {
 }
 
@@ -85,9 +85,6 @@ void mc146818_device::device_start()
 	m_clock_timer = timer_alloc(FUNC(mc146818_device::clock_tick), this);
 	m_update_timer = timer_alloc(FUNC(mc146818_device::time_tick), this);
 	m_periodic_timer = timer_alloc(FUNC(mc146818_device::periodic_tick), this);
-
-	m_write_irq.resolve_safe();
-	m_write_sqw.resolve_safe();
 
 	save_pointer(NAME(m_data), data_size());
 	save_item(NAME(m_index));
@@ -259,6 +256,7 @@ void mc146818_device::nvram_default()
 			bytes = data_size();
 
 		memcpy(&m_data[0], m_region->base(), bytes);
+		m_data[REG_D] |= REG_D_VRT;
 	}
 	else
 	{
@@ -282,10 +280,12 @@ void mc146818_device::nvram_default()
 
 bool mc146818_device::nvram_read(util::read_stream &file)
 {
-	size_t size = data_size();
-	size_t actual;
-	if (file.read(&m_data[0], size, actual) || actual != size)
+	size_t const size = data_size();
+	auto const [err, actual] = read(file, &m_data[0], size);
+	if (err || (actual != size))
 		return false;
+
+	m_data[REG_D] |= REG_D_VRT;
 
 	update_timer();
 	update_irq();
@@ -301,9 +301,9 @@ bool mc146818_device::nvram_read(util::read_stream &file)
 
 bool mc146818_device::nvram_write(util::write_stream &file)
 {
-	size_t size = data_size();
-	size_t actual;
-	return !file.write(&m_data[0], size, actual) && actual == size;
+	size_t const size = data_size();
+	auto const [err, actual] = write(file, &m_data[0], size);
+	return !err;
 }
 
 
@@ -588,20 +588,12 @@ void mc146818_device::update_irq()
 //  read - I/O handler for reading
 //-------------------------------------------------
 
-uint8_t mc146818_device::read(offs_t offset)
+uint8_t mc146818_device::data_r()
 {
-	uint8_t data = 0;
-	switch (offset)
-	{
-	case 0:
-		data = m_index;
-		break;
+	uint8_t data = internal_read(m_index);
 
-	case 1:
-		data = internal_read(m_index);
+	if (!machine().side_effects_disabled())
 		LOG("mc146818_port_r(): offset=0x%02x data=0x%02x\n", m_index, data);
-		break;
-	}
 
 	return data;
 }
@@ -614,7 +606,8 @@ uint8_t mc146818_device::read_direct(offs_t offset)
 
 	uint8_t data = internal_read(offset);
 
-	LOG("mc146818_port_r(): offset=0x%02x data=0x%02x\n", offset, data);
+	if (!machine().side_effects_disabled())
+		LOG("mc146818_port_r(): offset=0x%02x data=0x%02x\n", offset, data);
 
 	return data;
 }
@@ -623,19 +616,16 @@ uint8_t mc146818_device::read_direct(offs_t offset)
 //  write - I/O handler for writing
 //-------------------------------------------------
 
-void mc146818_device::write(offs_t offset, uint8_t data)
+void mc146818_device::address_w(uint8_t data)
 {
-	switch (offset)
-	{
-	case 0:
-		internal_set_address(data % data_logical_size());
-		break;
+	internal_set_address(data % data_logical_size());
+}
 
-	case 1:
-		LOG("mc146818_port_w(): offset=0x%02x data=0x%02x\n", m_index, data);
-		internal_write(m_index, data);
-		break;
-	}
+void mc146818_device::data_w(uint8_t data)
+{
+	LOG("mc146818_port_w(): offset=0x%02x data=0x%02x\n", m_index, data);
+
+	internal_write(m_index, data);
 }
 
 void mc146818_device::write_direct(offs_t offset, uint8_t data)
@@ -676,8 +666,9 @@ uint8_t mc146818_device::internal_read(offs_t offset)
 		break;
 
 	case REG_D:
-		/* battery ok */
-		data = m_data[REG_D] | REG_D_VRT;
+		data = m_data[REG_D];
+		// valid RAM and time
+		m_data[REG_D] |= REG_D_VRT;
 		break;
 
 	default:

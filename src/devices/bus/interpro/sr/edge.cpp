@@ -207,7 +207,6 @@
 #include "emu.h"
 #include "edge.h"
 
-#define LOG_GENERAL   (1U << 0)
 #define LOG_INTERRUPT (1U << 1)
 
 #define VERBOSE (LOG_GENERAL)
@@ -479,7 +478,7 @@ void mpcb828_device::device_add_mconfig(machine_config &config)
 
 	BT458(config, "ramdac", 83'020'800);
 
-	SCC8530N(config, m_scc, 4.9152_MHz_XTAL);
+	SCC8530(config, m_scc, 4.9152_MHz_XTAL);
 	m_scc->out_int_callback().set(FUNC(mpcb828_device::scc_irq));
 	m_scc->out_txda_callback().set("kbd", FUNC(interpro_keyboard_port_device::write_txd));
 
@@ -510,7 +509,7 @@ void mpcb849_device::device_add_mconfig(machine_config &config)
 
 	BT458(config, "ramdac", 0); // unconfirmed clock
 
-	SCC8530N(config, m_scc, 4.9152_MHz_XTAL);
+	SCC8530(config, m_scc, 4.9152_MHz_XTAL);
 	m_scc->out_int_callback().set(FUNC(mpcb849_device::scc_irq));
 	m_scc->out_txda_callback().set("kbd", FUNC(interpro_keyboard_port_device::write_txd));
 
@@ -562,7 +561,7 @@ void msmt094_device::device_add_mconfig(machine_config &config)
 	//TMS32030(config, m_dsp3, 40_MHz_XTAL);
 
 	// FIXME: actually Z0853006VSC
-	scc8530_device& scc(SCC8530N(config, "scc", 4.9152_MHz_XTAL));
+	scc8530_device& scc(SCC8530(config, "scc", 4.9152_MHz_XTAL));
 	scc.out_int_callback().set(FUNC(msmt094_device::scc_irq));
 	scc.out_txda_callback().set("kbd", FUNC(interpro_keyboard_port_device::write_txd));
 
@@ -720,7 +719,7 @@ u32 mpcba63_device::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, c
 	return 0;
 }
 
-WRITE_LINE_MEMBER(edge1_device_base::vblank)
+void edge1_device_base::vblank(int state)
 {
 	if (state)
 	{
@@ -780,7 +779,7 @@ void edge1_device_base::control_w(offs_t offset, u32 data, u32 mem_mask)
 		m_dsp->set_input_line(TMS3203X_HOLD, ASSERT_LINE);
 }
 
-WRITE_LINE_MEMBER(edge1_device_base::holda)
+void edge1_device_base::holda(int state)
 {
 	LOGMASKED(LOG_INTERRUPT, "hold acknowledge %d\n", state);
 
@@ -812,7 +811,7 @@ void edge2plus_processor_device_base::control_w(offs_t offset, u32 data, u32 mem
 		m_dsp1->set_input_line(TMS3203X_HOLD, ASSERT_LINE);
 }
 
-WRITE_LINE_MEMBER(edge2plus_processor_device_base::holda)
+void edge2plus_processor_device_base::holda(int state)
 {
 	LOGMASKED(LOG_INTERRUPT, "hold acknowledge %d\n", state);
 
@@ -855,7 +854,7 @@ void edge2plus_framebuffer_device_base::lut_select_w(u32 data)
 	// lookup table 3 enables address range 92030000-92030fff, written with zeroes
 }
 
-WRITE_LINE_MEMBER(edge1_device_base::scc_irq)
+void edge1_device_base::scc_irq(int state)
 {
 	if (state)
 		m_reg0 |= SCC_INT;
@@ -877,7 +876,7 @@ void edge1_device_base::kernel_w(offs_t offset, u32 data, u32 mem_mask)
 	m_status |= KREG_IN_FULL; // FIXME: what clears this?
 }
 
-WRITE_LINE_MEMBER(edge2plus_processor_device_base::scc_irq)
+void edge2plus_processor_device_base::scc_irq(int state)
 {
 	if (state)
 		m_reg0 |= SCC_INT;

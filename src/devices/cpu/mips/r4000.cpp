@@ -27,15 +27,17 @@
  */
 
 #include "emu.h"
+#include "r4000.h"
+
+#include "mips3dsm.h"
+
 #include "divtlb.h"
 #include "debug/debugcpu.h"
-#include "r4000.h"
-#include "mips3dsm.h"
+
 #include "unicode.h"
 
 #include "softfloat3/source/include/softfloat.h"
 
-#define LOG_GENERAL   (1U << 0)
 #define LOG_TLB       (1U << 1)
 #define LOG_CACHE     (1U << 2)
 #define LOG_EXCEPTION (1U << 3)
@@ -43,6 +45,7 @@
 #define LOG_STATS     (1U << 5)
 
 #define VERBOSE       (LOG_GENERAL)
+#include "logmacro.h"
 
 // operating system specific system call logging
 #define SYSCALL_IRIX53 (1U << 0)
@@ -57,8 +60,6 @@
 #define ICACHE 0
 
 #define SCACHE !(m_cp0[CP0_Config] & CONFIG_SC)
-
-#include "logmacro.h"
 
 #define USE_ABI_REG_NAMES 1
 
@@ -3644,7 +3645,7 @@ r4000_base_device::translate_result r4000_base_device::translate(int intention, 
 	// address needs translation, using a combination of VPN2 and ASID
 	u64 const key = (address & (extended ? (EH_R | EH_VPN2_64) : EH_VPN2_32)) | (m_cp0[CP0_EntryHi] & EH_ASID);
 
-	unsigned *mru = m_tlb_mru[intention & device_vtlb_interface::TR_TYPE];
+	unsigned *mru = m_tlb_mru[intention];
 	if (VERBOSE & LOG_STATS)
 		m_tlb_scans++;
 
@@ -3675,7 +3676,7 @@ r4000_base_device::translate_result r4000_base_device::translate(int intention, 
 		}
 
 		// test dirty
-		if ((intention & TR_WRITE) && !(pfn & EL_D))
+		if ((intention == TR_WRITE) && !(pfn & EL_D))
 		{
 			modify = true;
 			break;
@@ -3704,7 +3705,7 @@ r4000_base_device::translate_result r4000_base_device::translate(int intention, 
 					m_cp0[CP0_EntryHi] & EH_ASID, address, machine().describe_context());
 			else
 				LOGMASKED(LOG_TLB, "tlb miss %c asid 0x%02x address 0x%016x (%s)\n",
-					mode[intention & device_vtlb_interface::TR_TYPE], m_cp0[CP0_EntryHi] & EH_ASID, address, machine().describe_context());
+					mode[intention], m_cp0[CP0_EntryHi] & EH_ASID, address, machine().describe_context());
 		}
 
 		// load tlb exception registers
@@ -3714,9 +3715,9 @@ r4000_base_device::translate_result r4000_base_device::translate(int intention, 
 		m_cp0[CP0_XContext] = (m_cp0[CP0_XContext] & XCONTEXT_PTEBASE) | ((address >> 31) & XCONTEXT_R) | ((address >> 9) & XCONTEXT_BADVPN2);
 
 		if (invalid || modify || (SR & SR_EXL))
-			cpu_exception(modify ? EXCEPTION_MOD : (intention & TR_WRITE) ? EXCEPTION_TLBS : EXCEPTION_TLBL);
+			cpu_exception(modify ? EXCEPTION_MOD : (intention == TR_WRITE) ? EXCEPTION_TLBS : EXCEPTION_TLBL);
 		else
-			cpu_exception((intention & TR_WRITE) ? EXCEPTION_TLBS : EXCEPTION_TLBL, extended ? 0x080 : 0x000);
+			cpu_exception((intention == TR_WRITE) ? EXCEPTION_TLBS : EXCEPTION_TLBL, extended ? 0x080 : 0x000);
 	}
 
 	return MISS;
@@ -3732,7 +3733,7 @@ void r4000_base_device::address_error(int intention, u64 const address)
 		if (!(SR & SR_EXL))
 			m_cp0[CP0_BadVAddr] = address;
 
-		cpu_exception((intention & TR_WRITE) ? EXCEPTION_ADES : EXCEPTION_ADEL);
+		cpu_exception((intention == TR_WRITE) ? EXCEPTION_ADES : EXCEPTION_ADEL);
 
 		// address errors shouldn't typically occur, so a breakpoint is handy
 		machine().debug_break();
@@ -3741,7 +3742,7 @@ void r4000_base_device::address_error(int intention, u64 const address)
 
 template <typename T> void r4000_base_device::accessors(T &m)
 {
-	space(AS_PROGRAM).cache(m);
+	space(AS_PROGRAM).specific(m);
 
 	read_byte = [&m](offs_t offset) { return m.read_byte(offset); };
 	read_word = [&m](offs_t offset) { return m.read_word(offset); };

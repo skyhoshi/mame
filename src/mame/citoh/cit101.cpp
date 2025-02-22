@@ -91,7 +91,7 @@ public:
 	void cit101e(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	void draw_line(uint32_t *pixptr, int minx, int maxx, int line, bool last_line, u16 rowaddr, u16 rowattr, u8 scrattr);
@@ -105,7 +105,7 @@ private:
 	u8 e0_latch_r();
 	void e0_latch_w(u8 data);
 
-	DECLARE_WRITE_LINE_MEMBER(blink_w);
+	void blink_w(int state);
 	void screen_control_w(u8 data);
 	void screen_control_101e_w(u8 data);
 	void brightness_w(u8 data);
@@ -114,10 +114,10 @@ private:
 	void nvr_address_w(u8 data);
 	void nvr_control_w(u8 data);
 
-	void mem_map(address_map &map);
-	void mem_map_101e(address_map &map);
-	void io_map(address_map &map);
-	void io_map_101e(address_map &map);
+	void mem_map(address_map &map) ATTR_COLD;
+	void mem_map_101e(address_map &map) ATTR_COLD;
+	void io_map(address_map &map) ATTR_COLD;
+	void io_map_101e(address_map &map) ATTR_COLD;
 
 	u8 m_e0_latch;
 
@@ -285,7 +285,7 @@ void cit101_state::e0_latch_w(u8 data)
 	m_e0_latch = data;
 }
 
-WRITE_LINE_MEMBER(cit101_state::blink_w)
+void cit101_state::blink_w(int state)
 {
 	m_blink = state;
 }

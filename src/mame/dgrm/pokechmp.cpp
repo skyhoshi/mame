@@ -74,8 +74,8 @@ public:
 	void pokechmp(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -94,19 +94,17 @@ private:
 	void oki_bank_w(uint8_t data);
 	void videoram_w(offs_t offset, uint8_t data);
 	void flipscreen_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(sound_irq);
+	void sound_irq(int state);
 	TILE_GET_INFO_MEMBER(get_bg_tile_info);
 
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	void draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	void main_map(address_map &map);
-	void oki_map(address_map &map);
-	void sound_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void oki_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
 };
 
-
-// video
 
 void pokechmp_state::videoram_w(offs_t offset, uint8_t data)
 {
@@ -177,8 +175,6 @@ uint32_t pokechmp_state::screen_update(screen_device &screen, bitmap_ind16 &bitm
 	return 0;
 }
 
-
-// machine
 
 void pokechmp_state::machine_start()
 {
@@ -338,7 +334,7 @@ OKI M6295 (an AD65 on this board, note pin 7 is low): 1.5mhz
 
 */
 
-WRITE_LINE_MEMBER(pokechmp_state::sound_irq)
+void pokechmp_state::sound_irq(int state)
 {
 	// VBLANK is probably not the source of this interrupt
 	if (state)

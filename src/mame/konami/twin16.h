@@ -41,7 +41,7 @@ public:
 	void init_twin16();
 
 	void volume_callback(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(screen_vblank_twin16);
+	void screen_vblank_twin16(int state);
 	uint32_t screen_update_twin16(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
 protected:
@@ -64,15 +64,15 @@ protected:
 	uint16_t m_CPUA_register = 0;
 	uint16_t m_CPUB_register = 0;
 	bool m_is_fround = false;
-	uint16_t m_sprite_buffer[0x800]{};
+	uint16_t m_sprite_buffer[0x800] = { };
 	emu_timer *m_sprite_timer = nullptr;
 	int m_sprite_busy = 0;
 	int m_need_process_spriteram = 0;
-	uint16_t m_scrollx[3]{};
-	uint16_t m_scrolly[3]{};
+	uint16_t m_scrollx[3] = { };
+	uint16_t m_scrolly[3] = { };
 	uint16_t m_video_register = 0;
 	tilemap_t *m_fixed_tmap = nullptr;
-	tilemap_t *m_scroll_tmap[2]{};
+	tilemap_t *m_scroll_tmap[2] = { };
 
 	void CPUA_register_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 	void CPUB_register_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
@@ -94,29 +94,28 @@ protected:
 
 	TIMER_CALLBACK_MEMBER(sprite_tick);
 
-	void main_map(address_map &map);
-	void sound_map(address_map &map);
-	void sub_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
+	void sub_map(address_map &map) ATTR_COLD;
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 	virtual void tile_get_info(tile_data &tileinfo, uint16_t data, int color_base);
 
 	int set_sprite_timer();
 	void spriteram_process();
-	void draw_sprites( screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect );
+	void draw_sprites(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	int spriteram_process_enable();
-	void twin16_postload();
 };
 
 class fround_state : public twin16_state
 {
 public:
-	fround_state(const machine_config &mconfig, device_type type, const char *tag)
-		: twin16_state(mconfig, type, tag)
-	{}
+	fround_state(const machine_config &mconfig, device_type type, const char *tag) :
+		twin16_state(mconfig, type, tag)
+	{ }
 
 	void fround(machine_config &config);
 
@@ -126,20 +125,20 @@ private:
 	void fround_CPU_register_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 	void gfx_bank_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 
-	void fround_map(address_map &map);
+	void fround_map(address_map &map) ATTR_COLD;
 
-	virtual void video_start() override;
+	virtual void video_start() override ATTR_COLD;
 	virtual void tile_get_info(tile_data &tileinfo, uint16_t data, int color_base) override;
 
-	uint8_t m_gfx_bank[4]{};
+	uint8_t m_gfx_bank[4] = { };
 };
 
 class cuebrickj_state : public twin16_state
 {
 public:
-	cuebrickj_state(const machine_config &mconfig, device_type type, const char *tag)
-		: twin16_state(mconfig, type, tag)
-	{}
+	cuebrickj_state(const machine_config &mconfig, device_type type, const char *tag) :
+		twin16_state(mconfig, type, tag)
+	{ }
 
 	void cuebrickj(machine_config &config);
 
@@ -148,7 +147,7 @@ public:
 private:
 	void nvram_bank_w(uint8_t data);
 
-	void cuebrickj_main_map(address_map &map);
+	void cuebrickj_main_map(address_map &map) ATTR_COLD;
 	uint16_t m_nvram[0x400 * 0x20 / 2]{};
 };
 

@@ -33,16 +33,14 @@
 
     The extra baud rates are implemented by an 'X' bit for each channel. The X
     bit chooses between two baud rate tables, in addition to the ACR[7] bit.
-    The X bit is changed by additional commands that are written to CRA and
-    CRB.
+    The X bit is changed by additional commands that are written to CRA and CRB.
 
     The MISR is a read only register that takes the place of the 'BRG Test'
     register on the MC68681.
 
     The low power standby mode is entered and left by a command written to CRA
     or CRB registers. Writing the commands to either register affects the whole
-    DUART, not just one channel. Resetting the DUART also leaves low power
-    mode.
+    DUART, not just one channel. Resetting the DUART also leaves low power mode.
 */
 
 #include "emu.h"
@@ -70,8 +68,8 @@ static const int baud_rate_ACR_0_X_1[] = { 75, 110, 134, 150, 3600, 14400, 28800
 static const int baud_rate_ACR_1[] =     { 75, 110, 134, 150, 300,  600,   1200,  2000,  2400,   4800, 1800, 9600, 19200, 0, 0, 0 }; /* xr68c681 X=0 */
 static const int baud_rate_ACR_1_X_1[] = { 50, 110, 134, 200, 3600, 14400, 28800, 57600, 115200, 4800, 7200, 9600, 38400, 0, 0, 0 };
 
-static const int baud_rate_ACR_0_340[] =     { 50, 110, 134, 200, 300,  600,   1200,  1050,  2400,   4800, 7200, 9600, 38400, 76800, 0, 0 }; /* xr68c681 ACR:7=0 */
-static const int baud_rate_ACR_1_340[] =     { 75, 110, 134, 150, 300,  600,   1200,  2000,  2400,   4800, 1800, 9600, 19200, 38400, 0, 0 }; /* xr68c681 ACR:7=1 */
+static const int baud_rate_ACR_0_340[] = { 50, 110, 134, 200, 300,  600,   1200,  1050,  2400,   4800, 7200, 9600, 38400, 76800, 0, 0 }; /* xr68c681 ACR:7=0 */
+static const int baud_rate_ACR_1_340[] = { 75, 110, 134, 150, 300,  600,   1200,  2000,  2400,   4800, 1800, 9600, 19200, 38400, 0, 0 }; /* xr68c681 ACR:7=1 */
 
 #define INT_INPUT_PORT_CHANGE       0x80
 #define INT_DELTA_BREAK_B           0x40
@@ -103,7 +101,7 @@ static const int baud_rate_ACR_1_340[] =     { 75, 110, 134, 150, 300,  600,   1
 DEFINE_DEVICE_TYPE(SCN2681, scn2681_device, "scn2681", "SCN2681 DUART")
 DEFINE_DEVICE_TYPE(MC68681, mc68681_device, "mc68681", "MC68681 DUART")
 DEFINE_DEVICE_TYPE(SC28C94, sc28c94_device, "sc28c94", "SC28C94 QUART")
-DEFINE_DEVICE_TYPE(MC68340_DUART, mc68340_duart_device, "mc68340duart", "MC68340 DUART Device")
+DEFINE_DEVICE_TYPE(MC68340_DUART, mc68340_duart_device, "mc68340duart", "MC68340 DUART")
 DEFINE_DEVICE_TYPE(XR68C681, xr68c681_device, "xr68c681", "XR68C681 DUART")
 DEFINE_DEVICE_TYPE(DUART_CHANNEL, duart_channel, "duart_channel", "DUART channel")
 
@@ -112,8 +110,8 @@ DEFINE_DEVICE_TYPE(DUART_CHANNEL, duart_channel, "duart_channel", "DUART channel
 //  LIVE DEVICE
 //**************************************************************************
 
-duart_base_device::duart_base_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock)
-	: device_t(mconfig, type, tag, owner, clock),
+duart_base_device::duart_base_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock) :
+	device_t(mconfig, type, tag, owner, clock),
 	m_chanA(*this, CHANA_TAG),
 	m_chanB(*this, CHANB_TAG),
 	m_chanC(*this, CHANC_TAG),
@@ -123,7 +121,7 @@ duart_base_device::duart_base_device(const machine_config &mconfig, device_type 
 	write_b_tx(*this),
 	write_c_tx(*this),
 	write_d_tx(*this),
-	read_inport(*this),
+	read_inport(*this, 0),
 	write_outport(*this),
 	ip3clk(0),
 	ip4clk(0),
@@ -140,8 +138,8 @@ scn2681_device::scn2681_device(const machine_config &mconfig, const char *tag, d
 }
 
 mc68681_device::mc68681_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock)
-	: duart_base_device(mconfig, type, tag, owner, clock),
-	m_read_vector(false)
+	: duart_base_device(mconfig, type, tag, owner, clock)
+	, m_read_vector(false)
 {
 }
 
@@ -173,11 +171,11 @@ mc68340_duart_device::mc68340_duart_device(const machine_config &mconfig, const 
 }
 
 xr68c681_device::xr68c681_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
-	: mc68681_device(mconfig, XR68C681, tag, owner, clock),
-	m_XTXA(false),
-	m_XRXA(false),
-	m_XTXB(false),
-	m_XRXB(false)
+	: mc68681_device(mconfig, XR68C681, tag, owner, clock)
+	, m_XTXA(false)
+	, m_XRXA(false)
+	, m_XTXB(false)
+	, m_XRXB(false)
 {
 }
 
@@ -200,14 +198,6 @@ void duart_base_device::set_clocks(int clk3, int clk4, int clk5, int clk6)
 
 void duart_base_device::device_start()
 {
-	write_irq.resolve_safe();
-	write_a_tx.resolve_safe();
-	write_b_tx.resolve_safe();
-	write_c_tx.resolve_safe();
-	write_d_tx.resolve_safe();
-	read_inport.resolve();
-	write_outport.resolve_safe();
-
 	duart_timer = timer_alloc(FUNC(duart_base_device::duart_timer_callback), this);
 
 	save_item(NAME(ACR));
@@ -539,7 +529,7 @@ uint8_t mc68340_duart_device::read(offs_t offset)
 uint8_t sc28c94_device::read(offs_t offset)
 {
 	uint8_t r = 0;
-	offset &= 0x1f;
+	offset &= 0x3f;
 
 	if (offset < 0x10)
 	{
@@ -622,7 +612,7 @@ uint8_t duart_base_device::read(offs_t offset)
 		break;
 
 	case 0x0d: /* IP */
-		if (!read_inport.isnull())
+		if (!read_inport.isunset())
 		{
 			r = read_inport();  // TODO: go away
 		}
@@ -704,7 +694,7 @@ void mc68340_duart_device::write(offs_t offset, uint8_t data)
 
 void sc28c94_device::write(offs_t offset, uint8_t data)
 {
-	offset &= 0x1f;
+	offset &= 0x3f;
 
 	if (offset < 0x10)
 	{
@@ -720,10 +710,10 @@ void sc28c94_device::write(offs_t offset, uint8_t data)
 		m_chanC->write_chan_reg(offset&3, data);
 		break;
 
-	case 0x18: /* MRC */
-	case 0x19: /* CSRC */
-	case 0x1a: /* CRC */
-	case 0x1b: /* THRC */
+	case 0x18: /* MRD */
+	case 0x19: /* CSRD */
+	case 0x1a: /* CRD */
+	case 0x1b: /* THRD */
 		m_chanD->write_chan_reg(offset&3, data);
 		break;
 	}
@@ -732,6 +722,7 @@ void sc28c94_device::write(offs_t offset, uint8_t data)
 void xr68c681_device::write(offs_t offset, uint8_t data)
 {
 	if (offset == 0x02) /* CRA */
+	{
 		switch (data >> 4)
 		{
 		case 0x08: /* set RX extend bit */
@@ -765,8 +756,9 @@ void xr68c681_device::write(offs_t offset, uint8_t data)
 			data &= 0x0f;
 			break;
 		}
-
+	}
 	else if (offset == 0x0a) /* CRB */
+	{
 		switch (data >> 4)
 		{
 		case 0x08: /* set RX extend bit */
@@ -800,6 +792,7 @@ void xr68c681_device::write(offs_t offset, uint8_t data)
 			data &= 0x0f;
 			break;
 		}
+	}
 
 	mc68681_device::write(offset, data); /* pass on 68681 command */
 }
@@ -889,7 +882,7 @@ void duart_base_device::write(offs_t offset, uint8_t data)
 	}
 }
 
-WRITE_LINE_MEMBER(duart_base_device::ip0_w)
+void duart_base_device::ip0_w(int state)
 {
 	uint8_t newIP = (IP_last_state & ~0x01) | ((state == ASSERT_LINE) ? 1 : 0);
 
@@ -906,7 +899,7 @@ WRITE_LINE_MEMBER(duart_base_device::ip0_w)
 	IP_last_state = newIP;
 }
 
-WRITE_LINE_MEMBER(duart_base_device::ip1_w)
+void duart_base_device::ip1_w(int state)
 {
 	uint8_t newIP = (IP_last_state & ~0x02) | ((state == ASSERT_LINE) ? 2 : 0);
 
@@ -923,7 +916,7 @@ WRITE_LINE_MEMBER(duart_base_device::ip1_w)
 	IP_last_state = newIP;
 }
 
-WRITE_LINE_MEMBER(duart_base_device::ip2_w)
+void duart_base_device::ip2_w(int state)
 {
 	uint8_t newIP = (IP_last_state & ~0x04) | ((state == ASSERT_LINE) ? 4 : 0);
 
@@ -940,7 +933,7 @@ WRITE_LINE_MEMBER(duart_base_device::ip2_w)
 	IP_last_state = newIP;
 }
 
-WRITE_LINE_MEMBER(duart_base_device::ip3_w)
+void duart_base_device::ip3_w(int state)
 {
 	uint8_t newIP = (IP_last_state & ~0x08) | ((state == ASSERT_LINE) ? 8 : 0);
 
@@ -957,21 +950,21 @@ WRITE_LINE_MEMBER(duart_base_device::ip3_w)
 	IP_last_state = newIP;
 }
 
-WRITE_LINE_MEMBER(duart_base_device::ip4_w)
+void duart_base_device::ip4_w(int state)
 {
 	uint8_t newIP = (IP_last_state & ~0x10) | ((state == ASSERT_LINE) ? 0x10 : 0);
 // TODO: special mode for ip4 (Ch. A Rx clock)
 	IP_last_state = newIP;
 }
 
-WRITE_LINE_MEMBER(duart_base_device::ip5_w)
+void duart_base_device::ip5_w(int state)
 {
 	uint8_t newIP = (IP_last_state & ~0x20) | ((state == ASSERT_LINE) ? 0x20 : 0);
 // TODO: special mode for ip5 (Ch. B Tx clock)
 	IP_last_state = newIP;
 }
 
-WRITE_LINE_MEMBER(duart_base_device::ip6_w)
+void duart_base_device::ip6_w(int state)
 {
 	uint8_t newIP = (IP_last_state & ~0x40) | ((state == ASSERT_LINE) ? 0x40 : 0);
 // TODO: special mode for ip6 (Ch. B Rx clock)
@@ -1105,7 +1098,6 @@ int xr68c681_device::calc_baud(int ch, bool rx, uint8_t data)
 {
 	int baud_rate;
 
-
 	baud_rate = baud_rate_ACR_0[data & 0x0f];
 
 	if (ch == 0)
@@ -1168,8 +1160,9 @@ duart_channel::duart_channel(const machine_config &mconfig, const char *tag, dev
 	, SR(0)
 	, rx_enabled(0)
 	, rx_fifo_num(0)
-	, tx_enabled(0)
+	, m_tx_data_in_buffer(false)
 	, m_tx_break(false)
+	, m_bits_transmitted(255)
 {
 	std::fill_n(&rx_fifo[0], MC68681_RX_FIFO_SIZE + 1, 0);
 }
@@ -1192,10 +1185,10 @@ void duart_channel::device_start()
 	save_item(NAME(rx_fifo_read_ptr));
 	save_item(NAME(rx_fifo_write_ptr));
 	save_item(NAME(rx_fifo_num));
-	save_item(NAME(tx_enabled));
-	save_item(NAME(tx_data));
-	save_item(NAME(tx_ready));
+	save_item(NAME(m_tx_data));
+	save_item(NAME(m_tx_data_in_buffer));
 	save_item(NAME(m_tx_break));
+	save_item(NAME(m_bits_transmitted));
 }
 
 void duart_channel::device_reset()
@@ -1267,20 +1260,17 @@ void duart_channel::rx_fifo_push(uint8_t data, uint8_t errors)
 
 void duart_channel::tra_complete()
 {
-	//printf("%s ch %d Tx complete\n", tag(), m_ch);
-	tx_ready = 1;
-	SR |= STATUS_TRANSMITTER_READY | STATUS_TRANSMITTER_EMPTY;
-
-	if (m_ch == 0)
-		m_uart->set_ISR_bits(INT_TXRDYA);
+	if (!(SR & STATUS_TRANSMITTER_READY))
+	{
+		transmit_register_setup(m_tx_data);
+		m_bits_transmitted = 0;
+		m_tx_data_in_buffer = false;
+	}
 	else
-		m_uart->set_ISR_bits(INT_TXRDYB);
-
-	// if local loopback is on, write the transmitted data as if a byte had been received
-	if ((MR2 & 0xc0) == 0x80)
-		rx_fifo_push(tx_data, 0);
-
-	update_interrupts();
+	{
+		SR |= STATUS_TRANSMITTER_EMPTY;
+		update_interrupts();
+	}
 }
 
 void duart_channel::tra_callback()
@@ -1307,9 +1297,17 @@ void duart_channel::tra_callback()
 			m_uart->write_d_tx(bit);
 		}
 	}
-	else    // must call this to advance the transmitter
+	else
 	{
-		transmit_register_get_data_bit();
+		// loop back transmitted bit
+		rx_w(transmit_register_get_data_bit());
+	}
+
+	// TxRDY is not set until the end of start bit time
+	if (++m_bits_transmitted > 1 && !m_tx_data_in_buffer)
+	{
+		SR |= STATUS_TRANSMITTER_READY;
+		update_interrupts();
 	}
 }
 
@@ -1455,7 +1453,7 @@ void duart_channel::write_chan_reg(int reg, uint8_t data)
 		CSR = data;
 		tx_baud_rate = m_uart->calc_baud(m_ch, false, data & 0xf);
 		rx_baud_rate = m_uart->calc_baud(m_ch, true, (data>>4) & 0xf);
-	//printf("%s ch %d CSR %02x Tx baud %d Rx baud %d\n", tag(), m_ch, data, tx_baud_rate, rx_baud_rate);
+		//printf("%s ch %d CSR %02x Tx baud %d Rx baud %d\n", tag(), m_ch, data, tx_baud_rate, rx_baud_rate);
 		set_rcv_rate(rx_baud_rate);
 		set_tra_rate(tx_baud_rate);
 		break;
@@ -1559,14 +1557,20 @@ void duart_channel::write_CR(uint8_t data)
 		receive_register_reset();
 		break;
 	case 3: /* Reset channel transmitter */
-		tx_enabled = 0;
-		tx_ready = 0;
 		SR &= ~(STATUS_TRANSMITTER_READY | STATUS_TRANSMITTER_EMPTY);
 		if (m_ch == 0)
+		{
+			m_uart->write_a_tx(1);
 			m_uart->clear_ISR_bits(INT_TXRDYA);
+		}
 		else
+		{
+			m_uart->write_b_tx(1);
 			m_uart->clear_ISR_bits(INT_TXRDYB);
+		}
 		transmit_register_reset();
+		m_bits_transmitted = 255;
+		m_tx_data_in_buffer = false;
 		break;
 	case 4: /* Reset Error Status */
 		SR &= ~(STATUS_RECEIVED_BREAK | STATUS_FRAMING_ERROR | STATUS_PARITY_ERROR | STATUS_OVERRUN_ERROR);
@@ -1622,11 +1626,10 @@ void duart_channel::write_CR(uint8_t data)
 		SR &= ~STATUS_RECEIVER_READY;
 	}
 
-	if (!tx_enabled && BIT(data, 2))
+	if (!(SR & STATUS_TRANSMITTER_READY) && BIT(data, 2))
 	{
-		tx_enabled = 1;
-		tx_ready = 1;
 		SR |= STATUS_TRANSMITTER_READY | STATUS_TRANSMITTER_EMPTY;
+		m_tx_data_in_buffer = false;
 		if (m_ch == 0)
 			m_uart->set_ISR_bits(INT_TXRDYA);
 		else
@@ -1634,9 +1637,8 @@ void duart_channel::write_CR(uint8_t data)
 	}
 	if (BIT(data, 3))
 	{
-		tx_enabled = 0;
-		tx_ready = 0;
 		SR &= ~(STATUS_TRANSMITTER_READY | STATUS_TRANSMITTER_EMPTY);
+		m_tx_data_in_buffer = false;
 		if (m_ch == 0)
 			m_uart->clear_ISR_bits(INT_TXRDYA);
 		else
@@ -1648,25 +1650,23 @@ void duart_channel::write_CR(uint8_t data)
 
 void duart_channel::write_TX(uint8_t data)
 {
-	tx_data = data;
+	if (!(SR & STATUS_TRANSMITTER_READY))
+	{
+		logerror("write_tx transmitter not ready (data 0x%02x discarded)\n", data);
+		return;
+	}
 
-/*  if (!tx_ready)
-    {
-         printf("Write %02x to TX when TX not ready!\n", data);
-    }*/
-
-	//printf("%s ch %d Tx %c [%02x]\n", tag(), m_ch, isprint(data) ? data : ' ', data);
-
-	tx_ready = 0;
 	SR &= ~(STATUS_TRANSMITTER_READY | STATUS_TRANSMITTER_EMPTY);
-
-	if (m_ch == 0)
-		m_uart->clear_ISR_bits(INT_TXRDYA);
+	if (!is_transmit_register_empty())
+	{
+		m_tx_data = data;
+		m_tx_data_in_buffer = true;
+	}
 	else
-		m_uart->clear_ISR_bits(INT_TXRDYB);
-
-	// send tx_data
-	transmit_register_setup(tx_data);
+	{
+		transmit_register_setup(data);
+		m_bits_transmitted = 0;
+	}
 
 	update_interrupts();
 }

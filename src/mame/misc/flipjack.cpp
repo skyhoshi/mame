@@ -112,10 +112,10 @@ public:
 
 	void flipjack(machine_config &config);
 
-	DECLARE_WRITE_LINE_MEMBER(coin_nmi_w);
+	void coin_nmi_w(int state);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -142,10 +142,10 @@ private:
 	void flipjack_palette(palette_device &palette) const;
 	MC6845_UPDATE_ROW(update_row);
 
-	void main_io_map(address_map &map);
-	void main_map(address_map &map);
-	void sound_io_map(address_map &map);
-	void sound_map(address_map &map);
+	void main_io_map(address_map &map) ATTR_COLD;
+	void main_map(address_map &map) ATTR_COLD;
+	void sound_io_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
 };
 
 
@@ -279,7 +279,7 @@ void flipjack_state::portc_w(uint8_t data)
 	// vestigial hopper output?
 }
 
-WRITE_LINE_MEMBER(flipjack_state::coin_nmi_w)
+void flipjack_state::coin_nmi_w(int state)
 {
 	m_maincpu->set_input_line(INPUT_LINE_NMI, state ? CLEAR_LINE : ASSERT_LINE);
 }
@@ -334,7 +334,7 @@ void flipjack_state::sound_io_map(address_map &map)
 
 static INPUT_PORTS_START( flipjack )
 	PORT_START("COIN")
-	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_COIN1 ) PORT_WRITE_LINE_DEVICE_MEMBER(DEVICE_SELF, flipjack_state, coin_nmi_w) // not mapped in P1/P2/P3?
+	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_COIN1 ) PORT_WRITE_LINE_MEMBER(FUNC(flipjack_state::coin_nmi_w)) // not mapped in P1/P2/P3?
 
 	PORT_START("P1")
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_BUTTON3 ) PORT_NAME("P1 Shoot")

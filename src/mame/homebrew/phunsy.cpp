@@ -66,19 +66,19 @@ private:
 	void phunsy_ctrl_w(uint8_t data);
 	void phunsy_data_w(uint8_t data);
 	void kbd_put(u8 data);
-	DECLARE_READ_LINE_MEMBER(cass_r);
-	DECLARE_WRITE_LINE_MEMBER(cass_w);
+	int cass_r();
+	void cass_w(int state);
 	DECLARE_QUICKLOAD_LOAD_MEMBER(quickload_cb);
 	void phunsy_palette(palette_device &palette) const;
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	void phunsy_data(address_map &map);
-	void phunsy_io(address_map &map);
-	void phunsy_mem(address_map &map);
+	void phunsy_data(address_map &map) ATTR_COLD;
+	void phunsy_io(address_map &map) ATTR_COLD;
+	void phunsy_mem(address_map &map) ATTR_COLD;
 
 	uint8_t       m_data_out = 0U;
 	uint8_t       m_keyboard_input = 0U;
-	virtual void machine_reset() override;
+	virtual void machine_reset() override ATTR_COLD;
 	required_device<s2650_device> m_maincpu;
 	required_device<speaker_sound_device> m_speaker;
 	required_device<cassette_image_device> m_cass;
@@ -87,12 +87,12 @@ private:
 };
 
 
-WRITE_LINE_MEMBER( phunsy_state::cass_w )
+void phunsy_state::cass_w(int state)
 {
 	m_cass->output(state ? -1.0 : +1.0);
 }
 
-READ_LINE_MEMBER(phunsy_state::cass_r)
+int phunsy_state::cass_r()
 {
 	return (m_cass->input() > 0.03) ? 0 : 1;
 }

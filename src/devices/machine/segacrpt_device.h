@@ -1,8 +1,8 @@
 // license:BSD-3-Clause
 // copyright-holders:David Haywood
 
-#ifndef MAME_MACHINE_SEGACRYPT_DEVICE_H
-#define MAME_MACHINE_SEGACRYPT_DEVICE_H
+#ifndef MAME_MACHINE_SEGACRPT_DEVICE_H
+#define MAME_MACHINE_SEGACRPT_DEVICE_H
 
 #pragma once
 
@@ -24,8 +24,8 @@ public:
 protected:
 	segacrpt_z80_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock);
 
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 	virtual void decrypt() = 0;
 
 	const char* m_decrypted_tag = nullptr;
@@ -172,6 +172,12 @@ public:
 	sega_315_5096_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t);
 };
 
+class sega_315_5111_device : public sega_315_5006_device
+{
+public:
+	sega_315_5111_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t);
+};
+
 class sega_315_5015_device : public segacrpt_z80_device
 {
 public:
@@ -272,6 +278,7 @@ DECLARE_DEVICE_TYPE(SEGA_315_5093, sega_315_5093_device)
 DECLARE_DEVICE_TYPE(SEGA_315_5099, sega_315_5099_device)
 DECLARE_DEVICE_TYPE(SEGA_315_5006, sega_315_5006_device)
 DECLARE_DEVICE_TYPE(SEGA_315_5096, sega_315_5096_device)
+DECLARE_DEVICE_TYPE(SEGA_315_5111, sega_315_5111_device)
 DECLARE_DEVICE_TYPE(SEGA_315_5015, sega_315_5015_device)
 DECLARE_DEVICE_TYPE(SEGA_315_5133, sega_315_5133_device)
 DECLARE_DEVICE_TYPE(SEGA_315_5014, sega_315_5014_device)
@@ -283,5 +290,4 @@ DECLARE_DEVICE_TYPE(SEGA_315_5128, sega_315_5128_device)
 DECLARE_DEVICE_TYPE(SEGA_315_5028, sega_315_5028_device)
 DECLARE_DEVICE_TYPE(SEGA_315_5084, sega_315_5084_device)
 
-
-#endif // MAME_MACHINE_SEGACRYPT_DEVICE_H
+#endif // MAME_MACHINE_SEGACRPT_DEVICE_H

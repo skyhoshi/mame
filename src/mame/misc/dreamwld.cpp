@@ -142,9 +142,9 @@ public:
 	void dreamwld(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	/* memory pointers */
@@ -191,12 +191,12 @@ private:
 	template<int Chip> void okibank_w(u8 data);
 	template<int Layer> TILE_GET_INFO_MEMBER(get_tile_info);
 	u32 screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	DECLARE_WRITE_LINE_MEMBER(screen_vblank);
+	void screen_vblank(int state);
 	void draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect);
-	void baryon_map(address_map &map);
-	void dreamwld_map(address_map &map);
-	void oki1_map(address_map &map);
-	void oki2_map(address_map &map);
+	void baryon_map(address_map &map) ATTR_COLD;
+	void dreamwld_map(address_map &map) ATTR_COLD;
+	void oki1_map(address_map &map) ATTR_COLD;
+	void oki2_map(address_map &map) ATTR_COLD;
 };
 
 
@@ -310,7 +310,7 @@ void dreamwld_state::video_start()
 
 }
 
-WRITE_LINE_MEMBER(dreamwld_state::screen_vblank)
+void dreamwld_state::screen_vblank(int state)
 {
 	// rising edge
 	if (state)

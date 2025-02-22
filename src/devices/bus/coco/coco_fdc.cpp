@@ -73,15 +73,17 @@
 *********************************************************************/
 
 #include "emu.h"
-#include "cococart.h"
 #include "coco_fdc.h"
+
 #include "meb_intrf.h"
-#include "machine/ds1315.h"
+
+#include "imagedev/floppy.h"
 #include "machine/input_merger.h"
 #include "machine/msm6242.h"
 #include "machine/wd_fdc.h"
-#include "imagedev/floppy.h"
+
 #include "formats/dmk_dsk.h"
+#include "formats/flex_dsk.h"
 #include "formats/fs_coco_os9.h"
 #include "formats/fs_coco_rsdos.h"
 #include "formats/jvc_dsk.h"
@@ -89,7 +91,6 @@
 #include "formats/sdf_dsk.h"
 #include "formats/vdk_dsk.h"
 
-//#define LOG_GENERAL   (1U << 0) //defined in logmacro.h already
 #define LOG_WDFDC   (1U << 1) // Shows register setup
 #define LOG_WDIO    (1U << 2) // Shows data read and write
 #define LOG_WDSCII  (1U << 3) // Shows SCII register setup
@@ -128,7 +129,7 @@ protected:
 	virtual u8 cts_read(offs_t offset) override;
 	virtual u8 scs_read(offs_t offset) override;
 	virtual void scs_write(offs_t offset, u8 data) override;
-	virtual void device_add_mconfig(machine_config &config) override;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
 
 	// methods
 	virtual void update_lines() override;
@@ -147,10 +148,11 @@ protected:
 void coco_family_fdc_device_base::floppy_formats(format_registration &fr)
 {
 	fr.add_mfm_containers();
+	fr.add(FLOPPY_FLEX_FORMAT);
 	fr.add(FLOPPY_DMK_FORMAT);
+	fr.add(FLOPPY_SDF_FORMAT);
 	fr.add(FLOPPY_JVC_FORMAT);
 	fr.add(FLOPPY_VDK_FORMAT);
-	fr.add(FLOPPY_SDF_FORMAT);
 	fr.add(FLOPPY_OS9_FORMAT);
 	fr.add(fs::COCO_RSDOS);
 	fr.add(fs::COCO_OS9);
@@ -250,7 +252,7 @@ coco_fdc_device_base::coco_fdc_device_base(const machine_config &mconfig, device
 void coco_fdc_device_base::update_lines()
 {
 	// clear HALT enable under certain circumstances
-	if (intrq() && (dskreg() & 0x20))
+	if (intrq())
 		set_dskreg(dskreg() & ~0x80);  // clear halt enable
 
 	// set the NMI line
@@ -530,12 +532,12 @@ namespace
 
 	protected:
 		// device_t implementation
-		virtual void device_start() override;
-		virtual void device_reset() override;
+		virtual void device_start() override ATTR_COLD;
+		virtual void device_reset() override ATTR_COLD;
 		virtual u8 scs_read(offs_t offset) override;
 		virtual void scs_write(offs_t offset, u8 data) override;
 
-		virtual void device_add_mconfig(machine_config &config) override;
+		virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
 
 		virtual const tiny_rom_entry *device_rom_region() const override
 		{
@@ -649,7 +651,7 @@ namespace
 	void coco_scii_device::update_lines()
 	{
 		// clear HALT enable under certain circumstances
-		if (intrq() && (dskreg() & 0x20))
+		if (intrq())
 			set_dskreg(dskreg() & ~0x80);  // clear halt enable
 
 		if ((m_cache_controler & 0x02) == 0) /* cache disabled */

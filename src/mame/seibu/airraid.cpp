@@ -163,6 +163,7 @@ public:
 	airraid_state(const machine_config &mconfig, device_type type, const char *tag)
 		: driver_device(mconfig, type, tag)
 		, m_maincpu(*this, "maincpu")
+		, m_audiocpu(*this, "audiocpu")
 		, m_seibu_sound(*this, "seibu_sound")
 		, m_mainram(*this, "mainram")
 		, m_palette(*this, "palette")
@@ -179,6 +180,7 @@ public:
 
 private:
 	required_device<cpu_device> m_maincpu;
+	required_device<cpu_device> m_audiocpu;
 	required_device<seibu_sound_device> m_seibu_sound;
 	required_shared_ptr<uint8_t> m_mainram;
 	required_device<palette_device> m_palette;
@@ -191,10 +193,10 @@ private:
 	void bank_w(uint8_t data);
 	TIMER_DEVICE_CALLBACK_MEMBER(scanline);
 
-	void main_map(address_map &map);
-	void sound_decrypted_opcodes_map(address_map &map);
-	void sound_map(address_map &map);
-	void decrypted_opcodes_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void sound_decrypted_opcodes_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
+	void decrypted_opcodes_map(address_map &map) ATTR_COLD;
 };
 
 
@@ -422,16 +424,16 @@ INPUT_PORTS_END
 void airraid_state::airraid(machine_config &config)
 {
 	// basic machine hardware
-	Z80(config, m_maincpu, XTAL(12'000'000) / 2);        // verified on PCB
+	Z80(config, m_maincpu, XTAL(12'000'000) / 2); // verified on PCB
 	m_maincpu->set_addrmap(AS_PROGRAM, &airraid_state::main_map);
 	TIMER(config, "scantimer").configure_scanline(FUNC(airraid_state::scanline), "airraid_vid:screen", 0, 1);
 
-	z80_device &audiocpu(Z80(config, "audiocpu", XTAL(14'318'181) / 4));      // verified on PCB
-	audiocpu.set_addrmap(AS_PROGRAM, &airraid_state::sound_map);
-	audiocpu.set_addrmap(AS_OPCODES, &airraid_state::sound_decrypted_opcodes_map);
-	audiocpu.set_irq_acknowledge_callback("seibu_sound", FUNC(seibu_sound_device::im0_vector_cb));
+	Z80(config, m_audiocpu, XTAL(14'318'181) / 4); // verified on PCB
+	m_audiocpu->set_addrmap(AS_PROGRAM, &airraid_state::sound_map);
+	m_audiocpu->set_addrmap(AS_OPCODES, &airraid_state::sound_decrypted_opcodes_map);
+	m_audiocpu->set_irq_acknowledge_callback("seibu_sound", FUNC(seibu_sound_device::im0_vector_cb));
 
-	config.set_perfect_quantum(m_maincpu);
+	config.set_maximum_quantum(attotime::from_hz(m_maincpu->clock() / 4));
 
 	PALETTE(config, m_palette).set_format(palette_device::xBGR_444, 0x100);
 
@@ -446,7 +448,7 @@ void airraid_state::airraid(machine_config &config)
 	ymsnd.add_route(1, "mono", 0.50);
 
 	SEIBU_SOUND(config, m_seibu_sound, 0);
-	m_seibu_sound->int_callback().set_inputline("audiocpu", 0);
+	m_seibu_sound->int_callback().set_inputline(m_audiocpu, 0);
 	m_seibu_sound->set_rom_tag("audiocpu");
 	m_seibu_sound->ym_read_callback().set("ymsnd", FUNC(ym2151_device::read));
 	m_seibu_sound->ym_write_callback().set("ymsnd", FUNC(ym2151_device::write));
@@ -494,8 +496,8 @@ ROM_START( airraid )
 	ROM_LOAD( "4.7f",    0x08000, 0x08000, CRC(3cd715b4) SHA1(da735fb5d262908ddf7ed7dacdea68899f1723ff) )
 
 	ROM_REGION( 0x0200, "proms", 0 ) // this PCB type has different PROMs when compared to the cshootert hardware PCB where they were dumped
-	ROM_LOAD( "pr.c19",  0x0000, 0x0200, NO_DUMP )
-	ROM_LOAD( "6308.a13",  0x0000, 0x0100, NO_DUMP )
+	ROM_LOAD( "pr.c19",   0x0000, 0x0100, NO_DUMP )
+	ROM_LOAD( "6308.a13", 0x0100, 0x0100, NO_DUMP )
 
 	ROM_REGION( 0x02000, "airraid_vid:tx_gfx", 0 ) // TX Layer
 	ROM_LOAD( "3.13e",   0x00000, 0x02000, CRC(672ec0e8) SHA1(a11cd90d6494251ceee3bc7c72f4e7b1580b77e2) )
@@ -574,14 +576,14 @@ ROM_START( cshooter )
 	ROM_LOAD( "5.6f",    0x00000, 0x02000, CRC(30be398c) SHA1(6c61200ee8888d6270c8cec50423b3b5602c2027) ) // 5.g6
 	ROM_LOAD( "4.7f",    0x08000, 0x08000, CRC(3cd715b4) SHA1(da735fb5d262908ddf7ed7dacdea68899f1723ff) ) // 4.g8
 
-	ROM_REGION( 0x0200, "proms", 0 ) // this PCB type has different PROMs when compared to the cshootert hardware PCB where they were dumped
-	ROM_LOAD( "pr.c19",  0x0000, 0x0200, NO_DUMP )
-	ROM_LOAD( "6308.a13",  0x0000, 0x0100, NO_DUMP )
+	ROM_REGION( 0x0200, "proms", 0 )
+	ROM_LOAD( "82s129.c19",  0x0000, 0x0100, CRC(dcd4e66d) SHA1(17f53c7905c20f0c6c0a74ab519b8e4a442835c3) )
+	ROM_LOAD( "63s281.a13",  0x0100, 0x0100, CRC(208d17ca) SHA1(a77d56337bcac8d9a7bc3411239dfb3045e069ec) )
 
 	ROM_REGION( 0x02000, "airraid_vid:tx_gfx",  0 ) // TX Layer
-	ROM_LOAD( "3.f11",   0x00000, 0x02000, CRC(67b50a47) SHA1(b1f4aefc9437edbeefba5371149cc08c0b55c741) )
+	ROM_LOAD( "3.13e",   0x00000, 0x02000, CRC(704c26d7) SHA1(e5964f409cbc2c4752e3969f3e84ace08d5ad9cb) )
 
-	ROM_REGION( 0x100, "airraid_vid:tx_clut", 0 ) // taken from cshootert, not verified for this PCB
+	ROM_REGION( 0x100, "airraid_vid:tx_clut", 0 )
 	ROM_LOAD( "63s281.d16", 0x0000, 0x0100, CRC(0b8b914b) SHA1(8cf4910b846de79661cc187887171ed8ebfd6719) ) // clut
 
 	// ### MODULE 1 ### Background generation / graphics

@@ -34,8 +34,6 @@ public:
 	// construction/destruction
 	virtual ~device_nubus_card_interface();
 
-	void set_nubus_device();
-
 	// helper functions for card devices
 	void install_declaration_rom(const char *romregion, bool mirror_all_mb = false, bool reverse_rom = false);
 	void install_bank(offs_t start, offs_t end, void *data);
@@ -46,6 +44,8 @@ public:
 
 	void raise_slot_irq();
 	void lower_slot_irq();
+
+	void set_pds_slot(int slot) { m_slot = slot; }
 
 	// inline configuration
 	void set_nubus_tag(nubus_device *nubus, const char *slottag) { m_nubus = nubus; m_nubus_slottag = slottag; }
@@ -91,9 +91,9 @@ public:
 protected:
 	nubus_slot_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock);
 
-	// device-level overrides
-	virtual void device_resolve_objects() override;
-	virtual void device_start() override;
+	// device_t implementation
+	virtual void device_resolve_objects() override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
 
 	// configuration
 	required_device<nubus_device> m_nubus;
@@ -106,7 +106,7 @@ DECLARE_DEVICE_TYPE(NUBUS_SLOT, nubus_slot_device)
 
 class device_nubus_card_interface;
 // ======================> nubus_device
-class nubus_device : public device_t
+class nubus_device : public device_t, public device_memory_interface
 {
 public:
 	// construction/destruction
@@ -122,6 +122,14 @@ public:
 	auto out_irqd_callback() { return m_out_irqd_cb.bind(); }
 	auto out_irqe_callback() { return m_out_irqe_cb.bind(); }
 
+	typedef enum NUBUS_MODE_T
+	{
+		NORMAL = 0,
+		QUADRA_DAFB,        // omits slot 9 space
+		LC_PDS              // takes slot $E space only, with A31 in both states, for V8 based systems
+	} nubus_mode_t;
+	void set_bus_mode(nubus_mode_t newMode) { m_bus_mode = newMode; }
+
 	void add_nubus_card(device_nubus_card_interface &card);
 	template <typename R, typename W> void install_device(offs_t start, offs_t end, R rhandler, W whandler, uint32_t mask=0xffffffff);
 	template <typename R> void install_readonly_device(offs_t start, offs_t end, R rhandler, uint32_t mask=0xffffffff);
@@ -129,23 +137,30 @@ public:
 	void install_bank(offs_t start, offs_t end, void *data);
 	void install_view(offs_t start, offs_t end, memory_view &view);
 	void set_irq_line(int slot, int state);
+	void set_address_mask(uint32_t mask) { m_addr_mask = mask; }
 
-	DECLARE_WRITE_LINE_MEMBER( irq9_w );
-	DECLARE_WRITE_LINE_MEMBER( irqa_w );
-	DECLARE_WRITE_LINE_MEMBER( irqb_w );
-	DECLARE_WRITE_LINE_MEMBER( irqc_w );
-	DECLARE_WRITE_LINE_MEMBER( irqd_w );
-	DECLARE_WRITE_LINE_MEMBER( irqe_w );
+	void irq9_w(int state);
+	void irqa_w(int state);
+	void irqb_w(int state);
+	void irqc_w(int state);
+	void irqd_w(int state);
+	void irqe_w(int state);
 
 protected:
 	nubus_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock);
 
-	// device-level overrides
-	virtual void device_resolve_objects() override;
-	virtual void device_start() override;
+	// device_t implementation
+	virtual void device_start() override ATTR_COLD;
+
+	virtual space_config_vector memory_space_config() const override;
+
+	template <uint32_t Base> uint32_t bus_memory_r(offs_t offset, uint32_t mem_mask);
+	template <uint32_t Base> void bus_memory_w(offs_t offset, uint32_t data, uint32_t mem_mask);
 
 	// internal state
 	required_address_space m_space;
+
+	address_space_config m_mem_config;
 
 	devcb_write_line    m_out_irq9_cb;
 	devcb_write_line    m_out_irqa_cb;
@@ -155,6 +170,9 @@ protected:
 	devcb_write_line    m_out_irqe_cb;
 
 	std::vector<std::reference_wrapper<device_nubus_card_interface> > m_device_list;
+
+	nubus_mode_t m_bus_mode;
+	uint32_t m_addr_mask;
 };
 
 inline void device_nubus_card_interface::raise_slot_irq()

@@ -14,9 +14,9 @@
 
 #pragma once
 
-#include "video/mc6847.h"
-#include "6883sam.h"
+#include "machine/6883sam.h"
 #include "machine/ram.h"
+#include "video/mc6847.h"
 
 
 //**************************************************************************
@@ -61,21 +61,21 @@ public:
 	void set_il2(bool value) { set_interrupt_value(INTERRUPT_EI2, value); }
 
 protected:
-	gime_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock, const uint8_t *fontdata);
+	gime_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock, const uint8_t *fontdata, bool pal);
 
 	// device-level overrides
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 	virtual void device_pre_save() override;
 	virtual void device_post_load() override;
-	virtual ioport_constructor device_input_ports() const override;
+	virtual ioport_constructor device_input_ports() const override ATTR_COLD;
 
 	// other overrides
-	virtual TIMER_CALLBACK_MEMBER(new_frame) override;
+	virtual void new_frame() override;
 	virtual TIMER_CALLBACK_MEMBER(horizontal_sync_changed) override;
 	virtual void enter_bottom_border() override;
 	virtual void record_border_scanline(uint16_t physical_scanline) override;
-	virtual void record_body_scanline(uint16_t physical_scanline, uint16_t logical_scanline) override;
+	virtual void record_full_body_scanline(uint16_t physical_scanline, uint16_t logical_scanline) override;
 	virtual void record_partial_body_scanline(uint16_t physical_scanline, uint16_t logical_scanline, int32_t start_clock, int32_t end_clock) override;
 
 protected:
@@ -239,6 +239,7 @@ protected:
 	// rendering sampled graphics
 	typedef uint32_t (gime_device::*emit_samples_proc)(const scanline_record *scanline, int sample_start, int sample_count, pixel_t *pixels, const pixel_t *palette);
 	uint32_t emit_dummy_samples(const scanline_record *scanline, int sample_start, int sample_count, pixel_t *pixels, const pixel_t *palette);
+	template<int xscale>
 	uint32_t emit_mc6847_samples(const scanline_record *scanline, int sample_start, int sample_count, pixel_t *pixels, const pixel_t *palette);
 	template<int xscale>
 	uint32_t emit_gime_text_samples(const scanline_record *scanline, int sample_start, int sample_count, pixel_t *pixels, const pixel_t *palette);

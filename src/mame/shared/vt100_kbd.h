@@ -14,7 +14,6 @@
 #include "machine/ay31015.h"
 #include "machine/ripple_counter.h"
 #include "sound/beep.h"
-#include "speaker.h"
 
 
 //**************************************************************************
@@ -32,23 +31,22 @@ public:
 	// configuration
 	auto signal_out_callback() { return m_signal_out_cb.bind(); }
 
-	DECLARE_WRITE_LINE_MEMBER(signal_line_w);
+	void signal_line_w(int state);
 
 protected:
 	vt100_keyboard_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, u32 clock);
 
-	virtual void device_resolve_objects() override;
-	virtual void device_start() override;
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual ioport_constructor device_input_ports() const override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual ioport_constructor device_input_ports() const override ATTR_COLD;
 
 	virtual bool scan_enabled() const { return m_uart->tbmt_r(); }
 	virtual void scan_start() { }
 
 private:
 	// internal helpers
-	DECLARE_WRITE_LINE_MEMBER(signal_out_w);
-	DECLARE_WRITE_LINE_MEMBER(scan_disable_w);
+	void signal_out_w(int state);
+	void scan_disable_w(int state);
 	void key_scan_w(u8 data);
 
 	devcb_write_line m_signal_out_cb;
@@ -77,15 +75,15 @@ public:
 	ms7002_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock);
 
 protected:
-	virtual void device_start() override;
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual ioport_constructor device_input_ports() const override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual ioport_constructor device_input_ports() const override ATTR_COLD;
 
 	virtual bool scan_enabled() const override { return m_scan_enable; }
 	virtual void scan_start() override { m_scan_enable = true; }
 
 private:
-	DECLARE_WRITE_LINE_MEMBER(scan_disable_w);
+	void scan_disable_w(int state);
 
 	bool m_scan_enable;
 };

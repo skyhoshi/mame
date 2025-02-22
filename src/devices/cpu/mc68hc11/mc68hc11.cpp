@@ -16,6 +16,8 @@ TODO:
 #include "mc68hc11.h"
 #include "hc11dasm.h"
 
+#include <tuple>
+
 #define LOG_IRQ (1U << 1)
 
 #define VERBOSE (0)
@@ -62,10 +64,10 @@ mc68hc11_cpu_device::mc68hc11_cpu_device(const machine_config &mconfig, device_t
 	, device_nvram_interface(mconfig, *this, (config_mask & 0xf9) != 0)
 	, m_program_config("program", ENDIANNESS_BIG, 8, 16, 0, address_map_constructor(FUNC(mc68hc11_cpu_device::internal_map), this))
 	, m_irq_asserted(false)
-	, m_port_input_cb(*this)
+	, m_port_input_cb(*this, 0xff)
 	, m_port_output_cb(*this)
-	, m_analog_cb(*this)
-	, m_spi2_data_input_cb(*this)
+	, m_analog_cb(*this, 0)
+	, m_spi2_data_input_cb(*this, 0xff)
 	, m_spi2_data_output_cb(*this)
 	, m_ram_view(*this, "ram")
 	, m_reg_view(*this, "regs")
@@ -155,15 +157,6 @@ device_memory_interface::space_config_vector mc68hc11_cpu_device::memory_space_c
 	};
 }
 
-void mc68hc11_cpu_device::device_resolve_objects()
-{
-	m_port_input_cb.resolve_all_safe(0xff);
-	m_port_output_cb.resolve_all_safe();
-	m_analog_cb.resolve_all_safe(0);
-	m_spi2_data_input_cb.resolve_safe(0xff);
-	m_spi2_data_output_cb.resolve_safe();
-}
-
 std::unique_ptr<util::disasm_interface> mc68hc11_cpu_device::create_disassembler()
 {
 	return std::make_unique<hc11_disassembler>();
@@ -172,12 +165,15 @@ std::unique_ptr<util::disasm_interface> mc68hc11_cpu_device::create_disassembler
 
 bool mc68hc11_cpu_device::nvram_read(util::read_stream &file)
 {
+	std::error_condition err;
 	size_t actual;
 
-	if (file.read(&m_eeprom_data[0], m_internal_eeprom_size, actual) || actual != m_internal_eeprom_size)
+	std::tie(err, actual) = read(file, &m_eeprom_data[0], m_internal_eeprom_size);
+	if (err || (actual != m_internal_eeprom_size))
 		return false;
 
-	if (file.read(&m_config, 1, actual) || actual != 1)
+	std::tie(err, actual) = read(file, &m_config, 1);
+	if (err || (actual != 1))
 		return false;
 
 	return true;
@@ -185,12 +181,15 @@ bool mc68hc11_cpu_device::nvram_read(util::read_stream &file)
 
 bool mc68hc11_cpu_device::nvram_write(util::write_stream &file)
 {
+	std::error_condition err;
 	size_t actual;
 
-	if (file.write(&m_eeprom_data[0], m_internal_eeprom_size, actual) || actual != m_internal_eeprom_size)
+	std::tie(err, actual) = write(file, &m_eeprom_data[0], m_internal_eeprom_size);
+	if (err)
 		return false;
 
-	if (file.write(&m_config, 1, actual) || actual != 1)
+	std::tie(err, actual) = write(file, &m_config, 1);
+	if (err)
 		return false;
 
 	return true;
@@ -1223,10 +1222,18 @@ void mc68hc11_cpu_device::execute_run()
 
 		check_irq_lines();
 
-		m_ppc = m_pc;
-		debugger_instruction_hook(m_pc);
+		if (m_wait_state != 0)
+		{
+			debugger_wait_hook();
+			m_icount = 0;
+		}
+		else
+		{
+			m_ppc = m_pc;
+			debugger_instruction_hook(m_pc);
 
-		op = FETCH();
-		(this->*hc11_optable[op])();
+			op = FETCH();
+			(this->*hc11_optable[op])();
+		}
 	}
 }

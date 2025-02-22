@@ -77,25 +77,25 @@ public:
 	void jps(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	u8 porta_r();
 	u8 portb_r();
 	void out1_w(offs_t offset, u8 data);
 	void out2_w(offs_t offset, u8 data);
-	DECLARE_WRITE_LINE_MEMBER(disp_data_w);
-	DECLARE_WRITE_LINE_MEMBER(disp_clock_w);
-	DECLARE_WRITE_LINE_MEMBER(disp_strobe_w);
-	DECLARE_WRITE_LINE_MEMBER(row_w);
+	void disp_data_w(int state);
+	void disp_clock_w(int state);
+	void disp_strobe_w(int state);
+	void row_w(int state);
 	void sample_bank_w(u8 data);
 	void adpcm_reset_w(u8 data);
-	DECLARE_WRITE_LINE_MEMBER(vck_w);
+	void vck_w(int state);
 	IRQ_CALLBACK_MEMBER(sound_int_cb);
 
-	void main_map(address_map &map);
-	void audio_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void audio_map(address_map &map) ATTR_COLD;
 
 	void update_display();
 
@@ -273,15 +273,15 @@ void jp_state::out2_w(offs_t offset, u8 data)
 	}
 }
 
-WRITE_LINE_MEMBER(jp_state::row_w)
+void jp_state::row_w(int state)
 {
 }
 
-WRITE_LINE_MEMBER(jp_state::disp_data_w)
+void jp_state::disp_data_w(int state)
 {
 }
 
-WRITE_LINE_MEMBER(jp_state::disp_clock_w)
+void jp_state::disp_clock_w(int state)
 {
 	if (state)
 	{
@@ -292,7 +292,7 @@ WRITE_LINE_MEMBER(jp_state::disp_clock_w)
 		update_display();
 }
 
-WRITE_LINE_MEMBER(jp_state::disp_strobe_w)
+void jp_state::disp_strobe_w(int state)
 {
 	if (state)
 		update_display();
@@ -461,7 +461,7 @@ void jp_state::adpcm_reset_w(u8 data)
 	m_msm->reset_w(BIT(data, 0));
 }
 
-WRITE_LINE_MEMBER(jp_state::vck_w)
+void jp_state::vck_w(int state)
 {
 	if (state)
 	{
@@ -739,20 +739,20 @@ ROM_END
 } // Anonymous namespace
 
 // 6-digit display
-GAME(1985,  petacon,   0,        jp,  jp, jp_state, init_6d,    ROT0, "Juegos Populares", "Petaco (new hardware, set 1)", MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1985,  petacona,  0,        jp,  jp, jp_state, init_6d,    ROT0, "Juegos Populares", "Petaco (new hardware, set 2)", MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1985,  faeton6d,  faeton,   jp,  jp, jp_state, init_6d,    ROT0, "Juegos Populares", "Faeton (6 digits)",            MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
+GAME(1985,  petacon,   0,        jp,  jp, jp_state, init_6d,    ROT0, "Juegos Populares", "Petaco (new hardware, set 1)", MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1985,  petacona,  0,        jp,  jp, jp_state, init_6d,    ROT0, "Juegos Populares", "Petaco (new hardware, set 2)", MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1985,  faeton6d,  faeton,   jp,  jp, jp_state, init_6d,    ROT0, "Juegos Populares", "Faeton (6 digits)",            MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
 
 // 7-digit display
-GAME(1985,  petaco2,   0,        jps, jp, jp_state, empty_init, ROT0, "Juegos Populares", "Petaco 2",                     MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1985,  faeton,    0,        jp,  jp, jp_state, empty_init, ROT0, "Juegos Populares", "Faeton (7 digits)",            MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1986,  halley,    0,        jps, jp, jp_state, empty_init, ROT0, "Juegos Populares", "Halley Comet (set 1)",         MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1986,  halleya,   halley,   jps, jp, jp_state, empty_init, ROT0, "Juegos Populares", "Halley Comet (set 2)",         MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1986,  halleyb,   halley,   jps, jp, jp_state, empty_init, ROT0, "Juegos Populares", "Halley Comet (set 3)",         MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1986,  aqualand,  0,        jps, jp, jp_state, empty_init, ROT0, "Juegos Populares", "Aqualand (set 1)",             MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1986,  aqualanda, aqualand, jps, jp, jp_state, empty_init, ROT0, "Juegos Populares", "Aqualand (set 2)",             MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1986,  america,   0,        jps, jp, jp_state, empty_init, ROT0, "Juegos Populares", "America 1492",                 MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1986,  olympus,   0,        jps, jp, jp_state, empty_init, ROT0, "Juegos Populares", "Olympus (Juegos Populares)",   MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
+GAME(1985,  petaco2,   0,        jps, jp, jp_state, empty_init, ROT0, "Juegos Populares", "Petaco 2",                     MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1985,  faeton,    0,        jp,  jp, jp_state, empty_init, ROT0, "Juegos Populares", "Faeton (7 digits)",            MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1986,  halley,    0,        jps, jp, jp_state, empty_init, ROT0, "Juegos Populares", "Halley Comet (set 1)",         MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1986,  halleya,   halley,   jps, jp, jp_state, empty_init, ROT0, "Juegos Populares", "Halley Comet (set 2)",         MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1986,  halleyb,   halley,   jps, jp, jp_state, empty_init, ROT0, "Juegos Populares", "Halley Comet (set 3)",         MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1986,  aqualand,  0,        jps, jp, jp_state, empty_init, ROT0, "Juegos Populares", "Aqualand (set 1)",             MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1986,  aqualanda, aqualand, jps, jp, jp_state, empty_init, ROT0, "Juegos Populares", "Aqualand (set 2)",             MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1986,  america,   0,        jps, jp, jp_state, empty_init, ROT0, "Juegos Populares", "America 1492",                 MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1986,  olympus,   0,        jps, jp, jp_state, empty_init, ROT0, "Juegos Populares", "Olympus (Juegos Populares)",   MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
 
-GAME(1987,  lortium,   0,        jp,  jp, jp_state, empty_init, ROT0, u8"Juegos Populares / Automáticos Montecarlo", "Lortium",               MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(19??,  pimbal,    0,        jp,  jp, jp_state, empty_init, ROT0, u8"Juegos Populares / Automáticos Montecarlo", "Pimbal (Pinball 3000)", MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
+GAME(1987,  lortium,   0,        jp,  jp, jp_state, empty_init, ROT0, u8"Juegos Populares / Automáticos Montecarlo", "Lortium",               MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(19??,  pimbal,    0,        jp,  jp, jp_state, empty_init, ROT0, u8"Juegos Populares / Automáticos Montecarlo", "Pimbal (Pinball 3000)", MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )

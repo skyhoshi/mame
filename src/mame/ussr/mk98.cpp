@@ -49,8 +49,8 @@
 #include "speaker.h"
 
 
-#define LOG_KEYBOARD  (1U <<  1)
-#define LOG_DEBUG     (1U <<  2)
+#define LOG_KEYBOARD  (1U << 1)
+#define LOG_DEBUG     (1U << 2)
 
 #define VERBOSE (LOG_GENERAL|LOG_DEBUG)
 //#define LOG_OUTPUT_FUNC printf
@@ -77,8 +77,8 @@ public:
 	void mk98(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	required_device<cpu_device> m_maincpu;
 	required_device<ram_device> m_ram;
@@ -88,8 +88,8 @@ protected:
 private:
 	void mk98_palette(palette_device &palette) const;
 
-	DECLARE_WRITE_LINE_MEMBER(keyboard_clock_w);
-	DECLARE_WRITE_LINE_MEMBER(keyboard_data_w);
+	void keyboard_clock_w(int state);
+	void keyboard_data_w(int state);
 	uint8_t keyboard_r(offs_t offset);
 	void keyboard_w(offs_t offset, uint8_t data);
 	uint8_t serial_r(offs_t offset);
@@ -100,8 +100,8 @@ private:
 	uint8_t video_register_r();
 	void video_register_w(uint8_t data);
 
-	void mk98_io(address_map &map);
-	void mk98_map(address_map &map);
+	void mk98_io(address_map &map) ATTR_COLD;
+	void mk98_map(address_map &map) ATTR_COLD;
 
 	required_shared_ptr<u8> m_p_videoram;
 
@@ -269,7 +269,7 @@ void mk98_state::keyboard_w(offs_t offset, uint8_t data)
 	m_pic8259->ir1_w(CLEAR_LINE);
 }
 
-WRITE_LINE_MEMBER(mk98_state::keyboard_clock_w)
+void mk98_state::keyboard_clock_w(int state)
 {
 	LOGKBD("kbd: KCLK: %d kbit: %d\n", state ? 1 : 0, m_kbit);
 
@@ -308,7 +308,7 @@ WRITE_LINE_MEMBER(mk98_state::keyboard_clock_w)
 	m_kclk = (state == ASSERT_LINE) ? true : false;
 }
 
-WRITE_LINE_MEMBER(mk98_state::keyboard_data_w)
+void mk98_state::keyboard_data_w(int state)
 {
 	LOGKBD("kbd: KDATA: %d\n", state ? 1 : 0);
 	m_kdata = (state == ASSERT_LINE) ? 0x80 : 0x00;
@@ -485,4 +485,4 @@ ROM_END
 
 
 //    YEAR  NAME   PARENT   COMPAT  MACHINE  INPUT  CLASS        INIT         COMPANY         FULLNAME  FLAGS
-COMP( 1998, mk98,  0,       0,      mk98,    0,     mk98_state,  empty_init,  "Elektronika",  "MK-98",  MACHINE_IS_SKELETON)
+COMP( 1998, mk98,  0,       0,      mk98,    0,     mk98_state,  empty_init,  "Elektronika",  "MK-98",  MACHINE_NO_SOUND | MACHINE_NOT_WORKING)

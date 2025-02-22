@@ -709,13 +709,6 @@ void m2_te_device::device_start()
 	// Find our parent
 	m_bda = downcast<m2_bda_device *>(owner());
 
-	// Resolve callbacks
-	m_general_int_handler.resolve_safe();
-	m_dfinstr_int_handler.resolve_safe();
-	m_iminstr_int_handler.resolve_safe();
-	m_listend_int_handler.resolve_safe();
-	m_winclip_int_handler.resolve_safe();
-
 	// Allocate texture RAM
 	m_tram = std::make_unique<uint32_t[]>(TEXTURE_RAM_WORDS);
 
@@ -792,13 +785,13 @@ uint32_t m2_te_device::read(offs_t offset)
 		}
 		case 3:
 		{
-			if (reg < 0x400/4)
+			if (reg < 0x400 / 4)
 			{
 				return m_pipram[reg];
 			}
-			else if ((reg - 0x400) < sizeof(m_tm) / 4)
+			else if ((reg - 0x400 / 4) < sizeof(m_tm) / 4)
 			{
-				return m_tm.m_regs[reg];
+				return m_tm.m_regs[reg - 0x400 / 4];
 			}
 
 			break;

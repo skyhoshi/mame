@@ -9,16 +9,20 @@
 ***************************************************************************/
 
 #include "fs_hplif.h"
+#include "fsblk.h"
 #include "hp300_dsk.h"
+
 #include "corestr.h"
 #include "osdcomm.h"
 #include "strformat.h"
 
 #include <array>
+#include <optional>
 #include <set>
 #include <string_view>
 #include <tuple>
 #include <iostream>
+
 namespace fs {
 	const hplif_image HPLIF;
 };
@@ -70,9 +74,9 @@ public:
 	virtual ~impl() = default;
 
 	virtual meta_data volume_metadata() override;
-	virtual std::pair<err_t, meta_data> metadata(const std::vector<std::string> &path) override;
-	virtual std::pair<err_t, std::vector<dir_entry>> directory_contents(const std::vector<std::string> &path) override;
-	virtual std::pair<err_t, std::vector<u8>> file_read(const std::vector<std::string> &path) override;
+	virtual std::pair<std::error_condition, meta_data> metadata(const std::vector<std::string> &path) override;
+	virtual std::pair<std::error_condition, std::vector<dir_entry>> directory_contents(const std::vector<std::string> &path) override;
+	virtual std::pair<std::error_condition, std::vector<u8>> file_read(const std::vector<std::string> &path) override;
 
 private:
 	fsblk_t::block_t read_sector(u32 starting_sector) const;
@@ -80,7 +84,7 @@ private:
 	void iterate_directory_entries(const std::function<bool(const hplif_dirent &dirent)> &callback) const;
 	util::arbitrary_datetime decode_datetime(const hplif_time *time) const;
 	meta_data metadata_from_dirent(const hplif_dirent &dirent) const;
-	err_t format(const meta_data &meta) override;
+	std::error_condition format(const meta_data &meta) override;
 };
 
 // methods
@@ -116,10 +120,10 @@ const char *fs::hplif_image::description() const
 
 void fs::hplif_image::enumerate_f(floppy_enumerator &fe) const
 {
-	fe.add(FLOPPY_HP300_FORMAT, floppy_image::FF_35, floppy_image::DSDD,  630784,  "hp_lif_9121_format_1",   "HP 9212 LIF 3.5\" dual-sided double density Format 1");
+	fe.add(FLOPPY_HP300_FORMAT, floppy_image::FF_35, floppy_image::DSDD,  630784,  "hp_lif_9121_format_1",   "HP 9121 LIF 3.5\" dual-sided double density Format 1");
 	fe.add(FLOPPY_HP300_FORMAT, floppy_image::FF_35, floppy_image::DSDD,  709632,  "hp_lif_9121_format_2",   "HP 9121 LIF 3.5\" dual-sided double density Format 2");
 	fe.add(FLOPPY_HP300_FORMAT, floppy_image::FF_35, floppy_image::DSDD,  788480,  "hp_lif_9121_format_3",   "HP 9121 LIF 3.5\" dual-sided double density Format 3");
-	fe.add(FLOPPY_HP300_FORMAT, floppy_image::FF_35, floppy_image::SSDD,  286720,  "hp_lif_9121_format_4",   "HP 9121 LIF 3.5\" single-sided double density Format 4");
+	fe.add(FLOPPY_HP300_FORMAT, floppy_image::FF_35, floppy_image::SSDD,  270336,  "hp_lif_9121_format_4",   "HP 9121 LIF 3.5\" single-sided double density Format 4");
 	fe.add(FLOPPY_HP300_FORMAT, floppy_image::FF_35, floppy_image::DSDD,  737280,  "hp_lif_9121_format_16",  "HP 9121 LIF 3.5\" dual-sided double density Format 16");
 
 	fe.add(FLOPPY_HP300_FORMAT, floppy_image::FF_35, floppy_image::DSHD, 1261568, "hp_lif_9122_format_014", "HP 9122 LIF 3.5\" dual-sided high density Format 0, 1, 4");
@@ -261,13 +265,13 @@ meta_data impl::volume_metadata()
 //  impl::metadata
 //-------------------------------------------------
 
-std::pair<err_t, meta_data> impl::metadata(const std::vector<std::string> &path)
+std::pair<std::error_condition, meta_data> impl::metadata(const std::vector<std::string> &path)
 {
 	std::optional<hplif_dirent> dirent = dirent_from_path(path);
 	if (!dirent)
-		return std::make_pair(ERR_NOT_FOUND, meta_data());
+		return std::make_pair(error::not_found, meta_data());
 
-	return std::make_pair(ERR_OK, metadata_from_dirent(*dirent));
+	return std::make_pair(std::error_condition(), metadata_from_dirent(*dirent));
 }
 
 
@@ -275,7 +279,7 @@ std::pair<err_t, meta_data> impl::metadata(const std::vector<std::string> &path)
 //  impl::directory_contents
 //-------------------------------------------------
 
-std::pair<err_t, std::vector<dir_entry>> impl::directory_contents(const std::vector<std::string> &path)
+std::pair<std::error_condition, std::vector<dir_entry>> impl::directory_contents(const std::vector<std::string> &path)
 {
 	std::vector<dir_entry> results;
 	auto callback = [this, &results](const hplif_dirent &ent)
@@ -284,7 +288,7 @@ std::pair<err_t, std::vector<dir_entry>> impl::directory_contents(const std::vec
 		return false;
 	};
 	iterate_directory_entries(callback);
-	return std::make_pair(ERR_OK, std::move(results));
+	return std::make_pair(std::error_condition(), std::move(results));
 }
 
 
@@ -292,12 +296,12 @@ std::pair<err_t, std::vector<dir_entry>> impl::directory_contents(const std::vec
 //  impl::file_read
 //-------------------------------------------------
 
-std::pair<err_t, std::vector<u8>> impl::file_read(const std::vector<std::string> &path)
+std::pair<std::error_condition, std::vector<u8>> impl::file_read(const std::vector<std::string> &path)
 {
 	// find the file
 	std::optional<hplif_dirent> dirent = dirent_from_path(path);
 	if (!dirent)
-		return std::make_pair(ERR_NOT_FOUND, std::vector<u8>());
+		return std::make_pair(error::not_found, std::vector<u8>());
 
 	// and get the data
 	u32 sector_count = big_endianize_int32(dirent->m_sector_count);
@@ -312,7 +316,7 @@ std::pair<err_t, std::vector<u8>> impl::file_read(const std::vector<std::string>
 	while (iter.next())
 		result.insert(result.end(), (const u8 *)iter.data(), (const u8 *)iter.data() + 256);
 
-	return std::make_pair(ERR_OK, std::move(result));
+	return std::make_pair(std::error_condition(), std::move(result));
 }
 
 
@@ -464,7 +468,7 @@ const void *impl::block_iterator::data() const
 //  impl::format
 //-------------------------------------------------
 
-err_t impl::format(const meta_data &meta)
+std::error_condition impl::format(const meta_data &meta)
 {
 	std::string volume_name = meta.get_string(meta_name::name, "B9826 ");
 	fsblk_t::block_t block = m_blockdev.get(0);
@@ -480,7 +484,7 @@ err_t impl::format(const meta_data &meta)
 	block.w16b(12, 0x1000); // LIF identifier
 	block.w32b(16, 14);     // directory size
 	block.w16b(20, 1);      // LIF version
-	return ERR_OK;
+	return std::error_condition();
 }
 
 //-------------------------------------------------

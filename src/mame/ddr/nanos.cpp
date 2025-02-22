@@ -58,24 +58,24 @@ public:
 	void nanos(machine_config &config);
 
 protected:
-	virtual void machine_reset() override;
-	virtual void machine_start() override;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	void tc_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(ctc_z0_w);
-	DECLARE_WRITE_LINE_MEMBER(ctc_z1_w);
-	DECLARE_WRITE_LINE_MEMBER(ctc_z2_w);
+	void ctc_z0_w(int state);
+	void ctc_z1_w(int state);
+	void ctc_z2_w(int state);
 	TIMER_DEVICE_CALLBACK_MEMBER(keyboard_callback);
-	DECLARE_WRITE_LINE_MEMBER(z80daisy_interrupt);
+	void z80daisy_interrupt(int state);
 	uint8_t port_a_r();
 	uint8_t port_b_r();
 	void port_b_w(uint8_t data);
 	static void floppy_formats(format_registration &fr);
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	void io_map(address_map &map);
-	void mem_map(address_map &map);
+	void io_map(address_map &map) ATTR_COLD;
+	void mem_map(address_map &map) ATTR_COLD;
 
 	uint8_t m_key_command;
 	uint8_t m_last_code;
@@ -119,21 +119,21 @@ void nanos_state::tc_w(uint8_t data)
 
 /* Z80-CTC Interface */
 
-WRITE_LINE_MEMBER(nanos_state::ctc_z0_w)
+void nanos_state::ctc_z0_w(int state)
 {
 }
 
-WRITE_LINE_MEMBER(nanos_state::ctc_z1_w)
+void nanos_state::ctc_z1_w(int state)
 {
 }
 
-WRITE_LINE_MEMBER(nanos_state::ctc_z2_w)
+void nanos_state::ctc_z2_w(int state)
 {
 }
 
 /* Z80-SIO Interface */
 
-WRITE_LINE_MEMBER(nanos_state::z80daisy_interrupt)
+void nanos_state::z80daisy_interrupt(int state)
 {
 	m_maincpu->set_input_line(INPUT_LINE_IRQ0, state);
 }

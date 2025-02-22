@@ -89,13 +89,12 @@ public:
 	void hhtiger(machine_config &config);
 
 private:
-	virtual void machine_reset() override;
-	virtual void machine_start() override;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void machine_start() override ATTR_COLD;
 
 	uint8_t disable_rom_r();
 	uint8_t read(offs_t offset);
 	void write(offs_t offset, uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(busreq_w);
 	uint8_t memory_read_byte(offs_t offset);
 	void memory_write_byte(offs_t offset, uint8_t data);
 	uint8_t io_read_byte(offs_t offset);
@@ -108,24 +107,24 @@ private:
 	uint8_t pio_pa_r();
 	void pio_pa_w(uint8_t data);
 	void pio_pb_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(ardy_w);
-	DECLARE_WRITE_LINE_MEMBER(brdy_w);
+	void ardy_w(int state);
+	void brdy_w(int state);
 
 	uint8_t via_0_in_a();
 	void via_0_out_a(uint8_t data);
 	void via_0_out_b(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(via_0_out_ca2);
-	DECLARE_WRITE_LINE_MEMBER(via_0_out_cb2);
+	void via_0_out_ca2(int state);
+	void via_0_out_cb2(int state);
 
 	void via_1_out_a(uint8_t data);
 	void via_1_out_b(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(via_1_out_ca2);
-	DECLARE_WRITE_LINE_MEMBER(via_1_out_cb2);
+	void via_1_out_ca2(int state);
+	void via_1_out_cb2(int state);
 
-	void z80_mem(address_map &map);
-	void z80_io(address_map &map);
-	void m6809_mem(address_map &map);
-	void upd7220_map(address_map &map);
+	void z80_mem(address_map &map) ATTR_COLD;
+	void z80_io(address_map &map) ATTR_COLD;
+	void m6809_mem(address_map &map) ATTR_COLD;
+	void upd7220_map(address_map &map) ATTR_COLD;
 
 	required_device<z80_device> m_maincpu;
 	required_memory_region m_rom_z80;
@@ -273,13 +272,6 @@ void hhtiger_state::write(offs_t offset, uint8_t data)
 }
 
 
-WRITE_LINE_MEMBER(hhtiger_state::busreq_w)
-{
-	// since our Z80 has no support for BUSACK, we assume it is granted immediately
-	m_maincpu->set_input_line(Z80_INPUT_LINE_BUSRQ, state);
-	m_dma->bai_w(state); // tell dma that bus has been granted
-}
-
 uint8_t hhtiger_state::memory_read_byte(offs_t offset)
 {
 	address_space& prog_space = m_maincpu->space(AS_PROGRAM);
@@ -384,13 +376,13 @@ void hhtiger_state::pio_pb_w(uint8_t data)
 	m_via[0]->write_pb(data);
 }
 
-WRITE_LINE_MEMBER(hhtiger_state::ardy_w)
+void hhtiger_state::ardy_w(int state)
 {
 	LOG("ardy_w %d\n", state);
 	m_via[0]->write_ca1(state);
 }
 
-WRITE_LINE_MEMBER(hhtiger_state::brdy_w)
+void hhtiger_state::brdy_w(int state)
 {
 	LOG("brdy_w %d\n", state);
 	m_via[0]->write_cb1(state);
@@ -417,13 +409,13 @@ void hhtiger_state::via_0_out_b(uint8_t data)
 	LOG("via0_out_b %02X\n", data);
 }
 
-WRITE_LINE_MEMBER(hhtiger_state::via_0_out_ca2)
+void hhtiger_state::via_0_out_ca2(int state)
 {
 	LOG("via0_out_ca2 %d\n", state);
 	m_pio->strobe_a(state);
 }
 
-WRITE_LINE_MEMBER(hhtiger_state::via_0_out_cb2)
+void hhtiger_state::via_0_out_cb2(int state)
 {
 	LOG("via0_out_cb2 %d\n", state);
 }
@@ -439,12 +431,12 @@ void hhtiger_state::via_1_out_b(uint8_t data)
 	LOG("via1_out_b %02X\n", data);
 }
 
-WRITE_LINE_MEMBER(hhtiger_state::via_1_out_ca2)
+void hhtiger_state::via_1_out_ca2(int state)
 {
 	LOG("via1_out_ca2 %d\n", state);
 }
 
-WRITE_LINE_MEMBER(hhtiger_state::via_1_out_cb2)
+void hhtiger_state::via_1_out_cb2(int state)
 {
 	LOG("via1_out_cb2 %d\n", state);
 }
@@ -463,10 +455,11 @@ void hhtiger_state::hhtiger(machine_config &config)
 	m_maincpu->set_addrmap(AS_PROGRAM, &hhtiger_state::z80_mem);
 	m_maincpu->set_addrmap(AS_IO, &hhtiger_state::z80_io);
 	m_maincpu->set_daisy_config(daisy_chain_intf);
+	m_maincpu->busack_cb().set(m_dma, FUNC(z80dma_device::bai_w));
 
 	Z80DMA(config, m_dma, 16_MHz_XTAL / 4);
 	m_dma->out_int_callback().set_inputline(m_maincpu, INPUT_LINE_IRQ0);
-	m_dma->out_busreq_callback().set(FUNC(hhtiger_state::busreq_w));
+	m_dma->out_busreq_callback().set_inputline(m_maincpu, Z80_INPUT_LINE_BUSRQ);
 	m_dma->in_mreq_callback().set(FUNC(hhtiger_state::memory_read_byte));
 	m_dma->out_mreq_callback().set(FUNC(hhtiger_state::memory_write_byte));
 	m_dma->in_iorq_callback().set(FUNC(hhtiger_state::io_read_byte));
@@ -599,5 +592,5 @@ ROM_END
 
 
 /*    YEAR  NAME     PARENT  COMPAT   MACHINE  INPUT    CLASS          INIT        COMPANY               FULLNAME     FLAGS */
-COMP( 1983, hhtiger, 0,      0,       hhtiger, hhtiger, hhtiger_state, empty_init, "H/H Microcomputers", "H/H Tiger", MACHINE_IS_SKELETON )
+COMP( 1983, hhtiger, 0,      0,       hhtiger, hhtiger, hhtiger_state, empty_init, "H/H Microcomputers", "H/H Tiger", MACHINE_NO_SOUND | MACHINE_NOT_WORKING )
 

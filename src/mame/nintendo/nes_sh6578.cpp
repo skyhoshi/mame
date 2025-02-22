@@ -22,8 +22,8 @@
 #include "machine/bankdev.h"
 #include "machine/timer.h"
 
-#define LOG_DMA       (1U << 2)
-#define LOG_PPU       (1U << 1)
+#define LOG_DMA       (1U << 1)
+#define LOG_PPU       (1U << 2)
 
 //#define VERBOSE             (LOG_PPU)
 #define VERBOSE             (0)
@@ -54,9 +54,9 @@ public:
 	void init_nes_sh6578();
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 	virtual void io_w(uint8_t data);
 	virtual void extio_w(uint8_t data);
@@ -109,7 +109,7 @@ private:
 
 	uint8_t apu_read_mem(offs_t offset);
 
-	DECLARE_WRITE_LINE_MEMBER(apu_irq);
+	void apu_irq(int state);
 
 	int m_initial_startup_state;
 
@@ -125,8 +125,8 @@ private:
 
 	void do_dma();
 
-	void rom_map(address_map& map);
-	void nes_sh6578_map(address_map& map);
+	void rom_map(address_map &map) ATTR_COLD;
+	void nes_sh6578_map(address_map &map) ATTR_COLD;
 
 	//uint16_t get_tileaddress(uint8_t x, uint8_t y, bool ishigh);
 
@@ -161,7 +161,7 @@ public:
 
 protected:
 	virtual void extio_w(uint8_t data) override;
-	virtual void machine_reset() override;
+	virtual void machine_reset() override ATTR_COLD;
 };
 
 uint8_t nes_sh6578_state::bank_r(int bank, uint16_t offset)
@@ -444,7 +444,7 @@ void nes_sh6578_max10in1_state::extio_w(uint8_t data)
 
 
 
-WRITE_LINE_MEMBER(nes_sh6578_state::apu_irq)
+void nes_sh6578_state::apu_irq(int state)
 {
 	// unimplemented
 }

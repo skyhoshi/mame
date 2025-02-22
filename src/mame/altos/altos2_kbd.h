@@ -6,8 +6,8 @@
 
 **********************************************************************/
 
-#ifndef MAME_ALTOS_ALTOS2_KEYBOARD_H
-#define MAME_ALTOS_ALTOS2_KEYBOARD_H
+#ifndef MAME_ALTOS_ALTOS2_KBD_H
+#define MAME_ALTOS_ALTOS2_KBD_H
 
 #pragma once
 
@@ -30,25 +30,25 @@ public:
 	auto txd_callback() { return m_txd_callback.bind(); }
 
 	// serial line input
-	DECLARE_WRITE_LINE_MEMBER(rxd_w);
+	void rxd_w(int state);
 
 protected:
 	// device-level overrides
-	virtual void device_resolve_objects() override;
-	virtual void device_start() override;
-	virtual ioport_constructor device_input_ports() const override;
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual const tiny_rom_entry *device_rom_region() const override;
+	virtual void device_resolve_objects() override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
+	virtual ioport_constructor device_input_ports() const override ATTR_COLD;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual const tiny_rom_entry *device_rom_region() const override ATTR_COLD;
 
 private:
 	// MCU handlers
 	void leds_w(u8 data);
 	u8 p1_r();
 	void p2_w(u8 data);
-	DECLARE_WRITE_LINE_MEMBER(prog_w);
+	void prog_w(int state);
 
 	// address maps
-	void ext_map(address_map &map);
+	void ext_map(address_map &map) ATTR_COLD;
 
 	// object finders
 	required_device<mcs48_cpu_device> m_mcu;
@@ -68,4 +68,4 @@ private:
 // device type declarations
 DECLARE_DEVICE_TYPE(ALTOS2_KEYBOARD, altos2_keyboard_device)
 
-#endif // MAME_ALTOS_ALTOS2_KEYBOARD_H
+#endif // MAME_ALTOS_ALTOS2_KBD_H

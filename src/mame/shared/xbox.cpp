@@ -571,7 +571,7 @@ void xbox_base_state::help_command(const std::vector<std::string_view> &params)
 	con.printf("  xbox waitvblank -- Toggle support for wait vblank method\n");
 	con.printf("  xbox grab_texture,<type>,<filename> -- Save to <filename> the next used texture of type <type>\n");
 	con.printf("  xbox grab_vprog,<filename> -- save current vertex program instruction slots to <filename>\n");
-	con.printf("  xbox vprogdis,<address>,<length>[,<type>] -- disassemble <lenght> vertex program instructions at <address> of <type>\n");
+	con.printf("  xbox vprogdis,<address>,<length>[,<type>] -- disassemble <length> vertex program instructions at <address> of <type>\n");
 	con.printf("  xbox vdeclaration,<address> -- decode vertex program declaration at <address>\n");
 	con.printf("  xbox help -- this list\n");
 }
@@ -632,7 +632,7 @@ void xbox_base_state::debug_generate_irq(int irq, bool active)
 	mcpxlpc->debug_generate_irq(irq, state);
 }
 
-WRITE_LINE_MEMBER(xbox_base_state::vblank_callback)
+void xbox_base_state::vblank_callback(int state)
 {
 	nvidia_nv2a->vblank_callback(state);
 }
@@ -646,7 +646,7 @@ uint32_t xbox_base_state::screen_update_callback(screen_device &screen, bitmap_r
  * PIC & PIT
  */
 
-WRITE_LINE_MEMBER(xbox_base_state::maincpu_interrupt)
+void xbox_base_state::maincpu_interrupt(int state)
 {
 	m_maincpu->set_input_line(0, state ? HOLD_LINE : CLEAR_LINE);
 }

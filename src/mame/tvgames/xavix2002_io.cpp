@@ -13,9 +13,9 @@ DEFINE_DEVICE_TYPE(XAVIX2002IO, xavix2002_io_device, "xavix2002io", "XaviX 2002 
 
 xavix2002_io_device::xavix2002_io_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
 	: device_t(mconfig, XAVIX2002IO, tag, owner, clock)
-	, m_in0_cb(*this)
-	, m_in1_cb(*this)
-	, m_in2_cb(*this)
+	, m_in0_cb(*this, 0xff)
+	, m_in1_cb(*this, 0xff)
+	, m_in2_cb(*this, 0xff)
 	, m_out0_cb(*this)
 	, m_out1_cb(*this)
 	, m_out2_cb(*this)
@@ -24,14 +24,6 @@ xavix2002_io_device::xavix2002_io_device(const machine_config &mconfig, const ch
 
 void xavix2002_io_device::device_start()
 {
-	m_in0_cb.resolve_safe(0xff);
-	m_in1_cb.resolve_safe(0xff);
-	m_in2_cb.resolve_safe(0xff);
-
-	m_out0_cb.resolve_safe();
-	m_out1_cb.resolve_safe();
-	m_out2_cb.resolve_safe();
-
 	save_item(NAME(m_sx_pio_dir));
 	save_item(NAME(m_sx_pio_out));
 }
@@ -52,8 +44,8 @@ void xavix2002_io_device::pio_dir_w(offs_t offset, uint8_t data)
 	if (offset < 3)
 	{
 		m_sx_pio_dir[offset] = data;
+		// update output port after direction change?
 		pio_out_w(offset, m_sx_pio_out[offset]);
-		// update port?
 	}
 }
 
@@ -78,15 +70,11 @@ void xavix2002_io_device::pio_out_w(offs_t offset, uint8_t data)
 	{
 		m_sx_pio_out[offset] = data;
 
-		// TODO: look at direction register
-
-		uint8_t outdata = m_sx_pio_out[offset] & m_sx_pio_dir[offset];
-
 		switch (offset)
 		{
-			case 0: m_out0_cb(outdata); break;
-			case 1: m_out1_cb(outdata); break;
-			case 2: m_out2_cb(outdata); break;
+			case 0: m_out0_cb(0, m_sx_pio_out[offset], m_sx_pio_dir[offset]); break;
+			case 1: m_out1_cb(0, m_sx_pio_out[offset], m_sx_pio_dir[offset]); break;
+			case 2: m_out2_cb(0, m_sx_pio_out[offset], m_sx_pio_dir[offset]); break;
 			default: break;
 		}
 	}
@@ -115,13 +103,14 @@ uint8_t xavix2002_io_device::pio_in_r(offs_t offset)
 
 	switch (offset)
 	{
-		case 0: ret = m_in0_cb(); break;
-		case 1: ret = m_in1_cb(); break;
-		case 2: ret = m_in2_cb(); break;
+		case 0: ret = m_in0_cb(0, m_sx_pio_dir[offset]); break;
+		case 1: ret = m_in1_cb(0, m_sx_pio_dir[offset]); break;
+		case 2: ret = m_in2_cb(0, m_sx_pio_dir[offset]); break;
 		default: ret = 0x00; break;
 	}
 
-	// mask with direction register before returning
+	ret &= ~m_sx_pio_dir[offset];
+	ret |= m_sx_pio_out[offset] & m_sx_pio_dir[offset];
 
 	return ret;
 }

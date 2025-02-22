@@ -102,20 +102,20 @@ public:
 	DECLARE_INPUT_CHANGED_MEMBER(reset_button);
 
 private:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 	u8 kbd_r();
 	u8 latch_r();
 	void tec1_digit_w(u8 data);
 	void tecjmon_digit_w(u8 data);
 	void segment_w(u8 data);
-	DECLARE_WRITE_LINE_MEMBER(da_w);
+	void da_w(int state);
 	bool m_key_pressed = 0;
 	u8 m_seg = 0U;
 	u8 m_digit = 0U;
-	void tec1_io(address_map &map);
-	void tec1_map(address_map &map);
-	void tecjmon_io(address_map &map);
-	void tecjmon_map(address_map &map);
+	void tec1_io(address_map &map) ATTR_COLD;
+	void tec1_map(address_map &map) ATTR_COLD;
+	void tecjmon_io(address_map &map) ATTR_COLD;
+	void tecjmon_map(address_map &map) ATTR_COLD;
 	required_device<cpu_device> m_maincpu;
 	required_device<speaker_sound_device> m_speaker;
 	optional_device<cassette_image_device> m_cass;
@@ -206,7 +206,7 @@ u8 tec1_state::kbd_r()
 	return m_kb->read() | m_io_shift->read();
 }
 
-WRITE_LINE_MEMBER( tec1_state::da_w )
+void tec1_state::da_w(int state)
 {
 	m_key_pressed = state;
 	m_maincpu->set_input_line(INPUT_LINE_NMI, state ? ASSERT_LINE : CLEAR_LINE);
@@ -310,7 +310,7 @@ static INPUT_PORTS_START( tec1 )
 	PORT_BIT(0xc0, IP_ACTIVE_LOW, IPT_UNUSED)
 
 	PORT_START("RESET")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_NAME("RESET") PORT_CODE(KEYCODE_LALT) PORT_CHANGED_MEMBER(DEVICE_SELF, tec1_state, reset_button, 0)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_NAME("RESET") PORT_CODE(KEYCODE_LALT) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(tec1_state::reset_button), 0)
 INPUT_PORTS_END
 
 INPUT_CHANGED_MEMBER(tec1_state::reset_button)

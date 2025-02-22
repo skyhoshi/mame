@@ -58,8 +58,8 @@ public:
 	void driver_init();
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	// devices
@@ -90,12 +90,10 @@ private:
 
 	DECO16IC_BANK_CB_MEMBER(bank_callback);
 
-	void main_map(address_map &map);
-	void sound_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
 };
 
-
-// video
 
 /****************************************************************************
 
@@ -187,13 +185,11 @@ uint32_t vaportra_state::screen_update(screen_device &screen, bitmap_ind16 &bitm
 		m_deco_tilegen[1]->tilemap_2_draw(screen, bitmap, cliprect, 0, 4);
 	}
 
-	m_spritegen->draw_sprites(screen, bitmap, cliprect, m_gfxdecode->gfx(4), m_spriteram->buffer(), 0x800 / 2);
+	m_spritegen->draw_sprites(screen, bitmap, cliprect, m_spriteram->buffer(), 0x800 / 2);
 	m_deco_tilegen[0]->tilemap_1_draw(screen, bitmap, cliprect, 0, 0);
 	return 0;
 }
 
-
-// machine
 
 /******************************************************************************/
 
@@ -272,7 +268,7 @@ static INPUT_PORTS_START( vaportra )
 	PORT_BIT( 0x0001, IP_ACTIVE_LOW, IPT_COIN1 )
 	PORT_BIT( 0x0002, IP_ACTIVE_LOW, IPT_COIN2 )
 	PORT_BIT( 0x0004, IP_ACTIVE_LOW, IPT_SERVICE1 )
-	PORT_BIT( 0x0008, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_VBLANK("screen")
+	PORT_BIT( 0x0008, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("screen", FUNC(screen_device::vblank))
 	PORT_BIT( 0x0010, IP_ACTIVE_LOW, IPT_UNKNOWN )
 	PORT_BIT( 0x0020, IP_ACTIVE_LOW, IPT_UNKNOWN )
 	PORT_BIT( 0x0040, IP_ACTIVE_LOW, IPT_UNKNOWN )
@@ -350,11 +346,14 @@ static const gfx_layout tilelayout =
 };
 
 static GFXDECODE_START( gfx_vaportra )
-	GFXDECODE_ENTRY( "tiles1",  0x000000, charlayout,    0x000, 0x500 )    // Characters 8x8
-	GFXDECODE_ENTRY( "tiles1",  0x000000, tilelayout,    0x000, 0x500 )    // Tiles 16x16
-	GFXDECODE_ENTRY( "tiles2",  0x000000, charlayout,    0x000, 0x500 )    // Characters 8x8
-	GFXDECODE_ENTRY( "tiles2",  0x000000, tilelayout,    0x000, 0x500 )    // Tiles 16x16 // ok
-	GFXDECODE_ENTRY( "sprites", 0x000000, tilelayout,    0x100, 16 )       // 16x16
+	GFXDECODE_ENTRY( "tiles1",  0, charlayout, 0x000, 0x500 )    // Characters 8x8
+	GFXDECODE_ENTRY( "tiles1",  0, tilelayout, 0x000, 0x500 )    // Tiles 16x16
+	GFXDECODE_ENTRY( "tiles2",  0, charlayout, 0x000, 0x500 )    // Characters 8x8
+	GFXDECODE_ENTRY( "tiles2",  0, tilelayout, 0x000, 0x500 )    // Tiles 16x16 // ok
+GFXDECODE_END
+
+static GFXDECODE_START( gfx_vaportra_spr )
+	GFXDECODE_ENTRY( "sprites", 0, tilelayout, 0x100, 16 )       // 16x16
 GFXDECODE_END
 
 /******************************************************************************/
@@ -427,7 +426,7 @@ void vaportra_state::vaportra(machine_config &config)
 	m_deco_tilegen[1]->set_pf12_16x16_bank(3);
 	m_deco_tilegen[1]->set_gfxdecode_tag(m_gfxdecode);
 
-	DECO_MXC06(config, m_spritegen, 0);
+	DECO_MXC06(config, m_spritegen, 0, m_palette, gfx_vaportra_spr);
 	m_spritegen->set_colpri_callback(FUNC(vaportra_state::colpri_cb));
 
 	// sound hardware

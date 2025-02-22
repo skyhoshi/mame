@@ -1277,6 +1277,7 @@ layout_element::layout_element(environment &env, util::xml::data_node const &ele
 	, m_defstate(env.get_attribute_int(elemnode, "defstate", -1))
 	, m_statemask(0)
 	, m_foldhigh(false)
+	, m_invalidated(false)
 {
 	// parse components in order
 	bool first = true;
@@ -1647,6 +1648,17 @@ render_texture *layout_element::state_texture(int state)
 
 
 //-------------------------------------------------
+//  set_draw_callback - set handler called after
+//  drawing components
+//-------------------------------------------------
+
+void layout_element::set_draw_callback(draw_delegate &&handler)
+{
+	m_draw = std::move(handler);
+}
+
+
+//-------------------------------------------------
 //  preload - perform expensive loading upfront
 //  for all components
 //-------------------------------------------------
@@ -1655,6 +1667,25 @@ void layout_element::preload()
 {
 	for (component::ptr const &curcomp : m_complist)
 		curcomp->preload(machine());
+}
+
+
+//-------------------------------------------------
+//  prepare - perform additional tasks before
+//  drawing a frame
+//-------------------------------------------------
+
+void layout_element::prepare()
+{
+	if (m_invalidated)
+	{
+		m_invalidated = false;
+		for (texture &tex : m_elemtex)
+		{
+			machine().render().texture_free(tex.m_texture);
+			tex.m_texture = nullptr;
+		}
+	}
 }
 
 
@@ -1674,6 +1705,10 @@ void layout_element::element_scale(bitmap_argb32 &dest, bitmap_argb32 &source, c
 		if ((elemtex.m_state & curcomp->statemask()) == curcomp->stateval())
 			curcomp->draw(elemtex.m_element->machine(), dest, elemtex.m_state);
 	}
+
+	// if there's a callback for additional drawing, invoke it
+	if (!elemtex.m_element->m_draw.isnull())
+		elemtex.m_element->m_draw(elemtex.m_state, dest);
 }
 
 
@@ -1755,10 +1790,10 @@ private:
 			{
 				u8 const *const src(reinterpret_cast<u8 const *>(dst));
 				rgb_t const d(
-						u8((float(src[3]) * c.a) + 0.5),
-						u8((float(src[0]) * c.r) + 0.5),
-						u8((float(src[1]) * c.g) + 0.5),
-						u8((float(src[2]) * c.b) + 0.5));
+						u8((float(src[3]) * c.a) + 0.5F),
+						u8((float(src[0]) * c.r) + 0.5F),
+						u8((float(src[1]) * c.g) + 0.5F),
+						u8((float(src[2]) * c.b) + 0.5F));
 				*dst = d;
 				havealpha = havealpha || (d.a() < 255U);
 			}
@@ -2034,17 +2069,12 @@ private:
 			return;
 		}
 		svgbuf[len] = '\0';
-		for (char *ptr = svgbuf.get(); len; )
+		size_t actual;
+		std::tie(filerr, actual) = read(file, svgbuf.get(), len);
+		if (filerr || (actual < len))
 		{
-			size_t read;
-			filerr = file.read(ptr, size_t(len), read);
-			if (filerr || !read)
-			{
-				osd_printf_warning("Error reading component image '%s'\n", m_imagefile);
-				return;
-			}
-			ptr += read;
-			len -= read;
+			osd_printf_warning("Error reading component image '%s'\n", m_imagefile);
+			return;
 		}
 		parse_svg(svgbuf.get());
 	}
@@ -2117,7 +2147,7 @@ protected:
 			for (u32 y = bounds.top(); y <= bounds.bottom(); ++y)
 				std::fill_n(&dest.pix(y, bounds.left()), width, f);
 		}
-		else if (c.a)
+		else
 		{
 			// compute premultiplied color
 			u32 const a(c.a * 255.0F);
@@ -2125,6 +2155,9 @@ protected:
 			u32 const g(u32(c.g * (255.0F * 255.0F)) * a);
 			u32 const b(u32(c.b * (255.0F * 255.0F)) * a);
 			u32 const inva(255 - a);
+
+			if (!a)
+				return;
 
 			// we're translucent, add in the destination pixel contribution
 			for (u32 y = bounds.top(); y <= bounds.bottom(); ++y)
@@ -2159,6 +2192,7 @@ public:
 		u32 const g(c.g * (255.0F * 255.0F) * a);
 		u32 const b(c.b * (255.0F * 255.0F) * a);
 		u32 const inva(255 - a);
+
 		if (!a)
 			return;
 
@@ -2268,17 +2302,13 @@ public:
 					if ((x >= minfill) && (x <= maxfill))
 					{
 						if (255 <= a)
-						{
 							dst = std::fill_n(dst, maxfill - x + 1, f);
-							x = maxfill;
-						}
 						else
-						{
 							while (x++ <= maxfill)
 								alpha_blend(*dst++, a, r, g, b, inva);
-							--x;
-						}
+
 						--dst;
+						x = maxfill;
 					}
 					else
 					{
@@ -2380,17 +2410,13 @@ public:
 					if ((x >= minfill) && (x <= maxfill))
 					{
 						if (255 <= a)
-						{
 							dst = std::fill_n(dst, maxfill - x + 1, f);
-							x = maxfill;
-						}
 						else
-						{
 							while (x++ <= maxfill)
 								alpha_blend(*dst++, a, r, g, b, inva);
-							--x;
-						}
+
 						--dst;
+						x = maxfill;
 					}
 					else
 					{
@@ -3490,7 +3516,7 @@ layout_element::texture::texture(texture &&that) : texture()
 
 layout_element::texture::~texture()
 {
-	if (m_element != nullptr)
+	if (m_element)
 		m_element->machine().render().texture_free(m_texture);
 }
 
@@ -3692,12 +3718,6 @@ void layout_element::component::draw_text(
 		int align,
 		const render_color &color)
 {
-	// compute premultiplied color
-	u32 const r(color.r * 255.0f);
-	u32 const g(color.g * 255.0f);
-	u32 const b(color.b * 255.0f);
-	u32 const a(color.a * 255.0f);
-
 	// get the width of the string
 	float aspect = 1.0f;
 	s32 width;
@@ -3762,12 +3782,7 @@ void layout_element::component::draw_text(
 						u32 spix = rgb_t(src[x]).a();
 						if (spix != 0)
 						{
-							rgb_t dpix = d[effx];
-							u32 ta = (a * (spix + 1)) >> 8;
-							u32 tr = (r * ta + dpix.r() * (0x100 - ta)) >> 8;
-							u32 tg = (g * ta + dpix.g() * (0x100 - ta)) >> 8;
-							u32 tb = (b * ta + dpix.b() * (0x100 - ta)) >> 8;
-							d[effx] = rgb_t(tr, tg, tb);
+							alpha_blend(d[effx], color, spix / 255.0);
 						}
 					}
 				}
@@ -3986,9 +4001,20 @@ layout_view::layout_view(
 	: m_effaspect(1.0f)
 	, m_name(make_name(env, viewnode))
 	, m_unqualified_name(env.get_attribute_string(viewnode, "name"))
+	, m_elemmap(elemmap)
 	, m_defvismask(0U)
 	, m_has_art(false)
+	, m_show_ptr(false)
+	, m_ptr_time_out(true) // FIXME: add attribute for this
+	, m_exp_show_ptr(-1)
 {
+	// check for explicit pointer display setting
+	if (viewnode.get_attribute_string_ptr("showpointers"))
+	{
+		m_show_ptr = env.get_attribute_bool(viewnode, "showpointers", false);
+		m_exp_show_ptr = m_show_ptr ? 1 : 0;
+	}
+
 	// parse the layout
 	m_expbounds.x0 = m_expbounds.y0 = m_expbounds.x1 = m_expbounds.y1 = 0;
 	view_environment local(env, m_name.c_str());
@@ -4132,6 +4158,21 @@ bool layout_view::has_visible_screen(screen_device const &screen) const
 
 
 //-------------------------------------------------
+//  prepare_items - perform additional tasks
+//  before rendering a frame
+//-------------------------------------------------
+
+void layout_view::prepare_items()
+{
+	if (!m_prepare_items.isnull())
+		m_prepare_items();
+
+	for (auto &[name, element] : m_elemmap)
+		element.prepare();
+}
+
+
+//-------------------------------------------------
 //  recompute - recompute the bounds and aspect
 //  ratio of a view and all of its contained items
 //-------------------------------------------------
@@ -4151,6 +4192,7 @@ void layout_view::recompute(u32 visibility_mask, bool zoom_to_screen)
 	// loop over items and filter by visibility mask
 	bool first = true;
 	bool scrfirst = true;
+	bool haveinput = false;
 	for (item &curitem : m_items)
 	{
 		if ((visibility_mask & curitem.visibility_mask()) == curitem.visibility_mask())
@@ -4182,8 +4224,14 @@ void layout_view::recompute(u32 visibility_mask, bool zoom_to_screen)
 			// accumulate interactive elements
 			if (!curitem.clickthrough() || curitem.has_input())
 				m_interactive_items.emplace_back(curitem);
+			if (curitem.has_input())
+				haveinput = true;
 		}
 	}
+
+	// if show pointers isn't explicitly, update it based on visible items
+	if (0 > m_exp_show_ptr)
+		m_show_ptr = haveinput;
 
 	// if we have an explicit bounds, override it
 	if (m_expbounds.x1 > m_expbounds.x0)
@@ -4224,6 +4272,7 @@ void layout_view::recompute(u32 visibility_mask, bool zoom_to_screen)
 	// sort edges of interactive items
 	LOGMASKED(LOG_INTERACTIVE_ITEMS, "Recalculated view '%s' with %u interactive items\n",
 			name(), m_interactive_items.size());
+	//std::reverse(m_interactive_items.begin(), m_interactive_items.end()); TODO: flip hit test order to match visual order
 	m_interactive_edges_x.reserve(m_interactive_items.size() * 2);
 	m_interactive_edges_y.reserve(m_interactive_items.size() * 2);
 	for (unsigned i = 0; m_interactive_items.size() > i; ++i)
@@ -4251,6 +4300,29 @@ void layout_view::recompute(u32 visibility_mask, bool zoom_to_screen)
 	// additional actions typically supplied by script
 	if (!m_recomputed.isnull())
 		m_recomputed();
+}
+
+
+//-------------------------------------------------
+//  set_show_pointers - set whether pointers
+//  should be displayed
+//-------------------------------------------------
+
+void layout_view::set_show_pointers(bool value) noexcept
+{
+	m_show_ptr = value;
+	m_exp_show_ptr = value ? 1 : 0;
+}
+
+
+//-------------------------------------------------
+//  set_pointers_time_out - set whether pointers
+//  should be hidden after inactivity
+//-------------------------------------------------
+
+void layout_view::set_hide_inactive_pointers(bool value) noexcept
+{
+	m_ptr_time_out = value;
 }
 
 
@@ -4284,6 +4356,50 @@ void layout_view::set_preload_callback(preload_delegate &&handler)
 void layout_view::set_recomputed_callback(recomputed_delegate &&handler)
 {
 	m_recomputed = std::move(handler);
+}
+
+
+//-------------------------------------------------
+//  set_pointer_updated_callback - set handler
+//  called for pointer input
+//-------------------------------------------------
+
+void layout_view::set_pointer_updated_callback(pointer_updated_delegate &&handler)
+{
+	m_pointer_updated = std::move(handler);
+}
+
+
+//-------------------------------------------------
+//  set_pointer_left_callback - set handler for
+//  pointer leaving normally
+//-------------------------------------------------
+
+void layout_view::set_pointer_left_callback(pointer_left_delegate &&handler)
+{
+	m_pointer_left = std::move(handler);
+}
+
+
+//-------------------------------------------------
+//  set_pointer_aborted_callback - set handler for
+//  pointer leaving abnormally
+//-------------------------------------------------
+
+void layout_view::set_pointer_aborted_callback(pointer_left_delegate &&handler)
+{
+	m_pointer_aborted = std::move(handler);
+}
+
+
+//-------------------------------------------------
+//  set_forget_pointers_callback - set handler for
+//  abandoning pointer input
+//-------------------------------------------------
+
+void layout_view::set_forget_pointers_callback(forget_pointers_delegate &&handler)
+{
+	m_forget_pointers = std::move(handler);
 }
 
 

@@ -60,8 +60,12 @@
 #include "machine/eeprompar.h"
 #include "speaker.h"
 
+#define LOG_PROTECTION      (1U << 1)
 
-#define LOG_PROTECTION      (0)
+#define VERBOSE (0)
+#include "logmacro.h"
+
+
 #define HACK_TMEK_CONTROLS  (0)
 
 
@@ -78,7 +82,7 @@ INTERRUPT_GEN_MEMBER(atarigt_state::scanline_int_gen)
 }
 
 
-WRITE_LINE_MEMBER(atarigt_state::video_int_write_line)
+void atarigt_state::video_int_write_line(int state)
 {
 	if (state)
 	{
@@ -211,7 +215,7 @@ uint8_t atarigt_state::analog_port_r(offs_t offset)
 		return 0xff;
 	}
 #else
-	uint8_t result = m_adc->data_r();
+	uint8_t const result = m_adc->data_r();
 	if (!machine().side_effects_disabled())
 		m_adc->address_offset_start_w(offset, 0);
 	return result;
@@ -251,13 +255,13 @@ void atarigt_state::latch_w(offs_t offset, uint32_t data, uint32_t mem_mask)
 		// tmek20 needs following otherwise will cause a Cage CPU crash
 		// that eventually turns into a MAME hardlock.
 		// https://mametesters.org/view.php?id=7146
-		m_cage->reset_w(!BIT(data, 21));
+		m_cage->reset_w(BIT(~data, 21));
 		// sndres may reset internals instead?
 		// 0 in tmek, 1 in primrage
 		// also cfr. m_cage->control_w
-		//cage_reset_w(space, data & 0x00100000);
-		machine().bookkeeping().coin_counter_w(0, data & 0x00080000);
-		machine().bookkeeping().coin_counter_w(1, data & 0x00010000);
+		//cage_reset_w(space, BIT(data, 20));
+		machine().bookkeeping().coin_counter_w(0, BIT(data, 19));
+		machine().bookkeeping().coin_counter_w(1, BIT(data, 16));
 	}
 }
 
@@ -266,7 +270,7 @@ void atarigt_state::mo_command_w(offs_t offset, uint32_t data, uint32_t mem_mask
 {
 	COMBINE_DATA(m_mo_command);
 	if (ACCESSING_BITS_0_15)
-		m_rle->command_write(((data & 0xffff) == 2) ? ATARIRLE_COMMAND_CHECKSUM : ATARIRLE_COMMAND_DRAW);
+		m_rle->command_write(((data & 0xffff) == 2) ? atari_rle_objects_device::COMMAND_CHECKSUM : atari_rle_objects_device::COMMAND_DRAW);
 }
 
 
@@ -332,7 +336,7 @@ void atarigt_state::tmek_protection_w(address_space &space, offs_t offset, uint1
         Read ($38488)
 */
 
-	if (LOG_PROTECTION) logerror("%s:Protection W@%06X = %04X\n", machine().describe_context(), offset, data);
+	LOGMASKED(LOG_PROTECTION, "%s:Protection W@%06X = %04X\n", machine().describe_context(), offset, data);
 
 	/* track accesses */
 	tmek_update_mode(offset);
@@ -347,10 +351,13 @@ void atarigt_state::tmek_protection_w(address_space &space, offs_t offset, uint1
 
 void atarigt_state::tmek_protection_r(address_space &space, offs_t offset, uint16_t *data)
 {
-	if (LOG_PROTECTION) logerror("%s:Protection R@%06X\n", machine().describe_context(), offset);
+	if (!machine().side_effects_disabled())
+	{
+		LOGMASKED(LOG_PROTECTION, "%s:Protection R@%06X\n", machine().describe_context(), offset);
 
-	/* track accesses */
-	tmek_update_mode(offset);
+		/* track accesses */
+		tmek_update_mode(offset);
+	}
 
 	/* handle specific reads */
 	switch (offset)
@@ -387,21 +394,21 @@ void atarigt_state::primrage_update_mode(offs_t offset)
 		/* this is from the code at $20f90 */
 		if (m_protaddr[1] == 0xdcc7c4 && m_protaddr[2] == 0xdcc7c4 && m_protaddr[3] == 0xdc4010)
 		{
-			if (LOG_PROTECTION) logerror("prot:Entering mode 1\n");
+			LOGMASKED(LOG_PROTECTION, "prot:Entering mode 1\n");
 			m_protmode = 1;
 		}
 
 		/* this is from the code at $27592 */
 		if (m_protaddr[0] == 0xdcc7ca && m_protaddr[1] == 0xdcc7ca && m_protaddr[2] == 0xdcc7c6 && m_protaddr[3] == 0xdc4022)
 		{
-			if (LOG_PROTECTION) logerror("prot:Entering mode 2\n");
+			LOGMASKED(LOG_PROTECTION, "prot:Entering mode 2\n");
 			m_protmode = 2;
 		}
 
 		/* this is from the code at $3d8dc */
 		if (m_protaddr[0] == 0xdcc7c0 && m_protaddr[1] == 0xdcc7c0 && m_protaddr[2] == 0xdc80f2 && m_protaddr[3] == 0xdc7af2)
 		{
-			if (LOG_PROTECTION) logerror("prot:Entering mode 3\n");
+			LOGMASKED(LOG_PROTECTION, "prot:Entering mode 3\n");
 			m_protmode = 3;
 		}
 	}
@@ -411,20 +418,17 @@ void atarigt_state::primrage_update_mode(offs_t offset)
 
 void atarigt_state::primrage_protection_w(address_space &space, offs_t offset, uint16_t data)
 {
-	if (LOG_PROTECTION)
-	{
-	uint32_t pc = m_maincpu->pcbase();
-	switch (pc)
+	switch (m_maincpu->pcbase())
 	{
 		/* protection code from 20f90 - 21000 */
 		case 0x20fba:
 			if (offset % 16 == 0) logerror("\n   ");
-			logerror("W@%06X(%04X) ", offset, data);
+			LOGMASKED(LOG_PROTECTION, "W@%06X(%04X) ", offset, data);
 			break;
 
 		/* protection code from 27592 - 27664 */
 		case 0x275f6:
-			logerror("W@%06X(%04X) ", offset, data);
+			LOGMASKED(LOG_PROTECTION, "W@%06X(%04X) ", offset, data);
 			break;
 
 		/* protection code from 3d8dc - 3d95a */
@@ -432,23 +436,22 @@ void atarigt_state::primrage_protection_w(address_space &space, offs_t offset, u
 		case 0x3d932:
 		case 0x3d938:
 		case 0x3d93e:
-			logerror("W@%06X(%04X) ", offset, data);
+			LOGMASKED(LOG_PROTECTION, "W@%06X(%04X) ", offset, data);
 			break;
 		case 0x3d944:
-			logerror("W@%06X(%04X) - done\n", offset, data);
+			LOGMASKED(LOG_PROTECTION, "W@%06X(%04X) - done\n", offset, data);
 			break;
 
 		/* protection code from 437fa - 43860 */
 		case 0x43830:
 		case 0x43838:
-			logerror("W@%06X(%04X) ", offset, data);
+			LOGMASKED(LOG_PROTECTION, "W@%06X(%04X) ", offset, data);
 			break;
 
 		/* catch anything else */
 		default:
-			logerror("%s:Unknown protection W@%06X = %04X\n", machine().describe_context(), offset, data);
+			LOGMASKED(LOG_PROTECTION, "%s:Unknown protection W@%06X = %04X\n", machine().describe_context(), offset, data);
 			break;
-	}
 	}
 
 /* mask = 0x78fff */
@@ -463,7 +466,7 @@ void atarigt_state::primrage_protection_w(address_space &space, offs_t offset, u
 	if (m_protmode == 2)
 	{
 		int temp = (offset - 0xdc7800) >> 1;
-		if (LOG_PROTECTION) logerror("prot:mode 2 param = %04X\n", temp);
+		LOGMASKED(LOG_PROTECTION, "prot:mode 2 param = %04X\n", temp);
 		m_protresult = temp * 0x6915 + 0x6915;
 	}
 
@@ -471,7 +474,7 @@ void atarigt_state::primrage_protection_w(address_space &space, offs_t offset, u
 	{
 		if (offset == 0xdc4700)
 		{
-			if (LOG_PROTECTION) logerror("prot:Clearing mode 3\n");
+			LOGMASKED(LOG_PROTECTION, "prot:Clearing mode 3\n");
 			m_protmode = 0;
 		}
 	}
@@ -481,25 +484,29 @@ void atarigt_state::primrage_protection_w(address_space &space, offs_t offset, u
 
 void atarigt_state::primrage_protection_r(address_space &space, offs_t offset, uint16_t *data)
 {
-	/* track accesses */
-	primrage_update_mode(offset);
+	if (!machine().side_effects_disabled())
+	{
+		/* track accesses */
+		primrage_update_mode(offset);
+	}
 
-if (LOG_PROTECTION)
-{
-	uint32_t pc = m_maincpu->pcbase();
+	uint32_t const pc = m_maincpu->pcbase();
 	uint32_t p1, p2, a6;
 	switch (pc)
 	{
 		/* protection code from 20f90 - 21000 */
 		case 0x20f90:
-			logerror("Known Protection @ 20F90: R@%06X ", offset);
+			if (!machine().side_effects_disabled())
+				LOGMASKED(LOG_PROTECTION, "Known Protection @ 20F90: R@%06X ", offset);
 			break;
 		case 0x20f98:
 		case 0x20fa0:
-			logerror("R@%06X ", offset);
+			if (!machine().side_effects_disabled())
+				LOGMASKED(LOG_PROTECTION, "R@%06X ", offset);
 			break;
 		case 0x20fcc:
-			logerror("R@%06X - done\n", offset);
+			if (!machine().side_effects_disabled())
+				LOGMASKED(LOG_PROTECTION, "R@%06X - done\n", offset);
 			break;
 
 		/* protection code from 27592 - 27664 */
@@ -509,50 +516,58 @@ if (LOG_PROTECTION)
 			a6 = m_maincpu->state_int(M68K_A6);
 			p1 = (space.read_word(a6+8) << 16) | space.read_word(a6+10);
 			p2 = (space.read_word(a6+12) << 16) | space.read_word(a6+14);
-			logerror("Known Protection @ 275BC(%08X, %08X): R@%06X ", p1, p2, offset);
+			if (!machine().side_effects_disabled())
+				LOGMASKED(LOG_PROTECTION, "Known Protection @ 275BC(%08X, %08X): R@%06X ", p1, p2, offset);
 			break;
 		case 0x275d2:
 		case 0x275d8:
 		case 0x275de:
 		case 0x2761e:
 		case 0x2762e:
-			logerror("R@%06X ", offset);
+			if (!machine().side_effects_disabled())
+				LOGMASKED(LOG_PROTECTION, "R@%06X ", offset);
 			break;
 		case 0x2763e:
-			logerror("R@%06X - done\n", offset);
+			if (!machine().side_effects_disabled())
+				LOGMASKED(LOG_PROTECTION, "R@%06X - done\n", offset);
 			break;
 
 		/* protection code from 3d8dc - 3d95a */
 		case 0x3d8f4:
 			a6 = m_maincpu->state_int(M68K_A6);
 			p1 = (space.read_word(a6+12) << 16) | space.read_word(a6+14);
-			logerror("Known Protection @ 3D8F4(%08X): R@%06X ", p1, offset);
+			if (!machine().side_effects_disabled())
+				LOGMASKED(LOG_PROTECTION, "Known Protection @ 3D8F4(%08X): R@%06X ", p1, offset);
 			break;
 		case 0x3d8fa:
 		case 0x3d90e:
-			logerror("R@%06X ", offset);
+			if (!machine().side_effects_disabled())
+				LOGMASKED(LOG_PROTECTION, "R@%06X ", offset);
 			break;
 
 		/* protection code from 437fa - 43860 */
 		case 0x43814:
 			a6 = m_maincpu->state_int(M68K_A6);
 			p1 = space.read_dword(a6+14) & 0xffffff;
-			logerror("Known Protection @ 43814(%08X): R@%06X ", p1, offset);
+			if (!machine().side_effects_disabled())
+				LOGMASKED(LOG_PROTECTION, "Known Protection @ 43814(%08X): R@%06X ", p1, offset);
 			break;
 		case 0x4381c:
 		case 0x43840:
-			logerror("R@%06X ", offset);
+			if (!machine().side_effects_disabled())
+				LOGMASKED(LOG_PROTECTION, "R@%06X ", offset);
 			break;
 		case 0x43848:
-			logerror("R@%06X - done\n", offset);
+			if (!machine().side_effects_disabled())
+				LOGMASKED(LOG_PROTECTION, "R@%06X - done\n", offset);
 			break;
 
 		/* catch anything else */
 		default:
-			logerror("%s:Unknown protection R@%06X\n", machine().describe_context(), offset);
+			if (!machine().side_effects_disabled())
+				LOGMASKED(LOG_PROTECTION, "%s:Unknown protection R@%06X\n", machine().describe_context(), offset);
 			break;
 	}
-}
 
 	/* handle specific reads */
 	switch (offset)
@@ -570,16 +585,22 @@ if (LOG_PROTECTION)
 			if (m_protmode == 2)
 			{
 				*data = m_protresult;
-				m_protmode = 0;
-			if (LOG_PROTECTION) logerror("prot:Clearing mode 2\n");
+				if (!machine().side_effects_disabled())
+				{
+					m_protmode = 0;
+					LOGMASKED(LOG_PROTECTION, "prot:Clearing mode 2\n");
+				}
 			}
 			break;
 
 		case 0xdcc7c4:
 			if (m_protmode == 1)
 			{
-				m_protmode = 0;
-			if (LOG_PROTECTION) logerror("prot:Clearing mode 1\n");
+				if (!machine().side_effects_disabled())
+				{
+					m_protmode = 0;
+					LOGMASKED(LOG_PROTECTION, "prot:Clearing mode 1\n");
+				}
 			}
 			break;
 	}
@@ -595,7 +616,7 @@ if (LOG_PROTECTION)
 
 uint32_t atarigt_state::colorram_protection_r(address_space &space, offs_t offset, uint32_t mem_mask)
 {
-	offs_t address = 0xd80000 + offset * 4;
+	offs_t const address = 0xd80000 + offset * 4;
 	uint32_t result32 = 0;
 	uint16_t result;
 
@@ -618,7 +639,7 @@ uint32_t atarigt_state::colorram_protection_r(address_space &space, offs_t offse
 
 void atarigt_state::colorram_protection_w(address_space &space, offs_t offset, uint32_t data, uint32_t mem_mask)
 {
-	offs_t address = 0xd80000 + offset * 4;
+	offs_t const address = 0xd80000 + offset * 4;
 
 	if (ACCESSING_BITS_16_31)
 	{
@@ -705,7 +726,7 @@ static INPUT_PORTS_START( common )
 	PORT_BIT( 0x0008, IP_ACTIVE_LOW, IPT_UNUSED )   /* A2D.EOC */
 	PORT_BIT( 0x0030, IP_ACTIVE_LOW, IPT_UNUSED )   /* NC */
 	PORT_SERVICE( 0x0040, IP_ACTIVE_LOW )           /* SELFTEST */
-	PORT_BIT( 0x0080, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_VBLANK("screen")    /* VBLANK */
+	PORT_BIT( 0x0080, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("screen", FUNC(screen_device::vblank))    /* VBLANK */
 	PORT_BIT( 0xff00, IP_ACTIVE_LOW, IPT_UNUSED )
 
 	PORT_START("COIN")          /* 68.STATUS (A2=1) */
@@ -720,6 +741,7 @@ static INPUT_PORTS_START( common )
 	PORT_BIT( 0xff00, IP_ACTIVE_LOW, IPT_UNUSED )
 INPUT_PORTS_END
 
+
 static INPUT_PORTS_START( tmek )
 	PORT_INCLUDE( common )
 
@@ -731,7 +753,7 @@ static INPUT_PORTS_START( tmek )
 	PORT_BIT( 0x0008, IP_ACTIVE_HIGH, IPT_JOYSTICK_RIGHT ) PORT_8WAY PORT_PLAYER(1)
 #else
 	PORT_MODIFY("SERVICE")
-	PORT_BIT( 0x0008, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("adc", adc0808_device, eoc_r)
+	PORT_BIT( 0x0008, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("adc", FUNC(adc0808_device::eoc_r))
 
 	PORT_START("AN1")
 	PORT_BIT( 0xff, 0x80, IPT_AD_STICK_X ) PORT_SENSITIVITY(100) PORT_KEYDELTA(10) PORT_PLAYER(2)
@@ -751,7 +773,17 @@ INPUT_PORTS_END
 static INPUT_PORTS_START( primrage )
 	PORT_INCLUDE( common )
 
-	/* primrage uses one of the 4 action buttons as start */
+	/* primrage has a dedicated start button */
+	PORT_MODIFY( "P1_P2" )
+	PORT_BIT( 0x00000002, IP_ACTIVE_LOW, IPT_BUTTON4 ) PORT_PLAYER(1)
+	PORT_BIT( 0x00000008, IP_ACTIVE_LOW, IPT_BUTTON4 ) PORT_PLAYER(2)
+INPUT_PORTS_END
+
+
+static INPUT_PORTS_START( primrageo )
+	PORT_INCLUDE( common )
+
+	/* primrage20 & primrageo use one of the 4 action buttons as start */
 	PORT_MODIFY( "P1_P2" )
 	PORT_BIT( 0x00000100, IP_ACTIVE_LOW, IPT_BUTTON1 ) PORT_PLAYER(2)
 	PORT_BIT( 0x00000200, IP_ACTIVE_LOW, IPT_BUTTON2 ) PORT_PLAYER(2)
@@ -796,9 +828,9 @@ static const gfx_layout pftoplayout =
 
 
 static GFXDECODE_START( gfx_atarigt )
-	GFXDECODE_ENTRY( "gfx1", 0, pflayout, 0x000, 64 )
-	GFXDECODE_ENTRY( "gfx2", 0, gfx_8x8x4_packed_msb, 0x000, 16 )
-	GFXDECODE_ENTRY( "gfx1", 0, pftoplayout, 0x000, 64 )
+	GFXDECODE_ENTRY( "tiles", 0, pflayout, 0x000, 64 )
+	GFXDECODE_ENTRY( "chars", 0, gfx_8x8x4_packed_msb, 0x000, 16 )
+	GFXDECODE_ENTRY( "tiles", 0, pftoplayout, 0x000, 64 )
 GFXDECODE_END
 
 
@@ -840,7 +872,7 @@ void atarigt_state::atarigt(machine_config &config)
 
 	/* video hardware */
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_atarigt);
-	PALETTE(config, m_palette).set_entries(MRAM_ENTRIES);
+	PALETTE(config, m_palette).set_entries(0x8000);
 
 	TILEMAP(config, m_playfield_tilemap, m_gfxdecode, 2, 8,8);
 	m_playfield_tilemap->set_layout(FUNC(atarigt_state::playfield_scan), 128,64);
@@ -852,7 +884,7 @@ void atarigt_state::atarigt(machine_config &config)
 	/* note: these parameters are from published specs, not derived */
 	/* the board uses a pair of GALs to determine H and V parameters */
 	m_screen->set_raw(14.318181_MHz_XTAL/2, 456, 0, 336, 262, 0, 240);
-	m_screen->set_screen_update(FUNC(atarigt_state::screen_update_atarigt));
+	m_screen->set_screen_update(FUNC(atarigt_state::screen_update));
 	m_screen->screen_vblank().set(FUNC(atarigt_state::video_int_write_line));
 
 	ATARI_RLE_OBJECTS(config, m_rle, 0, modesc);
@@ -945,7 +977,7 @@ ROM_START( tmek )
 	ROM_LOAD32_WORD( "0076",  0x800000, 0x200000, CRC(74dffe2d) SHA1(9436f69827050ad2f3be58f1cb57d7a06b75ab61) )
 	ROM_LOAD32_WORD( "0074",  0x800002, 0x200000, CRC(8dfc6ce0) SHA1(5b0d4dd4cb7934f542e67217a2542a3c69558cea) )
 
-	ROM_REGION( 0x300000, "gfx1", 0 )
+	ROM_REGION( 0x300000, "tiles", 0 )
 	ROM_LOAD( "0250",  0x000000, 0x80000, CRC(56bd9f25) SHA1(a8161aeee274f28c41f82b6b3f63570970ee281d) ) /* playfield, planes 0-1 */
 	ROM_LOAD( "0253a", 0x080000, 0x80000, CRC(23e2f83d) SHA1(804a17ce8768bd48cda853e55fc1f54ed7475968) )
 	ROM_LOAD( "0251",  0x100000, 0x80000, CRC(0d3b08f7) SHA1(72ec2383011ef20e9054594279cc85fa55c3a9b2) ) /* playfield, planes 2-3 */
@@ -953,7 +985,7 @@ ROM_START( tmek )
 	ROM_LOAD( "0252",  0x200000, 0x80000, CRC(95a1c23b) SHA1(74eb69dcaebd7a7a03d8f7c9bf6183ece695e91d) ) /* playfield, planes 4-5 */
 	ROM_LOAD( "0255a", 0x280000, 0x80000, CRC(f0fbb700) SHA1(3f0355b137f6426a07abab77f25e718c6102a16f) )
 
-	ROM_REGION( 0x020000, "gfx2", 0 )
+	ROM_REGION( 0x020000, "chars", 0 )
 	ROM_LOAD( "0045a", 0x000000, 0x20000, CRC(057a5304) SHA1(d44c0cf885a1324888b7e8118f124c0dae616859) ) /* alphanumerics */
 
 	ROM_REGION16_BE( 0x1000000, "rle", 0 )
@@ -1000,7 +1032,7 @@ ROM_START( tmek51p )
 	ROM_LOAD32_WORD( "0076",  0x800000, 0x200000, CRC(74dffe2d) SHA1(9436f69827050ad2f3be58f1cb57d7a06b75ab61) )
 	ROM_LOAD32_WORD( "0074",  0x800002, 0x200000, CRC(8dfc6ce0) SHA1(5b0d4dd4cb7934f542e67217a2542a3c69558cea) )
 
-	ROM_REGION( 0x300000, "gfx1", 0 )
+	ROM_REGION( 0x300000, "tiles", 0 )
 	ROM_LOAD( "0250",  0x000000, 0x80000, CRC(56bd9f25) SHA1(a8161aeee274f28c41f82b6b3f63570970ee281d) ) /* playfield, planes 0-1 */
 	ROM_LOAD( "0253a", 0x080000, 0x80000, CRC(23e2f83d) SHA1(804a17ce8768bd48cda853e55fc1f54ed7475968) )
 	ROM_LOAD( "0251",  0x100000, 0x80000, CRC(0d3b08f7) SHA1(72ec2383011ef20e9054594279cc85fa55c3a9b2) ) /* playfield, planes 2-3 */
@@ -1008,7 +1040,7 @@ ROM_START( tmek51p )
 	ROM_LOAD( "0252",  0x200000, 0x80000, CRC(95a1c23b) SHA1(74eb69dcaebd7a7a03d8f7c9bf6183ece695e91d) ) /* playfield, planes 4-5 */
 	ROM_LOAD( "0255a", 0x280000, 0x80000, CRC(f0fbb700) SHA1(3f0355b137f6426a07abab77f25e718c6102a16f) )
 
-	ROM_REGION( 0x020000, "gfx2", 0 )
+	ROM_REGION( 0x020000, "chars", 0 )
 	ROM_LOAD( "0045a", 0x000000, 0x20000, CRC(057a5304) SHA1(d44c0cf885a1324888b7e8118f124c0dae616859) ) /* alphanumerics */
 
 	ROM_REGION16_BE( 0x1000000, "rle", 0 )
@@ -1055,7 +1087,7 @@ ROM_START( tmek45 )
 	ROM_LOAD32_WORD( "0076",  0x800000, 0x200000, CRC(74dffe2d) SHA1(9436f69827050ad2f3be58f1cb57d7a06b75ab61) )
 	ROM_LOAD32_WORD( "0074",  0x800002, 0x200000, CRC(8dfc6ce0) SHA1(5b0d4dd4cb7934f542e67217a2542a3c69558cea) )
 
-	ROM_REGION( 0x300000, "gfx1", 0 )
+	ROM_REGION( 0x300000, "tiles", 0 )
 	ROM_LOAD( "0250",  0x000000, 0x80000, CRC(56bd9f25) SHA1(a8161aeee274f28c41f82b6b3f63570970ee281d) ) /* playfield, planes 0-1 */
 	ROM_LOAD( "0253a", 0x080000, 0x80000, CRC(23e2f83d) SHA1(804a17ce8768bd48cda853e55fc1f54ed7475968) )
 	ROM_LOAD( "0251",  0x100000, 0x80000, CRC(0d3b08f7) SHA1(72ec2383011ef20e9054594279cc85fa55c3a9b2) ) /* playfield, planes 2-3 */
@@ -1063,7 +1095,7 @@ ROM_START( tmek45 )
 	ROM_LOAD( "0252",  0x200000, 0x80000, CRC(95a1c23b) SHA1(74eb69dcaebd7a7a03d8f7c9bf6183ece695e91d) ) /* playfield, planes 4-5 */
 	ROM_LOAD( "0255a", 0x280000, 0x80000, CRC(f0fbb700) SHA1(3f0355b137f6426a07abab77f25e718c6102a16f) )
 
-	ROM_REGION( 0x020000, "gfx2", 0 )
+	ROM_REGION( 0x020000, "chars", 0 )
 	ROM_LOAD( "0045a", 0x000000, 0x20000, CRC(057a5304) SHA1(d44c0cf885a1324888b7e8118f124c0dae616859) ) /* alphanumerics */
 
 	ROM_REGION16_BE( 0x1000000, "rle", 0 )
@@ -1110,7 +1142,7 @@ ROM_START( tmek44 )
 	ROM_LOAD32_WORD( "0076",  0x800000, 0x200000, CRC(74dffe2d) SHA1(9436f69827050ad2f3be58f1cb57d7a06b75ab61) )
 	ROM_LOAD32_WORD( "0074",  0x800002, 0x200000, CRC(8dfc6ce0) SHA1(5b0d4dd4cb7934f542e67217a2542a3c69558cea) )
 
-	ROM_REGION( 0x300000, "gfx1", 0 )
+	ROM_REGION( 0x300000, "tiles", 0 )
 	ROM_LOAD( "0250",  0x000000, 0x80000, CRC(56bd9f25) SHA1(a8161aeee274f28c41f82b6b3f63570970ee281d) ) /* playfield, planes 0-1 */
 	ROM_LOAD( "0253a", 0x080000, 0x80000, CRC(23e2f83d) SHA1(804a17ce8768bd48cda853e55fc1f54ed7475968) )
 	ROM_LOAD( "0251",  0x100000, 0x80000, CRC(0d3b08f7) SHA1(72ec2383011ef20e9054594279cc85fa55c3a9b2) ) /* playfield, planes 2-3 */
@@ -1118,7 +1150,7 @@ ROM_START( tmek44 )
 	ROM_LOAD( "0252",  0x200000, 0x80000, CRC(95a1c23b) SHA1(74eb69dcaebd7a7a03d8f7c9bf6183ece695e91d) ) /* playfield, planes 4-5 */
 	ROM_LOAD( "0255a", 0x280000, 0x80000, CRC(f0fbb700) SHA1(3f0355b137f6426a07abab77f25e718c6102a16f) )
 
-	ROM_REGION( 0x020000, "gfx2", 0 )
+	ROM_REGION( 0x020000, "chars", 0 )
 	ROM_LOAD( "0045a", 0x000000, 0x20000, CRC(057a5304) SHA1(d44c0cf885a1324888b7e8118f124c0dae616859) ) /* alphanumerics */
 
 	ROM_REGION16_BE( 0x1000000, "rle", 0 )
@@ -1165,7 +1197,7 @@ ROM_START( tmek20 )
 	ROM_LOAD32_WORD( "0076",  0x800000, 0x200000, CRC(74dffe2d) SHA1(9436f69827050ad2f3be58f1cb57d7a06b75ab61) )
 	ROM_LOAD32_WORD( "0074",  0x800002, 0x200000, CRC(8dfc6ce0) SHA1(5b0d4dd4cb7934f542e67217a2542a3c69558cea) )
 
-	ROM_REGION( 0x300000, "gfx1", 0 )
+	ROM_REGION( 0x300000, "tiles", 0 )
 	ROM_LOAD( "0250",  0x000000, 0x80000, CRC(56bd9f25) SHA1(a8161aeee274f28c41f82b6b3f63570970ee281d) ) /* playfield, planes 0-1 */
 	ROM_LOAD( "0253a", 0x080000, 0x80000, CRC(23e2f83d) SHA1(804a17ce8768bd48cda853e55fc1f54ed7475968) )
 	ROM_LOAD( "0251",  0x100000, 0x80000, CRC(0d3b08f7) SHA1(72ec2383011ef20e9054594279cc85fa55c3a9b2) ) /* playfield, planes 2-3 */
@@ -1173,7 +1205,7 @@ ROM_START( tmek20 )
 	ROM_LOAD( "0252",  0x200000, 0x80000, CRC(95a1c23b) SHA1(74eb69dcaebd7a7a03d8f7c9bf6183ece695e91d) ) /* playfield, planes 4-5 */
 	ROM_LOAD( "0255a", 0x280000, 0x80000, CRC(f0fbb700) SHA1(3f0355b137f6426a07abab77f25e718c6102a16f) )
 
-	ROM_REGION( 0x020000, "gfx2", 0 )
+	ROM_REGION( 0x020000, "chars", 0 )
 	ROM_LOAD( "alpha", 0x000000, 0x20000, CRC(8f57a604) SHA1(f076636430ff73ea11e4687ef7b21a7bac1d8e34) ) /* alphanumerics */
 
 	ROM_REGION16_BE( 0x1000000, "rle", 0 )
@@ -1215,12 +1247,12 @@ ROM_START( primrage ) // still shows 'version 2.3' on the title screen but build
 	ROM_LOAD32_WORD( "136102-0075_dspsub.11c",  0x400000, 0x200000, CRC(02448be6) SHA1(cc82ececfa739600136b330df90edcc07dff9296) )
 	ROM_LOAD32_WORD( "136102-0077_dspsub.11e",  0x400002, 0x200000, CRC(057aff9a) SHA1(5d654baafb8395c059613069592ec392d1096870) )
 
-	ROM_REGION( 0x300000, "gfx1", 0 ) // same as the primrageo set
+	ROM_REGION( 0x300000, "tiles", 0 ) // same as the primrageo set
 	ROM_LOAD( "rage_136102-0050a_pf0l.25n", 0x000000, 0x80000, CRC(66896e8f) SHA1(7675b24c15ca0608f11f2a7b8d70717adb10924c) ) /* playfield, planes 0-1 */
 	ROM_LOAD( "rage_136102-0051a_pf0m.27n", 0x100000, 0x80000, CRC(fb5b3e7b) SHA1(f43fe4b5c4bbea10da46b60c644f586fb391355d) ) /* playfield, planes 2-3 */
 	ROM_LOAD( "rage_136102-0052a_pf0h.28n", 0x200000, 0x80000, CRC(cbe38670) SHA1(0780e599007851f6d37cdd8c701d01cb1ae48b9d) ) /* playfield, planes 4-5 */
 
-	ROM_REGION( 0x020000, "gfx2", 0 ) // same as the primrageo set
+	ROM_REGION( 0x020000, "chars", 0 ) // same as the primrageo set
 	ROM_LOAD( "rage_136102-1078a_alpha.22p", 0x000000, 0x20000, CRC(1d3260bf) SHA1(85d9db8499cbe180c8d52710f3cfe64453a530ff) ) /* alphanumerics */
 
 	ROM_REGION16_BE( 0x2000000, "rle", 0 ) // only first 2 dumped for this set, the rest's numbers match the primrageo set
@@ -1301,12 +1333,12 @@ ROM_START( primrageo )
 	ROM_LOAD32_WORD( "136102-0075",  0x400000, 0x200000, CRC(b685a88e) SHA1(998b8fe54971f6cd96e4c22b19e3831f29d8172d) )
 	ROM_LOAD32_WORD( "136102-0077",  0x400002, 0x200000, CRC(3283cea8) SHA1(fb7333ca951053a56c501f2ce0eb197c8fcafaf7) )
 
-	ROM_REGION( 0x300000, "gfx1", 0 )
+	ROM_REGION( 0x300000, "tiles", 0 )
 	ROM_LOAD( "136102-0050a.25n", 0x000000, 0x80000, CRC(66896e8f) SHA1(7675b24c15ca0608f11f2a7b8d70717adb10924c) ) /* playfield, planes 0-1 */
 	ROM_LOAD( "136102-0051a.27n", 0x100000, 0x80000, CRC(fb5b3e7b) SHA1(f43fe4b5c4bbea10da46b60c644f586fb391355d) ) /* playfield, planes 2-3 */
 	ROM_LOAD( "136102-0052a.28n", 0x200000, 0x80000, CRC(cbe38670) SHA1(0780e599007851f6d37cdd8c701d01cb1ae48b9d) ) /* playfield, planes 4-5 */
 
-	ROM_REGION( 0x020000, "gfx2", 0 )
+	ROM_REGION( 0x020000, "chars", 0 )
 	ROM_LOAD( "136102-1045b.23p", 0x000000, 0x20000, CRC(1d3260bf) SHA1(85d9db8499cbe180c8d52710f3cfe64453a530ff) ) /* alphanumerics */
 
 	ROM_REGION16_BE( 0x2000000, "rle", 0 )
@@ -1387,12 +1419,12 @@ ROM_START( primrage20 )
 	ROM_LOAD32_WORD( "136102-0075",  0x400000, 0x200000, CRC(b685a88e) SHA1(998b8fe54971f6cd96e4c22b19e3831f29d8172d) )
 	ROM_LOAD32_WORD( "136102-0077",  0x400002, 0x200000, CRC(3283cea8) SHA1(fb7333ca951053a56c501f2ce0eb197c8fcafaf7) )
 
-	ROM_REGION( 0x300000, "gfx1", 0 )
+	ROM_REGION( 0x300000, "tiles", 0 )
 	ROM_LOAD( "136102-0050a.25n", 0x000000, 0x80000, CRC(66896e8f) SHA1(7675b24c15ca0608f11f2a7b8d70717adb10924c) ) /* playfield, planes 0-1 */
 	ROM_LOAD( "136102-0051a.27n", 0x100000, 0x80000, CRC(fb5b3e7b) SHA1(f43fe4b5c4bbea10da46b60c644f586fb391355d) ) /* playfield, planes 2-3 */
 	ROM_LOAD( "136102-0052a.28n", 0x200000, 0x80000, CRC(cbe38670) SHA1(0780e599007851f6d37cdd8c701d01cb1ae48b9d) ) /* playfield, planes 4-5 */
 
-	ROM_REGION( 0x020000, "gfx2", 0 )
+	ROM_REGION( 0x020000, "chars", 0 )
 	ROM_LOAD( "136102-0045a.23p", 0x000000, 0x20000, CRC(c8b39b1c) SHA1(836c0ccf96b2beccacf6d8ac23981fc2d1f09803) ) /* alphanumerics */
 
 	ROM_REGION16_BE( 0x2000000, "rle", 0 )
@@ -1487,11 +1519,11 @@ void atarigt_state::init_primrage()
  *
  *************************************/
 
-GAME( 1994, tmek,       0,        tmek,       tmek,     atarigt_state, init_tmek,     ROT0, "Atari Games", "T-MEK (v5.1, The Warlords)", MACHINE_UNEMULATED_PROTECTION | MACHINE_NODEVICE_LAN )
-GAME( 1994, tmek51p,    tmek,     tmek,       tmek,     atarigt_state, init_tmek,     ROT0, "Atari Games", "T-MEK (v5.1, prototype)", MACHINE_UNEMULATED_PROTECTION | MACHINE_NODEVICE_LAN )
-GAME( 1994, tmek45,     tmek,     tmek,       tmek,     atarigt_state, init_tmek,     ROT0, "Atari Games", "T-MEK (v4.5)", MACHINE_UNEMULATED_PROTECTION | MACHINE_NODEVICE_LAN )
-GAME( 1994, tmek44,     tmek,     tmek,       tmek,     atarigt_state, init_tmek,     ROT0, "Atari Games", "T-MEK (v4.4)", MACHINE_UNEMULATED_PROTECTION | MACHINE_NODEVICE_LAN )
-GAME( 1994, tmek20,     tmek,     tmek,       tmek,     atarigt_state, init_tmek,     ROT0, "Atari Games", "T-MEK (v2.0, prototype)", MACHINE_NODEVICE_LAN )
-GAME( 1994, primrage,   0,        primrage,   primrage, atarigt_state, init_primrage, ROT0, "Atari Games", "Primal Rage (version 2.3, newer build)", MACHINE_UNEMULATED_PROTECTION ) // OS: Jan 4 1995 18:25:40 Main: Jan 4 1995 18:28:24
-GAME( 1994, primrageo,  primrage, primrage,   primrage, atarigt_state, init_primrage, ROT0, "Atari Games", "Primal Rage (version 2.3, older build)", MACHINE_UNEMULATED_PROTECTION ) // OS: Dec 6 1994 16:04:09 Main: Dec 7 1994 17:24:05
-GAME( 1994, primrage20, primrage, primrage20, primrage, atarigt_state, init_primrage, ROT0, "Atari Games", "Primal Rage (version 2.0)", MACHINE_UNEMULATED_PROTECTION ) // OS: Aug 9 1994 17:05:40 Main: Aug 9 1994 17:05:02
+GAME( 1994, tmek,       0,        tmek,       tmek,      atarigt_state, init_tmek,     ROT0, "Atari Games", "T-MEK (v5.1, The Warlords)", MACHINE_UNEMULATED_PROTECTION | MACHINE_NODEVICE_LAN )
+GAME( 1994, tmek51p,    tmek,     tmek,       tmek,      atarigt_state, init_tmek,     ROT0, "Atari Games", "T-MEK (v5.1, prototype)", MACHINE_UNEMULATED_PROTECTION | MACHINE_NODEVICE_LAN )
+GAME( 1994, tmek45,     tmek,     tmek,       tmek,      atarigt_state, init_tmek,     ROT0, "Atari Games", "T-MEK (v4.5)", MACHINE_UNEMULATED_PROTECTION | MACHINE_NODEVICE_LAN )
+GAME( 1994, tmek44,     tmek,     tmek,       tmek,      atarigt_state, init_tmek,     ROT0, "Atari Games", "T-MEK (v4.4)", MACHINE_UNEMULATED_PROTECTION | MACHINE_NODEVICE_LAN )
+GAME( 1994, tmek20,     tmek,     tmek,       tmek,      atarigt_state, init_tmek,     ROT0, "Atari Games", "T-MEK (v2.0, prototype)", MACHINE_NODEVICE_LAN )
+GAME( 1994, primrage,   0,        primrage,   primrage,  atarigt_state, init_primrage, ROT0, "Atari Games", "Primal Rage (version 2.3, Jan 1995)", MACHINE_UNEMULATED_PROTECTION ) // OS: Jan 4 1995 18:25:40 Main: Jan 4 1995 18:28:24
+GAME( 1994, primrageo,  primrage, primrage,   primrageo, atarigt_state, init_primrage, ROT0, "Atari Games", "Primal Rage (version 2.3, Dec 1994)", MACHINE_UNEMULATED_PROTECTION ) // OS: Dec 6 1994 16:04:09 Main: Dec 7 1994 17:24:05
+GAME( 1994, primrage20, primrage, primrage20, primrageo, atarigt_state, init_primrage, ROT0, "Atari Games", "Primal Rage (version 2.0)", MACHINE_UNEMULATED_PROTECTION ) // OS: Aug 9 1994 17:05:40 Main: Aug 9 1994 17:05:02

@@ -95,13 +95,14 @@ ROM_END
 
 ROM_START( tube_6502p )
 	ROM_REGION(0x1000, "rom", 0)
-	ROM_DEFAULT_BIOS("005")
-	ROM_SYSTEM_BIOS(0, "005", "Tube 0.05") // Iss.F
-	ROMX_LOAD("6502tube_005.rom", 0x0000, 0x1000, CRC(0d4cd088) SHA1(f68a74f2529e2719193f81032af298e606792ce8), ROM_BIOS(0))
-	ROM_SYSTEM_BIOS(1, "004", "Tube 0.04")
-	ROMX_LOAD("6502tube_004.rom", 0x0000, 0x1000, CRC(64698ffa) SHA1(b7d47ac65291a7d7bd03b6b82ee08cff291c8609), ROM_BIOS(1))
-	ROM_SYSTEM_BIOS(2, "001", "Tube 0.01") // Iss.C
-	ROMX_LOAD("6502tube_001.rom", 0x0000, 0x1000, CRC(83bee05d) SHA1(4a00d4d3deec0ab43dc6647ac591bd71f4b24a51), ROM_BIOS(2))
+	ROM_SYSTEM_BIOS(0, "006", "Tube 0.06") // Iss.A
+	ROMX_LOAD("6502tube_006.rom", 0x0000, 0x1000, CRC(1f8d2f60) SHA1(dee529f502d24174186269ba7728c023133b92de), ROM_BIOS(0))
+	ROM_SYSTEM_BIOS(1, "005", "Tube 0.05") // Iss.F
+	ROMX_LOAD("6502tube_005.rom", 0x0000, 0x1000, CRC(0d4cd088) SHA1(f68a74f2529e2719193f81032af298e606792ce8), ROM_BIOS(2))
+	ROM_SYSTEM_BIOS(2, "004", "Tube 0.04")
+	ROMX_LOAD("6502tube_004.rom", 0x0000, 0x1000, CRC(64698ffa) SHA1(b7d47ac65291a7d7bd03b6b82ee08cff291c8609), ROM_BIOS(3))
+	ROM_SYSTEM_BIOS(3, "001", "Tube 0.01") // Iss.C
+	ROMX_LOAD("6502tube_001.rom", 0x0000, 0x1000, CRC(83bee05d) SHA1(4a00d4d3deec0ab43dc6647ac591bd71f4b24a51), ROM_BIOS(3))
 ROM_END
 
 ROM_START( tube_6502e )
@@ -129,12 +130,12 @@ ROM_END
 
 void bbc_tube_6502_device::device_add_mconfig(machine_config &config)
 {
-	M65SC02(config, m_maincpu, 12_MHz_XTAL / 4); // G65SC02
+	G65SC02(config, m_maincpu, 12_MHz_XTAL / 4); // G65SC02
 	m_maincpu->set_addrmap(AS_PROGRAM, &bbc_tube_6502_device::tube_6502_mem);
 
 	TUBE(config, m_ula);
-	m_ula->pnmi_handler().set_inputline(m_maincpu, M65C02_NMI_LINE);
-	m_ula->pirq_handler().set_inputline(m_maincpu, M65C02_IRQ_LINE);
+	m_ula->pnmi_handler().set_inputline(m_maincpu, G65SC02_NMI_LINE);
+	m_ula->pirq_handler().set_inputline(m_maincpu, G65SC02_IRQ_LINE);
 	m_ula->prst_handler().set(FUNC(bbc_tube_6502_device::prst_w));
 
 	RAM(config, m_ram).set_default_size("64K").set_default_value(0);
@@ -154,7 +155,7 @@ void bbc_tube_6502e_device::device_add_mconfig(machine_config &config)
 {
 	bbc_tube_6502_device::device_add_mconfig(config);
 
-	M65SC02(config.replace(), m_maincpu, 12_MHz_XTAL / 4); // G65SC02
+	G65SC02(config.replace(), m_maincpu, 12_MHz_XTAL / 4); // G65SC02
 	m_maincpu->set_addrmap(AS_PROGRAM, &bbc_tube_6502e_device::tube_6502e_mem);
 
 	m_ram->set_default_size("256K").set_default_value(0);
@@ -164,7 +165,7 @@ void bbc_tube_65c102_device::device_add_mconfig(machine_config &config)
 {
 	bbc_tube_6502_device::device_add_mconfig(config);
 
-	R65C02(config.replace(), m_maincpu, 16_MHz_XTAL / 4); // R65C102
+	R65C102(config.replace(), m_maincpu, 16_MHz_XTAL); // R65C102
 	m_maincpu->set_addrmap(AS_PROGRAM, &bbc_tube_65c102_device::tube_6502_mem);
 }
 
@@ -263,7 +264,7 @@ void bbc_tube_6502_device::device_reset()
 //  IMPLEMENTATION
 //**************************************************************************
 
-WRITE_LINE_MEMBER(bbc_tube_6502_device::prst_w)
+void bbc_tube_6502_device::prst_w(int state)
 {
 	device_reset();
 

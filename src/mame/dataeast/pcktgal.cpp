@@ -58,7 +58,7 @@ public:
 	void pcktgal2(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -81,19 +81,17 @@ private:
 	void sound_w(uint8_t data);
 	void adpcm_data_w(uint8_t data);
 	uint8_t sound_unk_r();
-	DECLARE_WRITE_LINE_MEMBER(adpcm_int);
+	void adpcm_int(int state);
 
 	void palette(palette_device &palette) const;
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	uint32_t screen_update_bootleg(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	void draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect, bool flip_screen);
 
-	void main_map(address_map &map);
-	void sound_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
 };
 
-
-// video
 
 
 void pcktgal_state::palette(palette_device &palette) const
@@ -169,8 +167,6 @@ uint32_t pcktgal_state::screen_update_bootleg(screen_device &screen, bitmap_ind1
 }
 
 
-// machine
-
 /***************************************************************************/
 
 void pcktgal_state::bank_w(uint8_t data)
@@ -193,7 +189,7 @@ void pcktgal_state::sound_w(uint8_t data)
 }
 
 
-WRITE_LINE_MEMBER(pcktgal_state::adpcm_int)
+void pcktgal_state::adpcm_int(int state)
 {
 	m_msm->data_w(m_msm5205next >> 4);
 	m_msm5205next <<= 4;

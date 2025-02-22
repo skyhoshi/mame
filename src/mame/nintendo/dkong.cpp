@@ -452,7 +452,7 @@ void dkong_state::memory_write_byte(offs_t offset, uint8_t data)
  *
  *************************************/
 
-WRITE_LINE_MEMBER(dkong_state::s2650_interrupt)
+void dkong_state::s2650_interrupt(int state)
 {
 	if (state)
 		m_maincpu->set_input_line(0, ASSERT_LINE);
@@ -672,7 +672,7 @@ void dkong_state::s2650_data_w(uint8_t data)
 	m_hunchloopback = data;
 }
 
-WRITE_LINE_MEMBER(dkong_state::s2650_fo_w)
+void dkong_state::s2650_fo_w(int state)
 {
 #if DEBUG_PROTECTION
 	logerror("%s write : FO = %02x\n", machine().describe_context(), data);
@@ -1011,7 +1011,7 @@ static INPUT_PORTS_START( dkong_in2 )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_START2 )
 	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_UNKNOWN )   /* not connected - held to high */
 	PORT_BIT( 0x20, IP_ACTIVE_HIGH, IPT_UNKNOWN )   /* not connected - held to high */
-	PORT_BIT( 0x40, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("virtual_p2", latch8_device, bit4_q_r) /* status from sound cpu */
+	PORT_BIT( 0x40, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("virtual_p2", FUNC(latch8_device::bit4_q_r)) /* status from sound cpu */
 	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_COIN1 )
 
 	PORT_START("SERVICE1")
@@ -1098,7 +1098,7 @@ static INPUT_PORTS_START( dkongike )
 	PORT_INCLUDE( dkongx )
 
 	PORT_START("GAME")
-	PORT_CONFNAME(0x01, 0x00, "Game") PORT_WRITE_LINE_DEVICE_MEMBER(DEVICE_SELF, dkong_state, dk_braze_a15)
+	PORT_CONFNAME(0x01, 0x00, "Game") PORT_WRITE_LINE_MEMBER(FUNC(dkong_state::dk_braze_a15))
 	PORT_CONFSETTING(0x00, "1")
 	PORT_CONFSETTING(0x01, "2")
 INPUT_PORTS_END
@@ -1623,7 +1623,7 @@ uint8_t dkong_state::braze_eeprom_r()
 	return m_eeprom->do_read();
 }
 
-WRITE_LINE_MEMBER(dkong_state::dk_braze_a15)
+void dkong_state::dk_braze_a15(int state)
 {
 	m_bank1->set_entry(state & 0x01);
 	m_bank2->set_entry(state & 0x01);
@@ -1650,7 +1650,7 @@ void dkong_state::braze_decrypt_rom(uint8_t *dest)
 
 	ROM = memregion("braze")->base();
 
-	for (mem=0;mem<0x10000;mem++)
+	for (mem = 0; mem < 0x10000; mem++)
 	{
 		oldbyte = ROM[mem];
 
@@ -1661,27 +1661,17 @@ void dkong_state::braze_decrypt_rom(uint8_t *dest)
 	}
 }
 
+
 /*************************************
  *
  *  Machine driver
  *
  *************************************/
 
-WRITE_LINE_MEMBER(dkong_state::vblank_irq)
+void dkong_state::vblank_irq(int state)
 {
 	if (state && m_nmi_mask)
 		m_maincpu->set_input_line(INPUT_LINE_NMI, ASSERT_LINE);
-}
-
-WRITE_LINE_MEMBER(dkong_state::busreq_w )
-{
-	// since our Z80 has no support for BUSACK, we assume it is granted immediately
-	m_maincpu->set_input_line(Z80_INPUT_LINE_BUSRQ, state);
-	m_maincpu->set_input_line(INPUT_LINE_HALT, state); // do we need this?
-	if(m_z80dma)
-		m_z80dma->bai_w(state); // tell dma that bus has been granted
-	else if(m_dma8257)
-		m_dma8257->hlda_w(state);
 }
 
 void dkong_state::dkong_base(machine_config &config)
@@ -1689,12 +1679,13 @@ void dkong_state::dkong_base(machine_config &config)
 	/* basic machine hardware */
 	Z80(config, m_maincpu, CLOCK_1H);
 	m_maincpu->set_addrmap(AS_PROGRAM, &dkong_state::dkong_map);
+	downcast<z80_device &>(*m_maincpu).busack_cb().set(m_dma8257, FUNC(i8257_device::hlda_w));
 
 	MCFG_MACHINE_START_OVERRIDE(dkong_state,dkong2b)
 	MCFG_MACHINE_RESET_OVERRIDE(dkong_state,dkong)
 
 	I8257(config, m_dma8257, CLOCK_1H);
-	m_dma8257->out_hrq_cb().set(FUNC(dkong_state::busreq_w));
+	m_dma8257->out_hrq_cb().set_inputline(m_maincpu, Z80_INPUT_LINE_BUSRQ);
 	m_dma8257->in_memr_cb().set(FUNC(dkong_state::memory_read_byte));
 	m_dma8257->out_memw_cb().set(FUNC(dkong_state::memory_write_byte));
 	m_dma8257->in_ior_cb<1>().set(FUNC(dkong_state::p8257_ctl_r));
@@ -1789,11 +1780,12 @@ void dkong_state::dkong3(machine_config &config)
 	Z80(config, m_maincpu, XTAL(8'000'000) / 2); /* verified in schematics */
 	m_maincpu->set_addrmap(AS_PROGRAM, &dkong_state::dkong3_map);
 	m_maincpu->set_addrmap(AS_IO, &dkong_state::dkong3_io_map);
+	downcast<z80_device &>(*m_maincpu).busack_cb().set(m_z80dma, FUNC(z80dma_device::bai_w));
 
 	MCFG_MACHINE_START_OVERRIDE(dkong_state, dkong3)
 
 	Z80DMA(config, m_z80dma, CLOCK_1H);
-	m_z80dma->out_busreq_callback().set_inputline(m_maincpu, INPUT_LINE_HALT);
+	m_z80dma->out_busreq_callback().set_inputline(m_maincpu, Z80_INPUT_LINE_BUSRQ);
 	m_z80dma->in_mreq_callback().set(FUNC(dkong_state::memory_read_byte));
 	m_z80dma->out_mreq_callback().set(FUNC(dkong_state::memory_write_byte));
 
@@ -1844,6 +1836,7 @@ void dkong_state::dkong3b(machine_config &config)
 	m_palette->set_init(FUNC(dkong_state::dkong3_palette));
 }
 
+
 /*************************************
  *
  * S2650 Machine drivers
@@ -1855,7 +1848,7 @@ void dkong_state::s2650(machine_config &config)
 	dkong2b(config);
 
 	/* basic machine hardware */
-	s2650_device &s2650(S2650(config.replace(), m_maincpu, CLOCK_1H / 2));    /* ??? */
+	s2650_device &s2650(S2650(config.replace(), m_maincpu, CLOCK_1H / 2)); // ???
 	s2650.set_addrmap(AS_PROGRAM, &dkong_state::s2650_map);
 	s2650.set_addrmap(AS_IO, &dkong_state::s2650_io_map);
 	s2650.set_addrmap(AS_DATA, &dkong_state::s2650_data_map);
@@ -1865,6 +1858,8 @@ void dkong_state::s2650(machine_config &config)
 
 	m_screen->screen_vblank().set(FUNC(dkong_state::s2650_interrupt));
 
+	m_dma8257->out_hrq_cb().set_inputline(m_maincpu, INPUT_LINE_HALT); // DBUSEN?
+	m_dma8257->out_hrq_cb().append(m_dma8257, FUNC(i8257_device::hlda_w));
 	m_dma8257->in_memr_cb().set(FUNC(dkong_state::hb_dma_read_byte));
 	m_dma8257->out_memw_cb().set(FUNC(dkong_state::hb_dma_write_byte));
 
@@ -1888,6 +1883,7 @@ void dkong_state::spclforc(machine_config &config)
 
 	SN76496(config, "snsnd", CLOCK_1H).add_route(ALL_OUTPUTS, "mono", 0.5);
 }
+
 
 /*************************************
  *
@@ -1924,6 +1920,7 @@ void dkong_state::drktnjr(machine_config &config)
 
 	MCFG_MACHINE_RESET_OVERRIDE(dkong_state,drakton)
 }
+
 
 /*************************************
  *
@@ -3795,16 +3792,16 @@ GAME( 1983, dkong3hs,  dkong3,   dk3_braze, dkong3,   dkong_state, init_dkong3hs
 GAME( 1983, pestplce,  mario,    pestplce,  pestplce, dkong_state, empty_init,    ROT0,   "bootleg", "Pest Place", MACHINE_WRONG_COLORS | MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
 
 /* 2650 based */
-GAME( 1984, herbiedk,  huncholy, herbiedk,  herbiedk, dkong_state, empty_init,    ROT270, "Century Electronics / Seatongrove Ltd",             "Herbie at the Olympics (DK conversion)",                   MACHINE_SUPPORTS_SAVE )
-GAME( 1983, hunchbkd,  hunchbak, s2650,     hunchbkd, dkong_state, empty_init,    ROT270, "Century Electronics",                               "Hunchback (DK conversion)",                                MACHINE_SUPPORTS_SAVE )
-GAME( 1984, sbdk,      superbik, s2650,     sbdk,     dkong_state, empty_init,    ROT270, "Century Electronics",                               "Super Bike (DK conversion)",                               MACHINE_SUPPORTS_SAVE )
-GAME( 1984, herodk,    hero,     s2650,     herodk,   dkong_state, init_herodk,   ROT270, "Seatongrove Ltd (Crown license)",                   "Hero in the Castle of Doom (DK conversion)",               MACHINE_SUPPORTS_SAVE )
-GAME( 1984, herodku,   hero,     s2650,     herodk,   dkong_state, empty_init,    ROT270, "Seatongrove Ltd (Crown license)",                   "Hero in the Castle of Doom (DK conversion not encrypted)", MACHINE_SUPPORTS_SAVE )
-GAME( 1984, 8ballact,  0,        herbiedk,  8ballact, dkong_state, empty_init,    ROT270, "Seatongrove Ltd (Magic Electronics USA license)",   "Eight Ball Action (DK conversion)",                        MACHINE_SUPPORTS_SAVE )
-GAME( 1984, 8ballact2, 8ballact, herbiedk,  8ballact, dkong_state, empty_init,    ROT270, "Seatongrove Ltd (Magic Electronics USA license)",   "Eight Ball Action (DKJr conversion)",                      MACHINE_SUPPORTS_SAVE )
-GAME( 1984, shootgal,  0,        s2650,     shootgal, dkong_state, empty_init,    ROT0,   "Seatongrove Ltd (Zaccaria license)",                "Shooting Gallery",                                         MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
-GAME( 1985, spclforc,  0,        spclforc,  spclforc, dkong_state, empty_init,    ROT270, "Senko Industries (Magic Electronics Inc. license)", "Special Forces",                                           MACHINE_SUPPORTS_SAVE )
-GAME( 1985, spcfrcii,  0,        spclforc,  spclforc, dkong_state, empty_init,    ROT270, "Senko Industries (Magic Electronics Inc. license)", "Special Forces II",                                        MACHINE_SUPPORTS_SAVE )
+GAME( 1984, herbiedk,  huncholy, herbiedk,  herbiedk, dkong_state, empty_init,    ROT270, "Seatongrove UK, Ltd.",                                 "Herbie at the Olympics (DK conversion)",                    MACHINE_SUPPORTS_SAVE )
+GAME( 1983, hunchbkd,  hunchbak, s2650,     hunchbkd, dkong_state, empty_init,    ROT270, "Century Electronics",                                  "Hunchback (DK conversion)",                                 MACHINE_SUPPORTS_SAVE )
+GAME( 1984, sbdk,      superbik, s2650,     sbdk,     dkong_state, empty_init,    ROT270, "Century Electronics",                                  "Super Bike (DK conversion)",                                MACHINE_SUPPORTS_SAVE )
+GAME( 1984, herodk,    hero,     s2650,     herodk,   dkong_state, init_herodk,   ROT270, "Seatongrove UK, Ltd. (Crown license)",                 "Hero in the Castle of Doom (DK conversion)",                MACHINE_SUPPORTS_SAVE )
+GAME( 1984, herodku,   hero,     s2650,     herodk,   dkong_state, empty_init,    ROT270, "Seatongrove UK, Ltd. (Crown license)",                 "Hero in the Castle of Doom (DK conversion, not encrypted)", MACHINE_SUPPORTS_SAVE )
+GAME( 1984, 8ballact,  0,        herbiedk,  8ballact, dkong_state, empty_init,    ROT270, "Seatongrove UK, Ltd. (Magic Electronics USA license)", "Eight Ball Action (DK conversion)",                         MACHINE_SUPPORTS_SAVE )
+GAME( 1984, 8ballact2, 8ballact, herbiedk,  8ballact, dkong_state, empty_init,    ROT270, "Seatongrove UK, Ltd. (Magic Electronics USA license)", "Eight Ball Action (DKJr conversion)",                       MACHINE_SUPPORTS_SAVE )
+GAME( 1984, shootgal,  0,        s2650,     shootgal, dkong_state, empty_init,    ROT0,   "Seatongrove UK, Ltd. (Zaccaria license)",              "Shooting Gallery",                                          MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
+GAME( 1985, spclforc,  0,        spclforc,  spclforc, dkong_state, empty_init,    ROT270, "Senko Industries (Magic Electronics Inc. license)",    "Special Forces - Kung Fu Commando",                         MACHINE_SUPPORTS_SAVE )
+GAME( 1985, spcfrcii,  0,        spclforc,  spclforc, dkong_state, empty_init,    ROT270, "Senko Industries (Magic Electronics Inc. license)",    "Special Forces II",                                         MACHINE_SUPPORTS_SAVE )
 
 /* EPOS */
 GAME( 1984, drakton,   0,        drakton,   drakton,  dkong_state, init_drakton,  ROT270, "Epos Corporation", "Drakton (DK conversion)",     MACHINE_SUPPORTS_SAVE )

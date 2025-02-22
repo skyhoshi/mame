@@ -316,9 +316,9 @@ protected:
 	};
 
 	// device_t overrides
-	virtual void device_start() override;
-	virtual void device_reset() override;
-	virtual void device_stop() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
+	virtual void device_stop() override ATTR_COLD;
 
 	// device_memory_interface overrides
 	virtual space_config_vector memory_space_config() const override;
@@ -332,7 +332,6 @@ protected:
 	virtual u64 execute_cycles_to_clocks(u64 cycles) const noexcept override { return (cycles + 1) / 2; }
 	virtual u32 execute_min_cycles() const noexcept override { return 1; }
 	virtual u32 execute_max_cycles() const noexcept override { return *std::max_element(std::begin(m_hilo_cycles), std::end(m_hilo_cycles)); }
-	virtual u32 execute_input_lines() const noexcept override { return 6; }
 	virtual void execute_run() override;
 	virtual void execute_set_input(int inputnum, int state) override;
 
@@ -400,8 +399,8 @@ protected:
 	address_space_config m_program_config_be;
 
 	// memory access helpers
-	memory_access<36, 3, 0, ENDIANNESS_LITTLE>::cache m_le;
-	memory_access<36, 3, 0, ENDIANNESS_BIG>::cache m_be;
+	memory_access<32, 3, 0, ENDIANNESS_LITTLE>::specific m_le;
+	memory_access<32, 3, 0, ENDIANNESS_BIG>::specific m_be;
 
 	std::function<u8(offs_t offset)> read_byte;
 	std::function<u16(offs_t offset)> read_word;

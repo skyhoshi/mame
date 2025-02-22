@@ -71,7 +71,7 @@ private:
 	TIMER_DEVICE_CALLBACK_MEMBER(kansas_r);
 	MC6845_UPDATE_ROW(crtc_update_row);
 
-	void mem_map(address_map &map);
+	void mem_map(address_map &map) ATTR_COLD;
 
 	void pia0b_w(u8);
 	void pia1b_w(u8);
@@ -79,8 +79,8 @@ private:
 	bool m_cassbit = 0;
 	bool m_cassold = 0;
 	u8 m_cass_data[4]{};
-	void machine_start() override;
-	void machine_reset() override;
+	void machine_start() override ATTR_COLD;
+	void machine_reset() override ATTR_COLD;
 	required_device<cpu_device> m_maincpu;
 	required_device<cassette_image_device> m_cass;
 	required_device<pia6821_device> m_pia0;
@@ -136,7 +136,7 @@ static INPUT_PORTS_START( crei680 )
 	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_UNUSED )
 
 	PORT_START("RESET")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_NAME("RST") PORT_CODE(KEYCODE_LALT) PORT_CHANGED_MEMBER(DEVICE_SELF, crei680_state, reset_button, 0)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_NAME("RST") PORT_CODE(KEYCODE_LALT) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(crei680_state::reset_button), 0)
 INPUT_PORTS_END
 
 INPUT_CHANGED_MEMBER(crei680_state::reset_button)
@@ -293,14 +293,14 @@ void crei680_state::crei680(machine_config &config)
 	BEEP(config, "beeper", 900).add_route(ALL_OUTPUTS, "mono", 0.50);
 
 	/* devices */
-	PIA6821(config, m_pia0, 0);
+	PIA6821(config, m_pia0);
 	m_pia0->readpa_handler().set_ioport("X1");
 	m_pia0->writepb_handler().set(FUNC(crei680_state::pia0b_w));
 	//m_pia0->cb2_handler().set(FUNC(crei680_state::screen_w));
 	m_pia0->irqa_handler().set_inputline("maincpu", M6800_IRQ_LINE);
 	m_pia0->irqb_handler().set_inputline("maincpu", M6800_IRQ_LINE);
 
-	PIA6821(config, m_pia1, 0);
+	PIA6821(config, m_pia1);
 	m_pia1->readpa_handler().set_ioport("X0");
 	m_pia1->writepb_handler().set(FUNC(crei680_state::pia1b_w));
 	//m_pia1->cb2_handler().set(FUNC(crei680_state::screen_w));

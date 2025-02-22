@@ -49,17 +49,14 @@ public:
 	u16 vend() const { return m_vend; }
 	u16 visible_height() const { return m_visible_height; }
 	u16 visible_width() const { return m_visible_width; }
-	u16 hshift() const { return m_hshift; }
-	u16 vshift() const { return m_vshift; }
 
 protected:
 	// base constructor
 	x68k_crtc_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, u32 clock);
 
-	// device-specific overrides
-	virtual void device_resolve_objects() override;
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	// device_t implementation
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 private:
 	// internal helpers
@@ -104,8 +101,6 @@ private:
 	u16 m_width;
 	u16 m_visible_height;
 	u16 m_visible_width;
-	u16 m_hshift;
-	u16 m_vshift;
 	//u16 m_video_width;  // horizontal total (in pixels)
 	//u16 m_video_height; // vertical total
 	bool m_interlace;  // 1024 vertical resolution is interlaced

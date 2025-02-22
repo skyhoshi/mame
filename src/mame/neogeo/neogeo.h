@@ -29,6 +29,12 @@
 #include "screen.h"
 
 
+#define NEOGEO_MASTER_CLOCK                     (24000000)
+#define NEOGEO_MAIN_CPU_CLOCK                   (NEOGEO_MASTER_CLOCK / 2)
+#define NEOGEO_AUDIO_CPU_CLOCK                  (NEOGEO_MASTER_CLOCK / 6)
+#define NEOGEO_YM2610_CLOCK                     (NEOGEO_MASTER_CLOCK / 3)
+#define NEOGEO_PIXEL_CLOCK                      (NEOGEO_MASTER_CLOCK / 4)
+
 // On scanline 224, /VBLANK goes low 56 mclks (14 pixels) from the rising edge of /HSYNC.
 // Two mclks after /VBLANK goes low, the hardware sets a pending IRQ1 flip-flop.
 #define NEOGEO_VBLANK_IRQ_HTIM (attotime::from_ticks(56+2, NEOGEO_MASTER_CLOCK))
@@ -37,8 +43,8 @@
 class neogeo_base_state : public driver_device
 {
 public:
-	DECLARE_CUSTOM_INPUT_MEMBER(get_memcard_status);
-	DECLARE_CUSTOM_INPUT_MEMBER(get_audio_result);
+	ioport_value get_memcard_status();
+	ioport_value get_audio_result();
 
 protected:
 	neogeo_base_state(const machine_config &mconfig, device_type type, const char *tag)
@@ -76,7 +82,7 @@ protected:
 	void audio_cpu_enable_nmi_w(offs_t offset, uint8_t data);
 	uint16_t unmapped_r(address_space &space);
 	uint16_t paletteram_r(offs_t offset);
-	void paletteram_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
+	void paletteram_w(offs_t offset, uint16_t data);
 	uint16_t video_register_r(address_space &space, offs_t offset, uint16_t mem_mask = ~0);
 	void video_register_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 
@@ -88,8 +94,8 @@ protected:
 
 	virtual void io_control_w(offs_t offset, uint8_t data);
 	void audio_command_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(set_use_cart_vectors);
-	DECLARE_WRITE_LINE_MEMBER(set_use_cart_audio);
+	void set_use_cart_vectors(int state);
+	void set_use_cart_audio(int state);
 	uint16_t banked_vectors_r(offs_t offset);
 	void write_banksel(uint16_t data);
 	void write_bankprot(uint16_t data);
@@ -99,20 +105,20 @@ protected:
 	void write_bankprot_kof10th(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 	uint16_t read_lorom_kof10th(offs_t offset);
 
-	DECLARE_WRITE_LINE_MEMBER(set_screen_shadow);
-	DECLARE_WRITE_LINE_MEMBER(set_palette_bank);
+	void set_screen_shadow(int state);
+	void set_palette_bank(int state);
 
 	void neogeo_base(machine_config &config);
 	void neogeo_stereo(machine_config &config);
 	void neogeo_memcard(machine_config &config);
 
-	void base_main_map(address_map &map);
-	void audio_io_map(address_map &map);
-	void audio_map(address_map &map);
+	void base_main_map(address_map &map) ATTR_COLD;
+	void audio_io_map(address_map &map) ATTR_COLD;
+	void audio_map(address_map &map) ATTR_COLD;
 
 	// device overrides
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	virtual void device_post_load() override;
 
@@ -149,8 +155,8 @@ protected:
 
 	// video hardware, including maincpu interrupts
 	// TODO: make into a device
-	virtual void video_start() override;
-	virtual void video_reset() override;
+	virtual void video_start() override ATTR_COLD;
+	virtual void video_reset() override ATTR_COLD;
 
 	const pen_t *m_bg_pen = nullptr;
 	uint8_t      m_vblank_level = 0;
@@ -172,7 +178,7 @@ protected:
 
 	optional_device_array<neogeo_cart_slot_device, 6> m_slots;
 
-	int m_curr_slot = 0;
+	int32_t m_curr_slot = 0;
 
 private:
 	void update_interrupts();
@@ -208,15 +214,15 @@ private:
 	// color/palette related
 	std::vector<uint16_t> m_paletteram;
 	uint8_t      m_palette_lookup[32][4]{};
-	int          m_screen_shadow = 0;
-	int          m_palette_bank = 0;
+	bool         m_screen_shadow = false;
+	uint32_t     m_palette_bank = 0;
 };
 
 
 class ngarcade_base_state : public neogeo_base_state
 {
 public:
-	DECLARE_CUSTOM_INPUT_MEMBER(startsel_edge_joy_r);
+	ioport_value startsel_edge_joy_r();
 
 protected:
 	ngarcade_base_state(const machine_config &mconfig, device_type type, const char *tag)
@@ -227,11 +233,11 @@ protected:
 	{
 	}
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	virtual void io_control_w(offs_t offset, uint8_t data) override;
-	DECLARE_WRITE_LINE_MEMBER(set_save_ram_unlock);
+	void set_save_ram_unlock(int state);
 	void save_ram_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 	uint16_t in0_edge_r();
 	uint16_t in0_edge_joy_r();
@@ -241,7 +247,7 @@ protected:
 	void neogeo_arcade(machine_config &config);
 	void neogeo_mono(machine_config &config);
 
-	void neogeo_main_map(address_map &map);
+	void neogeo_main_map(address_map &map) ATTR_COLD;
 
 private:
 	required_shared_ptr<uint16_t> m_save_ram;
@@ -266,9 +272,9 @@ protected:
 
 	uint16_t aes_in2_r();
 
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
-	void aes_base_main_map(address_map &map);
+	void aes_base_main_map(address_map &map) ATTR_COLD;
 
 private:
 	required_ioport m_io_in2;

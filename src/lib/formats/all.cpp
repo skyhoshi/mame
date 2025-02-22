@@ -320,6 +320,10 @@
 #include "guab_dsk.h"
 #endif
 
+#ifdef HAS_FORMATS_H17D_DSK
+#include "h17disk.h"
+#endif
+
 #ifdef HAS_FORMATS_H8_CAS
 #include "h8_cas.h"
 #endif
@@ -452,6 +456,10 @@
 #include "mz_cas.h"
 #endif
 
+#ifdef HAS_FORMATS_NABUPC_DSK
+#include "nabupc_dsk.h"
+#endif
+
 #ifdef HAS_FORMATS_NANOS_DSK
 #include "nanos_dsk.h"
 #endif
@@ -570,6 +578,10 @@
 
 #ifdef HAS_FORMATS_RX50_DSK
 #include "rx50_dsk.h"
+#endif
+
+#ifdef HAS_FORMATS_SAP_DSK
+#include "sap_dsk.h"
 #endif
 
 #ifdef HAS_FORMATS_SC3000_BIT
@@ -744,6 +756,10 @@
 #include "fs_isis.h"
 #endif
 
+#ifdef HAS_FORMATS_FS_HP98X5
+#include "fs_hp98x5.h"
+#endif
+
 void mame_formats_full_list(mame_formats_enumerator &en)
 {
 	en.category("Generic");
@@ -777,6 +793,7 @@ void mame_formats_full_list(mame_formats_enumerator &en)
 	en.add(fs::PRODOS);
 #endif
 #ifdef HAS_FORMATS_AP2_DSK
+	en.add(FLOPPY_A213S_FORMAT); // ap2_dsk.h
 	en.add(FLOPPY_A216S_DOS_FORMAT); // ap2_dsk.h
 	en.add(FLOPPY_A216S_PRODOS_FORMAT); // ap2_dsk.h
 	en.add(FLOPPY_RWTS18_FORMAT); // ap2_dsk.h
@@ -901,6 +918,11 @@ void mame_formats_full_list(mame_formats_enumerator &en)
 #endif
 #ifdef HAS_FORMATS_FS_HPLIF
 	en.add(fs::HPLIF); // fs_lif.h
+#endif
+#ifdef HAS_FORMATS_FS_HP98X5
+	en.add(fs::HP9825);
+	en.add(fs::HP9831);
+	en.add(fs::HP9845);
 #endif
 
 	en.category("Applix");
@@ -1216,6 +1238,11 @@ void mame_formats_full_list(mame_formats_enumerator &en)
 	en.add(FLOPPY_MTX_FORMAT); // mtx_dsk.h
 #endif
 
+	en.category("NABU PC");
+#ifdef HAS_FORMATS_NABUPC_DSK
+	en.add(FLOPPY_NABUPC_FORMAT); // nabupc_dsk.h
+#endif
+
 	en.category("Nanos");
 #ifdef HAS_FORMATS_NANOS_DSK
 	en.add(FLOPPY_NANOS_FORMAT); // nanos_dsk.h
@@ -1320,6 +1347,9 @@ void mame_formats_full_list(mame_formats_enumerator &en)
 #ifdef HAS_FORMATS_THOM_DSK
 	en.add(FLOPPY_THOMSON_525_FORMAT); // thom_dsk.h
 	en.add(FLOPPY_THOMSON_35_FORMAT); // thom_dsk.h
+#endif
+#ifdef HAS_FORMATS_SAP_DSK
+	en.add(FLOPPY_SAP_FORMAT);
 #endif
 
 	en.category("Texas Instruments");
@@ -1492,7 +1522,7 @@ void mame_formats_full_list(mame_formats_enumerator &en)
 	en.add(vtech1_cassette_formats); // vt_cas.h
 	en.add(vtech2_cassette_formats); // vt_cas.h
 #endif
-#ifdef HAS_FORMATS_VT_DSJ
+#ifdef HAS_FORMATS_VT_DSK
 	en.add(FLOPPY_VTECH_BIN_FORMAT); // vt_dsk.h
 	en.add(FLOPPY_VTECH_DSK_FORMAT); // vt_dsk.h
 #endif
@@ -1503,5 +1533,10 @@ void mame_formats_full_list(mame_formats_enumerator &en)
 	en.category("Canon");
 #ifdef HAS_FORMATS_X07_CAS
 	en.add(x07_cassette_formats); // x07_cas.h
+#endif
+
+	en.category("Heath");
+#ifdef HAS_FORMATS_H17D_DSK
+	en.add(FLOPPY_H17D_FORMAT); // h17disk.h
 #endif
 }

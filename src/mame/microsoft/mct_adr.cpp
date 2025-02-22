@@ -45,8 +45,8 @@ mct_adr_device::mct_adr_device(const machine_config &mconfig, const char *tag, d
 	, m_out_int_dma(*this)
 	, m_out_int_device(*this)
 	, m_out_int_timer(*this)
-	, m_eisa_iack(*this)
-	, m_dma_r(*this)
+	, m_eisa_iack(*this, 0)
+	, m_dma_r(*this, 0xff)
 	, m_dma_w(*this)
 {
 }
@@ -144,14 +144,6 @@ void mct_adr_device::dma(address_map &map)
 
 void mct_adr_device::device_start()
 {
-	m_out_int_dma.resolve();
-	m_out_int_device.resolve();
-	m_out_int_timer.resolve();
-	m_eisa_iack.resolve();
-
-	m_dma_r.resolve_all_safe(0xff);
-	m_dma_w.resolve_all_safe();
-
 	m_ioc_maint = 0;
 	m_ioc_physical_tag = 0;
 	m_ioc_logical_tag = 0;
@@ -162,6 +154,8 @@ void mct_adr_device::device_start()
 
 	m_out_int_timer_asserted = false;
 	m_out_int_device_asserted = false;
+
+	std::fill(std::begin(m_drq_active), std::end(m_drq_active), false);
 }
 
 void mct_adr_device::device_reset()
@@ -270,11 +264,11 @@ TIMER_CALLBACK_MEMBER(mct_adr_device::dma_check)
 
 		// check channel enabled
 		if (!(m_dma_reg[(channel << 2) + REG_ENABLE] & DMA_ENABLE))
-			return;
+			continue;
 
 		// check transfer count
 		if (!m_dma_reg[(channel << 2) + REG_COUNT])
-			return;
+			continue;
 
 		u32 const address = translate_address(m_dma_reg[(channel << 2) + REG_ADDRESS]);
 

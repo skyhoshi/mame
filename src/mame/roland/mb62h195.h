@@ -36,9 +36,9 @@ public:
 
 	// CPU read/write handlers (TODO)
 
-	// device-specific overrides
-	virtual void device_resolve_objects() override;
-	virtual void device_start() override;
+protected:
+	// device_t implementation
+	virtual void device_start() override ATTR_COLD;
 
 private:
 	// callback objects

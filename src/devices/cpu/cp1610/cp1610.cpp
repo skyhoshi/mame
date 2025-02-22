@@ -5,7 +5,7 @@
  *   cp1610.c
  *   Portable CP1610 emulator (General Instrument CP1610)
  *
- *   Copyright Frank Palazzolo, all rights reserved.
+ *   Copyright Frank Palazzolo
  *
  *  This work is based on Juergen Buchmueller's F8 emulation,
  *  and the 'General Instruments CP1610' data sheets.
@@ -3329,9 +3329,6 @@ void cp1610_cpu_device::execute_run()
 
 void cp1610_cpu_device::device_start()
 {
-	m_read_bext.resolve_safe(0);
-	m_read_iab.resolve_safe(0);
-	m_write_intak.resolve_safe();
 	m_intr_enabled = false;
 	m_reset_pending = false;
 	m_intr_pending = false;
@@ -3395,8 +3392,8 @@ cp1610_cpu_device::cp1610_cpu_device(const machine_config &mconfig, const char *
 	, m_program_config("program", ENDIANNESS_BIG, 16, 16, -1)
 	, m_intr_state(0)
 	, m_intrm_state(0)
-	, m_read_bext(*this)
-	, m_read_iab(*this)
+	, m_read_bext(*this, 0)
+	, m_read_iab(*this, 0)
 	, m_write_intak(*this)
 {
 }

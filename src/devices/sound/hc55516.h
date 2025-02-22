@@ -31,23 +31,23 @@ public:
 	// which is a very bad design pattern and will cause synchronization/missed clock transition issues.
 	// This function WILL ASSERT if it is called and the clock hz is NOT specified!
 	// TODO: remove all use of this, and remove it.
-	READ_LINE_MEMBER( clock_r );
+	int clock_r();
 
 	// Clock push; this function WILL ASSERT if it is called and the clock hz IS specified!
-	WRITE_LINE_MEMBER( mclock_w );
+	void mclock_w(int state);
 
 	// Digital in push to the pin, as a pseudo 'buffer' implemented within the cvsd device itself.
 	// This is not technically accurate to hardware, and in the future should be deprecated in favor of
 	// digin_cb once the latter is implemented.
-	WRITE_LINE_MEMBER( digin_w );
+	void digin_w(int state);
 
 	// DEC/ENC decode/encode select push. This is not implemented yet, and relies on an input audio stream.
 	// TODO: implement this beyond a do-nothing stub
-	WRITE_LINE_MEMBER( dec_encq_w );
+	void dec_encq_w(int state);
 
 	// Digital out pull. TODO: this is not hooked up or implemented yet, although it is only really
 	// relevant for devices which use the CVSD chips in encode mode.
-	READ_LINE_MEMBER( digout_r );
+	int digout_r();
 
 	// Audio In pin, an analog value of the audio waveform being pushed to the chip.
 	// TODO: this is not hooked up or implemented yet, and this should really be handled as an
@@ -69,8 +69,8 @@ protected:
 	cvsd_device_base(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock, bool active_clock_edge, uint8_t shiftreg_mask);
 
 	// device-level overrides
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 	//virtual void device_clock_changed() override;
 
 	// sound stream update overrides
@@ -90,8 +90,6 @@ protected:
 	bool m_last_clock_state;
 	bool m_buffered_bit;
 	uint8_t m_shiftreg;
-	stream_buffer::sample_t m_curr_sample;
-	stream_buffer::sample_t m_next_sample;
 	uint32_t m_samples_generated;
 
 	// specific internal handler overrides, overridden by each chip
@@ -116,19 +114,19 @@ public:
 	// AGC callback function, called to push the state if the AGC pin changes, ok to leave unconnected
 	auto agc_cb() { return m_agc_push_cb.bind(); }
 
-	WRITE_LINE_MEMBER( fzq_w ); // /FZ (partial reset) push
-	READ_LINE_MEMBER( agc_r ); // AGC pull
+	void fzq_w(int state); // /FZ (partial reset) push
+	int agc_r(); // AGC pull
 	// TODO: These are only relevant for encode mode, which isn't done yet!
-	//WRITE_LINE_MEMBER( aptq_w ); // /APT (silence encoder output) push
-	//WRITE_LINE_MEMBER( dec_encq_w ); // DEC/ENC decode/encode select push
+	//void aptq_w(int state); // /APT (silence encoder output) push
+	//void dec_encq_w(int state); // DEC/ENC decode/encode select push
 
 protected:
 	// overridable type for subclass
 	hc55516_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock, uint32_t sylmask, int32_t sylshift, int32_t syladd, int32_t intshift);
 
 	// device-level overrides
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 	// sound stream update overrides
 	virtual void sound_stream_update(sound_stream &stream, std::vector<read_stream_view> const &inputs, std::vector<write_stream_view> &outputs) override;
@@ -146,6 +144,7 @@ protected:
 	// internal state
 	int32_t m_sylfilter;
 	int32_t m_intfilter;
+	int16_t m_next_sample;
 	bool m_agc;
 	bool m_buffered_fzq;
 
@@ -160,7 +159,7 @@ public:
 	hc55532_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 protected:
 	// device-level overrides
-	virtual void device_reset() override;
+	virtual void device_reset() override ATTR_COLD;
 };
 
 
@@ -177,7 +176,7 @@ protected:
 	mc3417_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock, uint8_t shiftreg_mask);
 
 	// device-level overrides
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	// sound stream update overrides
 	virtual void sound_stream_update(sound_stream &stream, std::vector<read_stream_view> const &inputs, std::vector<write_stream_view> &outputs) override;
@@ -189,8 +188,10 @@ protected:
 	const double m_leak;
 
 	// internal state
-	double m_sylfilter_d;
-	double m_intfilter_d;
+	double m_sylfilter;
+	double m_intfilter;
+	stream_buffer::sample_t m_curr_sample;
+	stream_buffer::sample_t m_next_sample;
 
 	// internal handlers
 	virtual void process_bit(bool bit, bool clock_state) override;

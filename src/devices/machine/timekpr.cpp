@@ -15,10 +15,10 @@
 ***************************************************************************/
 
 #include "emu.h"
-#include "machine/timekpr.h"
+#include "timekpr.h"
+
 #include "machine/timehelp.h"
 
-#define LOG_GENERAL (1U << 0)
 #define LOG_TICKS   (1U << 1)
 
 #define VERBOSE (0)
@@ -31,6 +31,7 @@ DEFINE_DEVICE_TYPE(M48T37,  m48t37_device,  "m48t37",  "M48T37 Timekeeper")
 DEFINE_DEVICE_TYPE(M48T58,  m48t58_device,  "m48t58",  "M48T58 Timekeeper")
 DEFINE_DEVICE_TYPE(MK48T08, mk48t08_device, "mk48t08", "MK48T08 Timekeeper")
 DEFINE_DEVICE_TYPE(MK48T12, mk48t12_device, "mk48t12", "MK48T12 Timekeeper")
+DEFINE_DEVICE_TYPE(DS1643,  ds1643_device,  "ds1643",  "DS1643 Nonvolatile Timekeeping RAM")
 
 
 /***************************************************************************
@@ -48,12 +49,12 @@ DEFINE_DEVICE_TYPE(MK48T12, mk48t12_device, "mk48t12", "MK48T12 Timekeeper")
 
 #define CONTROL_W (0x80)
 #define CONTROL_R (0x40)
-#define CONTROL_S (0x20) /* not emulated */
-#define CONTROL_CALIBRATION (0x1f) /* not emulated */
+#define CONTROL_S (0x20) /* not emulated - unused on DS1643 */
+#define CONTROL_CALIBRATION (0x1f) /* not emulated - unused on DS1643 */
 
 #define SECONDS_ST (0x80)
 
-#define DAY_FT (0x40) /* M48T37 - not emulated */
+#define DAY_FT (0x40) /* M48T37/DS1643 - not emulated */
 #define DAY_CEB (0x20) /* M48T35/M48T58 */
 #define DAY_CB (0x10) /* M48T35/M48T58 */
 
@@ -147,8 +148,8 @@ m48t37_device::m48t37_device(const machine_config &mconfig, const char *tag, dev
 	m_offset_flags = 0x7ff0;
 }
 
-m48t58_device::m48t58_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock)
-	: timekeeper_device(mconfig, M48T58, tag, owner, clock, 0x2000)
+m48t58_device::m48t58_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, u32 clock)
+	: timekeeper_device(mconfig, type, tag, owner, clock, 0x2000)
 {
 	m_offset_watchdog = -1;
 	m_offset_control = 0x1ff8;
@@ -161,6 +162,16 @@ m48t58_device::m48t58_device(const machine_config &mconfig, const char *tag, dev
 	m_offset_year = 0x1fff;
 	m_offset_century = -1;
 	m_offset_flags = -1;
+}
+
+m48t58_device::m48t58_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock)
+	: m48t58_device(mconfig, M48T58, tag, owner, clock)
+{
+}
+
+ds1643_device::ds1643_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock)
+	: m48t58_device(mconfig, DS1643, tag, owner, clock)
+{
 }
 
 mk48t08_device::mk48t08_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock)
@@ -221,8 +232,6 @@ void timekeeper_device::device_start()
 
 	m_watchdog_timer = timer_alloc(FUNC(timekeeper_device::watchdog_callback), this);
 	m_watchdog_timer->adjust(attotime::never);
-	m_reset_cb.resolve_safe();
-	m_irq_cb.resolve_safe();
 }
 
 //-------------------------------------------------
@@ -369,7 +378,7 @@ void timekeeper_device::watchdog_write(u8 data)
 
 void timekeeper_device::write(offs_t offset, u8 data)
 {
-	LOGMASKED(LOG_GENERAL, "timekeeper_device::write: %04x = %02x\n", offset, data);
+	LOG("timekeeper_device::write: %04x = %02x\n", offset, data);
 	if (offset == m_offset_control)
 	{
 		if ((m_control & CONTROL_W) != 0 &&
@@ -423,13 +432,18 @@ u8 timekeeper_device::read(offs_t offset)
 	}
 	else if (offset == m_offset_flags && type() == M48T37)
 	{
-		// Clear the watchdog flag
-		m_data[m_offset_flags] &= ~FLAGS_WDF;
-		// Clear callbacks
-		m_reset_cb(CLEAR_LINE);
-		m_irq_cb(CLEAR_LINE);
+		if (!machine().side_effects_disabled())
+		{
+			// Clear the watchdog flag
+			m_data[m_offset_flags] &= ~FLAGS_WDF;
+			// Clear callbacks
+			m_reset_cb(CLEAR_LINE);
+			m_irq_cb(CLEAR_LINE);
+		}
 	}
-	LOGMASKED(LOG_GENERAL, "timekeeper_device::read: %04x (%02x)\n", offset, result);
+	if (!machine().side_effects_disabled())
+		LOG("timekeeper_device::read: %04x (%02x)\n", offset, result);
+
 	return result;
 }
 
@@ -462,8 +476,8 @@ void timekeeper_device::nvram_default()
 
 bool timekeeper_device::nvram_read(util::read_stream &file)
 {
-	size_t actual;
-	if (file.read(&m_data[0], m_size, actual) || actual != m_size)
+	auto const [err, actual] = util::read(file, &m_data[0], m_size);
+	if (err || (actual != m_size))
 		return false;
 
 	counters_to_ram();
@@ -478,6 +492,6 @@ bool timekeeper_device::nvram_read(util::read_stream &file)
 
 bool timekeeper_device::nvram_write(util::write_stream &file)
 {
-	size_t actual;
-	return !file.write(&m_data[0], m_size, actual) && actual == m_size;
+	auto const [err, actual] = util::write(file, &m_data[0], m_size);
+	return !err;
 }

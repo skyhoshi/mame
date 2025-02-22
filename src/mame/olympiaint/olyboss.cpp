@@ -85,8 +85,8 @@ public:
 	void olybossd(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	TIMER_CALLBACK_MEMBER(toggle_tim);
 
@@ -95,9 +95,9 @@ private:
 
 	UPD3301_DRAW_CHARACTER_MEMBER( olyboss_display_pixels );
 
-	DECLARE_WRITE_LINE_MEMBER( hrq_w );
-	DECLARE_WRITE_LINE_MEMBER( tc_w );
-	DECLARE_WRITE_LINE_MEMBER( romdis_w );
+	void hrq_w(int state);
+	void tc_w(int state);
+	void romdis_w(int state);
 	u8 dma_mem_r(offs_t offset);
 	void dma_mem_w(offs_t offset, u8 data);
 	u8 fdcctrl_r();
@@ -112,9 +112,9 @@ private:
 	void vchrram_w(offs_t offset, u8 data);
 	void vchrram85_w(offs_t offset, u8 data);
 	void ppic_w(u8 data);
-	void olyboss_io(address_map &map);
-	void olyboss_mem(address_map &map);
-	void olyboss85_io(address_map &map);
+	void olyboss_io(address_map &map) ATTR_COLD;
+	void olyboss_mem(address_map &map) ATTR_COLD;
+	void olyboss85_io(address_map &map) ATTR_COLD;
 
 	required_device<cpu_device> m_maincpu;
 	required_device<i8257_device> m_dma;
@@ -250,7 +250,7 @@ void olyboss_state::vchrram_w(offs_t offset, u8 data)
 	m_vchrram[(m_vchrpage << 4) + (offset ^ 0xf)] = data;
 }
 
-WRITE_LINE_MEMBER( olyboss_state::romdis_w )
+void olyboss_state::romdis_w(int state)
 {
 	m_romen = state ? false : true;
 }
@@ -336,14 +336,14 @@ void olyboss_state::keyboard85_put(u8 data)
 
 /* 8257 Interface */
 
-WRITE_LINE_MEMBER( olyboss_state::hrq_w )
+void olyboss_state::hrq_w(int state)
 {
 	//logerror("hrq_w\n");
 	m_maincpu->set_input_line(INPUT_LINE_HALT,state);
 	m_dma->hlda_w(state);
 }
 
-WRITE_LINE_MEMBER( olyboss_state::tc_w )
+void olyboss_state::tc_w(int state)
 {
 	if((m_channel == 0) && state)
 	{

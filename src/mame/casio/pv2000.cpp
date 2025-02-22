@@ -57,8 +57,8 @@ public:
 	void pv2000(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -70,7 +70,7 @@ private:
 	uint8_t keys_hi_r();
 	uint8_t keys_lo_r();
 	uint8_t keys_mod_r();
-	DECLARE_WRITE_LINE_MEMBER(pv2000_vdp_interrupt);
+	void pv2000_vdp_interrupt(int state);
 	uint8_t cass_in();
 	void cass_out(uint8_t data);
 	bool m_last_state = false;
@@ -78,8 +78,8 @@ private:
 	uint8_t m_keyb_column = 0;
 	uint8_t m_cass_conf = 0;
 	DECLARE_DEVICE_IMAGE_LOAD_MEMBER(cart_load);
-	void pv2000_io_map(address_map &map);
-	void pv2000_map(address_map &map);
+	void pv2000_io_map(address_map &map) ATTR_COLD;
+	void pv2000_map(address_map &map) ATTR_COLD;
 };
 
 
@@ -317,7 +317,7 @@ static INPUT_PORTS_START( pv2000 )
 INPUT_PORTS_END
 
 
-WRITE_LINE_MEMBER(pv2000_state::pv2000_vdp_interrupt)
+void pv2000_state::pv2000_vdp_interrupt(int state)
 {
 	// only if it goes up
 	if (state && !m_last_state)

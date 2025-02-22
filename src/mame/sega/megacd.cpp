@@ -1790,7 +1790,7 @@ void sega_segacd_device::device_reset()
 	// time.  Changing the CDHock timer to 50hz from 75hz also stops the hang, but then the video is
 	// too slow and has bad sound.  -- Investigate!
 	// Update: removed, otherwise megacdj and megacd2j will black screen with no cdrom inserted.
-	//m_scdcpu->set_clock_scale(1.5000f);
+	//m_scdcpu->set_clock_scale(1.5);
 
 
 	// initialize some stuff on reset
@@ -1872,11 +1872,14 @@ void sega_segacd_device::SegaCD_CDC_Do_DMA(int &dmacount, uint8_t *CDC_BUFFER, u
 		}
 		else if (destination==DMA_PCM)
 		{
-			dest = nullptr;//fatalerror("PCM RAM DMA unimplemented!\n");
+			dest = nullptr;
+			//fatalerror("PCM RAM DMA unimplemented!\n");
 		}
 		else
 		{
-			fatalerror("Unknown DMA Destination!!\n");
+			// TODO: audio CD player accesses this
+			dest = nullptr;
+			//fatalerror("Unknown DMA Destination!!\n");
 		}
 
 		if (PCM_DMA)

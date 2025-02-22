@@ -185,8 +185,7 @@ std::string ekara_cart_slot_device::get_default_card_software(get_default_card_s
 		hook.image_file()->length(len); // FIXME: check error return, guard against excessively large files
 		std::vector<uint8_t> rom(len);
 
-		size_t actual;
-		hook.image_file()->read(&rom[0], len, actual); // FIXME: check error return or read returning short
+		/*auto const [err, actual] =*/ read(*hook.image_file(), &rom[0], len); // FIXME: check error return or read returning short
 
 		int const type = get_cart_type(&rom[0], len);
 		char const *const slot_string = ekara_get_slot(type);
@@ -258,17 +257,17 @@ bool ekara_cart_slot_device::is_write_access_not_rom(void)
  direct seeprom access (popira2, gc0010)
  -------------------------------------------------*/
 
-WRITE_LINE_MEMBER(ekara_cart_slot_device::write_sda)
+void ekara_cart_slot_device::write_sda(int state)
 {
 	m_cart->write_sda(state);
 }
 
-WRITE_LINE_MEMBER(ekara_cart_slot_device::write_scl)
+void ekara_cart_slot_device::write_scl(int state)
 {
 	m_cart->write_scl(state);
 }
 
-READ_LINE_MEMBER(ekara_cart_slot_device::read_sda )
+int ekara_cart_slot_device::read_sda()
 {
 	return  m_cart->read_sda();
 }

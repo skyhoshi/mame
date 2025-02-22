@@ -59,10 +59,10 @@
 
 #include <algorithm>
 
-#define LOG_GPIO    (1 << 0)
-#define LOG_ADC     (1 << 1)
-#define LOG_I2C     (1 << 2)
-#define LOG_INPUTS  (1 << 3)
+#define LOG_GPIO    (1U << 1)
+#define LOG_ADC     (1U << 2)
+#define LOG_I2C     (1U << 3)
+#define LOG_INPUTS  (1U << 4)
 
 #define VERBOSE     (LOG_GPIO | LOG_ADC | LOG_I2C | LOG_INPUTS)
 #include "logmacro.h"
@@ -125,8 +125,8 @@ private:
 
 	uint8_t m_input_select = 0;
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 	uint32_t s3c2440_gpio_port_r(offs_t offset);
 	void s3c2440_gpio_port_w(offs_t offset, uint32_t data, uint32_t mem_mask = ~0);
 	uint32_t s3c2440_core_pin_r(offs_t offset);
@@ -137,7 +137,7 @@ private:
 	void s3c2440_i2s_data_w(offs_t offset, uint16_t data);
 	uint32_t s3c2440_adc_data_r();
 
-	void hapyfish_map(address_map &map);
+	void hapyfish_map(address_map &map) ATTR_COLD;
 };
 
 /***************************************************************************
@@ -606,4 +606,4 @@ ROM_END
 } // anonymous namespace
 
 
-GAME( 201?, hapyfsh2, 0, hapyfish, hapyfish, hapyfish_state, empty_init, ROT0, "bootleg", "Happy Fish (V2 PCB, 302-in-1)", MACHINE_IS_SKELETON )
+GAME( 201?, hapyfsh2, 0, hapyfish, hapyfish, hapyfish_state, empty_init, ROT0, "bootleg", "Happy Fish (V2 PCB, 302-in-1)", MACHINE_NO_SOUND | MACHINE_NOT_WORKING )

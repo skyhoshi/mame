@@ -9,11 +9,7 @@
   Who Wants to Know? (wwtk@mail.com)
 
   This core is written with the advise and consent of Matthew Conte and is
-  released under the GNU Public License.  This core is freely available for
-  use in any freeware project, subject to the following terms:
-
-  Any modifications to this code must be duly noted in the source and
-  approved by Matthew Conte and myself prior to public submission.
+  released under the GNU Public License.
 
  *****************************************************************************
 
@@ -49,7 +45,7 @@ public:
 	auto irq() { return m_irq_handler.bind(); }
 	auto mem_read() { return m_mem_read_cb.bind(); }
 
-	virtual void device_reset() override;
+	virtual void device_reset() override ATTR_COLD;
 	virtual void device_clock_changed() override;
 
 	u8 status_r();
@@ -59,7 +55,7 @@ protected:
 	nesapu_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, u32 clock);
 
 	// device-level overrides
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	// sound stream update overrides
 	virtual void sound_stream_update(sound_stream &stream, std::vector<read_stream_view> const &inputs, std::vector<write_stream_view> &outputs) override;

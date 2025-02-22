@@ -170,8 +170,6 @@ void gdrom_device::device_reset()
 		GDROM_Cmd11_Reply[i] = GDROM_Def_Cmd11_Reply[i];
 
 	atapi_cdrom_device::device_reset();
-
-	m_cdda->set_cdrom(m_image);
 }
 
 // scsicd_exec_command
@@ -193,7 +191,7 @@ void gdrom_device::ExecCommand()
 		case 0x10:
 		{
 			transferOffset = command[2];
-			u8 allocation_length = SCSILengthFromUINT8( &command[ 4 ] );
+			u8 allocation_length = SCSILengthFromUINT8( &command[4] );
 			// any game that enables [redbook]
 			LOGCMD("REQ_STAT 10h offset %02x length %02x\n", transferOffset, allocation_length);
 
@@ -211,9 +209,9 @@ void gdrom_device::ExecCommand()
 			m_phase = SCSI_PHASE_DATAIN;
 			m_status_code = SCSI_STATUS_CODE_GOOD;
 
-//          if (SCSILengthFromUINT8( &command[ 4 ] ) < 32) return -1;
+//          if (SCSILengthFromUINT8( &command[4] ) < 32) return -1;
 			transferOffset = command[2];
-			m_transfer_length = SCSILengthFromUINT8( &command[ 4 ] );
+			m_transfer_length = SCSILengthFromUINT8( &command[4] );
 			if (transferOffset & 1)
 				throw emu_fatalerror("GDROM: REQ_MODE with odd offset %02x %02x", transferOffset, m_transfer_length);
 			break;
@@ -224,7 +222,7 @@ void gdrom_device::ExecCommand()
 			m_phase = SCSI_PHASE_DATAOUT;
 			m_status_code = SCSI_STATUS_CODE_GOOD;
 			//transferOffset = command[2];
-			m_transfer_length = SCSILengthFromUINT8( &command[ 4 ] );
+			m_transfer_length = SCSILengthFromUINT8( &command[4] );
 			if (command[2])
 				throw emu_fatalerror("GDROM: SET_MODE with offset %02x %02x", transferOffset, m_transfer_length);
 
@@ -247,8 +245,8 @@ void gdrom_device::ExecCommand()
 
 			// TODO: it's supposed to write a single and a double density TOC request
 			//if (command[1])
-			//	throw emu_fatalerror("Double density unsupported");
-			u16 allocation_length = SCSILengthFromUINT16( &command[ 3 ] );
+			//  throw emu_fatalerror("Double density unsupported");
+			u16 allocation_length = SCSILengthFromUINT16( &command[3] );
 			LOGCMD("READ_TOC 14h %02x %02x %d\n",
 				command[1], command[2], allocation_length
 			);
@@ -274,7 +272,7 @@ void gdrom_device::ExecCommand()
 		{
 			m_phase = SCSI_PHASE_DATAIN;
 			m_status_code = SCSI_STATUS_CODE_GOOD;
-			m_transfer_length = SCSILengthFromUINT8( &command[ 4 ] );
+			m_transfer_length = SCSILengthFromUINT8( &command[4] );
 			LOGCMD("REQ_SES 15h %02x %02x\n", command[2], m_transfer_length);
 			break;
 		}
@@ -433,7 +431,7 @@ void gdrom_device::ExecCommand()
 
 		case 0x40:
 		{
-			m_transfer_length = SCSILengthFromUINT8( &command[ 4 ] );
+			m_transfer_length = SCSILengthFromUINT8( &command[4] );
 			//LOGCMD("CD_SCD 40h %02x %d\n", command[1] & 0xf, m_transfer_length);
 
 			switch(command[1] & 0xf)
@@ -441,7 +439,7 @@ void gdrom_device::ExecCommand()
 				case 0x00:
 					m_phase = SCSI_PHASE_DATAIN;
 					m_status_code = SCSI_STATUS_CODE_GOOD;
-					m_transfer_length = SCSILengthFromUINT8( &command[ 4 ] );
+					m_transfer_length = SCSILengthFromUINT8( &command[4] );
 					break;
 				case 0x01:
 					m_phase = SCSI_PHASE_DATAIN;
@@ -583,7 +581,7 @@ void gdrom_device::ReadData( uint8_t *data, int dataLength )
 
 						tstart = m_image->get_track_start(i - 1) + 150;
 						//if ((command[1]&2)>>1)
-						//	tstart = cdrom_file::lba_to_msf(tstart);
+						//  tstart = cdrom_file::lba_to_msf(tstart);
 						data[dptr++] = (tstart>>16) & 0xff;
 						data[dptr++] = (tstart>>8) & 0xff;
 						data[dptr++] = (tstart & 0xff);
@@ -601,7 +599,7 @@ void gdrom_device::ReadData( uint8_t *data, int dataLength )
 					data[dptr++] = 0;
 					const u32 tend = m_image->get_track_start(0xaa) + 150;
 					//if ((command[1]&2)>>1)
-					//	tstart = cdrom_file::lba_to_msf(tstart);
+					//  tstart = cdrom_file::lba_to_msf(tstart);
 					data[dptr++] = m_image->get_adr_control(0xaa) | 1;
 					data[dptr++] = (tend>>16) & 0xff;
 					data[dptr++] = (tend>>8) & 0xff;
@@ -755,7 +753,7 @@ void gdrom_device::ReadData( uint8_t *data, int dataLength )
 
 void gdrom_device::WriteData( uint8_t *data, int dataLength )
 {
-	switch (command[ 0 ])
+	switch (command[0])
 	{
 		case 0x12: // SET_MODE
 			memcpy(&GDROM_Cmd11_Reply[transferOffset], data, (dataLength >= 32-transferOffset) ? 32-transferOffset : dataLength);
@@ -856,6 +854,11 @@ void gdrom_device::signature()
 {
 	atapi_hle_device::signature();
 
+	// 0000 CD-DA
+	// 0001 CD-ROM
+	// 0010 CD-ROM XA, CD Extra
+	// 0011 CD-i
+	// 1000 GD-ROM
 	const u8 cd_type = m_image->is_gd() ? 0x80 : 0x00;
 
 	// naomi dimm board firmware needs the upper nibble to be 8 at the beginning
@@ -865,11 +868,11 @@ void gdrom_device::signature()
 //bool gdrom_device::set_features()
 //{
 	// TODO: DSC, likely tested by Check-GD programs
-//	m_status |= IDE_STATUS_DSC;
-//	return atapi_cdrom_device::set_features();
+//  m_status |= IDE_STATUS_DSC;
+//  return atapi_cdrom_device::set_features();
 //}
 
-WRITE_LINE_MEMBER(gdrom_device::cdda_end_mark_cb)
+void gdrom_device::cdda_end_mark_cb(int state)
 {
 	if (state != ASSERT_LINE)
 		return;

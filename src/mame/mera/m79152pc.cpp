@@ -56,13 +56,13 @@ public:
 	void m79152pc(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	void beep_w(offs_t offset, uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(latch_full_w);
-	DECLARE_READ_LINE_MEMBER(mcu_t0_r);
-	DECLARE_READ_LINE_MEMBER(mcu_t1_r);
+	void latch_full_w(int state);
+	int mcu_t0_r();
+	int mcu_t1_r();
 	void mcu_p1_w(u8 data);
 	void mcu_p2_w(u8 data);
 	void lc_reset_w(u8 data);
@@ -73,10 +73,10 @@ private:
 	u32 screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	void screen_draw_line(bitmap_ind16 &bitmap, unsigned y);
 
-	void mem_map(address_map &map);
-	void io_map(address_map &map);
-	void mcu_map(address_map &map);
-	void mcu_io_map(address_map &map);
+	void mem_map(address_map &map) ATTR_COLD;
+	void io_map(address_map &map) ATTR_COLD;
+	void mcu_map(address_map &map) ATTR_COLD;
+	void mcu_io_map(address_map &map) ATTR_COLD;
 
 	required_shared_ptr<u8> m_videoram;
 	required_shared_ptr<u8> m_attributes;
@@ -103,17 +103,17 @@ void m79152pc_state::beep_w(offs_t offset, uint8_t data)
 	m_beep->set_state(BIT(offset, 2));
 }
 
-WRITE_LINE_MEMBER(m79152pc_state::latch_full_w)
+void m79152pc_state::latch_full_w(int state)
 {
 	m_latch_full = state == ASSERT_LINE;
 }
 
-READ_LINE_MEMBER(m79152pc_state::mcu_t0_r)
+int m79152pc_state::mcu_t0_r()
 {
 	return m_latch_full ? 0 : 1;
 }
 
-READ_LINE_MEMBER(m79152pc_state::mcu_t1_r)
+int m79152pc_state::mcu_t1_r()
 {
 	return m_hsync ? 0 : 1;
 }

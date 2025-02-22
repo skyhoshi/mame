@@ -46,15 +46,12 @@ public:
 
 	u8 read(offs_t offset);
 	void write(offs_t offset, u8 data);
-	u16 word_r(offs_t offset);
-	void word_w(offs_t offset, u16 data, u16 mem_mask = ~0);
 
 	void set_rmrd_line(int state);
 	int get_rmrd_line();
 	void tilemap_update();
-	int is_irq_enabled() { return m_irq_enabled; } // FIXME: remove
-	void tilemap_mark_dirty(int tmap_num);
 	void tilemap_draw(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect, int tmap_num, uint32_t flags, uint8_t priority);
+	void mark_tilemap_dirty(uint8_t tmap_num);
 
 	void vblank_callback(screen_device &screen, bool state);
 
@@ -62,13 +59,13 @@ public:
 
 protected:
 	// device-level overrides
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 	virtual void device_post_load() override;
 
 private:
 	// internal state
-	std::unique_ptr<uint8_t[]>   m_ram;
+	std::unique_ptr<uint8_t[]> m_ram;
 	uint8_t    *m_videoram_F;
 	uint8_t    *m_videoram_A;
 	uint8_t    *m_videoram_B;
@@ -80,13 +77,13 @@ private:
 	uint8_t    *m_colorram_B;
 
 	tilemap_t  *m_tilemap[3];
-	int      m_tileflip_enable;
+	uint8_t    m_tileflip_enable;
 	uint8_t    m_charrombank[4];
 	uint8_t    m_charrombank_2[4];
 	uint8_t    m_has_extra_video_ram;
 	int32_t    m_rmrd_line;
 	uint8_t    m_irq_enabled;
-	uint8_t    m_romsubbank, m_scrollctrl;
+	uint8_t    m_romsubbank, m_scrollctrl, m_addrmap;
 
 	int        m_dx, m_dy;
 

@@ -851,14 +851,18 @@ namespace entry
 
 						if (utf16[0] >= 0xD800 && utf16[0] <= 0xDBFF) {
 							m_surrogate = utf16[0];
-						} else {
+						}
+						else
+						{
 							int utf16_len;
 							if (utf16[0] >= 0xDC00 && utf16[0] <= 0xDFFF) {
 								utf16[1] = utf16[0];
 								utf16[0] = m_surrogate;
 								m_surrogate = 0;
 								utf16_len = 2;
-							} else {
+							}
+							else
+							{
 								utf16_len = 1;
 							}
 
@@ -1167,6 +1171,12 @@ namespace entry
 	void* getNativeDisplayHandle()
 	{
 		return NULL;
+	}
+
+	bgfx::NativeWindowHandleType::Enum getNativeWindowHandleType(WindowHandle _handle)
+	{
+		BX_UNUSED(_handle);
+		return bgfx::NativeWindowHandleType::Default;
 	}
 
 	int32_t MainThreadEntry::threadFunc(bx::Thread* /*_thread*/, void* _userData)

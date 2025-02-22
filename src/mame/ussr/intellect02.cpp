@@ -50,7 +50,7 @@ Keypad legend:
 #include "speaker.h"
 
 // internal artwork
-#include "intellect02.lh" // clickable
+#include "intellect02.lh"
 
 
 namespace {
@@ -73,7 +73,7 @@ public:
 	DECLARE_INPUT_CHANGED_MEMBER(reset_button);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	// devices/pointers
@@ -83,18 +83,18 @@ private:
 	required_device<beep_device> m_beeper;
 	required_ioport_array<2> m_inputs;
 
+	u8 m_digit_data = 0;
+	u8 m_led_select = 0;
+
 	// address maps
-	void main_map(address_map &map);
-	void main_io(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void main_io(address_map &map) ATTR_COLD;
 
 	// I/O handlers
 	void update_display();
 	u8 input_r();
 	void digit_w(u8 data);
 	void control_w(u8 data);
-
-	u8 m_digit_data = 0;
-	u8 m_led_select = 0;
 };
 
 void intel02_state::machine_start()
@@ -201,7 +201,7 @@ static INPUT_PORTS_START( intel02 )
 	PORT_BIT(0x08, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_DEL) PORT_CODE(KEYCODE_BACKSPACE) PORT_NAME(u8"СТ (Erase)")
 
 	PORT_START("RESET")
-	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_R) PORT_CHANGED_MEMBER(DEVICE_SELF, intel02_state, reset_button, 0) PORT_NAME(u8"СБ (Reset)")
+	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_R) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(intel02_state::reset_button), 0) PORT_NAME(u8"СБ (Reset)")
 INPUT_PORTS_END
 
 
@@ -213,7 +213,7 @@ INPUT_PORTS_END
 void intel02_state::intel02(machine_config &config)
 {
 	// basic machine hardware
-	I8080A(config, m_maincpu, 1500000); // measured (no XTAL)
+	I8080A(config, m_maincpu, 1'500'000); // measured (no XTAL)
 	m_maincpu->set_addrmap(AS_PROGRAM, &intel02_state::main_map);
 	m_maincpu->set_addrmap(AS_IO, &intel02_state::main_io);
 
@@ -259,4 +259,4 @@ ROM_END
 *******************************************************************************/
 
 //    YEAR  NAME     PARENT  COMPAT  MACHINE  INPUT    CLASS          INIT        COMPANY, FULLNAME, FLAGS
-SYST( 1985, intel02, 0,      0,      intel02, intel02, intel02_state, empty_init, "BREA Research Institute", "Intellect-02", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
+SYST( 1985, intel02, 0,      0,      intel02, intel02, intel02_state, empty_init, "BREA Research Institute", "Intellect-02", MACHINE_SUPPORTS_SAVE )

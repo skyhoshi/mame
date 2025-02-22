@@ -11,12 +11,15 @@ original creation by Rüdiger Worbs and Dieter Schultze. It competed in
 Budapest WMCCC 1983 and ended at a low 16th place.
 
 Hardware notes:
+- PCB label: 15003-500-2902 B 01 02 03
 - UB880 Z80 @ ~2.5MHz
 - 2*Z80 PIO
 - 10KB ROM (10*U505D), 2KB RAM (4*U214D)
 - chessboard with 64 hall sensors, 64+15 leds, piezo
 
-A newer version had a 4MHz UA880 and 2 ROM chips (8KB + 2KB).
+Chess-Master Schachtisch embedded in a wooden table is on the same hardware
+and has the same ROMs, they manually changed the PCB label from 15003 to 15005.
+A newer version of Chess-Master had a 4MHz UA880 and 2 ROM chips (8KB + 2KB).
 
 BTANB:
 - corner leds flicker sometimes
@@ -64,18 +67,21 @@ public:
 	void chessmsta(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	required_device<z80_device> m_maincpu;
 	required_device_array<z80pio_device, 2> m_pio;
 	required_device<sensorboard_device> m_board;
 	required_device<pwm_display_device> m_led_pwm;
-	required_device<dac_bit_interface> m_dac;
+	required_device<dac_1bit_device> m_dac;
 	required_ioport_array<2> m_inputs;
 
-	void chessmst_io(address_map &map);
-	void chessmst_mem(address_map &map);
+	u16 m_matrix = 0;
+	u8 m_led_data[2] = { 0, 0 };
+
+	void chessmst_io(address_map &map) ATTR_COLD;
+	void chessmst_mem(address_map &map) ATTR_COLD;
 
 	void pio1_port_a_w(u8 data);
 	void pio1_port_b_w(u8 data);
@@ -83,9 +89,6 @@ private:
 	void pio2_port_b_w(u8 data);
 
 	void update_leds();
-
-	u16 m_matrix = 0;
-	u8 m_led_data[2] = { 0, 0 };
 };
 
 void chessmst_state::machine_start()
@@ -204,11 +207,8 @@ static INPUT_PORTS_START( chessmst )
 	PORT_BIT(0x80, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_NAME("New Game / 0 / Pawn")   PORT_CODE(KEYCODE_0) PORT_CODE(KEYCODE_0_PAD) PORT_CODE(KEYCODE_N)
 
 	PORT_START("IN.1")
-	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_NAME("Halt")  PORT_CODE(KEYCODE_F2) PORT_CHANGED_MEMBER(DEVICE_SELF, chessmst_state, halt_button, 0)
-	PORT_BIT(0x02, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_NAME("Reset") PORT_CODE(KEYCODE_F1) PORT_CHANGED_MEMBER(DEVICE_SELF, chessmst_state, reset_button, 0)
-
-	PORT_START("CLICKABLE") // helper for clickable artwork
-	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_OTHER)
+	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_NAME("Halt")  PORT_CODE(KEYCODE_F2) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(chessmst_state::halt_button), 0)
+	PORT_BIT(0x02, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_NAME("Reset") PORT_CODE(KEYCODE_F1) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(chessmst_state::reset_button), 0)
 INPUT_PORTS_END
 
 
@@ -300,5 +300,5 @@ ROM_END
 *******************************************************************************/
 
 //    YEAR  NAME        PARENT    COMPAT  MACHINE    INPUT     CLASS           INIT        COMPANY                                     FULLNAME                FLAGS
-SYST( 1984, chessmst,   0,        0,      chessmst,  chessmst, chessmst_state, empty_init, "VEB Mikroelektronik \"Karl Marx\" Erfurt", "Chess-Master (set 1)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
-SYST( 1984, chessmsta,  chessmst, 0,      chessmsta, chessmst, chessmst_state, empty_init, "VEB Mikroelektronik \"Karl Marx\" Erfurt", "Chess-Master (set 2)", MACHINE_SUPPORTS_SAVE | MACHINE_NOT_WORKING | MACHINE_CLICKABLE_ARTWORK )
+SYST( 1984, chessmst,   0,        0,      chessmst,  chessmst, chessmst_state, empty_init, "VEB Mikroelektronik \"Karl Marx\" Erfurt", "Chess-Master (set 1)", MACHINE_SUPPORTS_SAVE )
+SYST( 1984, chessmsta,  chessmst, 0,      chessmsta, chessmst, chessmst_state, empty_init, "VEB Mikroelektronik \"Karl Marx\" Erfurt", "Chess-Master (set 2)", MACHINE_SUPPORTS_SAVE | MACHINE_NOT_WORKING )

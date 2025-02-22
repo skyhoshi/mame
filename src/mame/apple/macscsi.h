@@ -27,13 +27,12 @@ public:
 	u8 read_wrapper(bool pseudo_dma, offs_t offset);
 	void write_wrapper(bool pseudo_dma, offs_t offset, u8 data);
 
-	DECLARE_WRITE_LINE_MEMBER(drq_w);
+	void drq_w(int state);
 
 protected:
-	// device-level overrides
-	virtual void device_resolve_objects() override;
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	// device_t implementation
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 private:
 	enum class mode : u8 { NON_DMA, READ_WAIT_DRQ, READ_DMA, WRITE_DMA, BAD_DMA };

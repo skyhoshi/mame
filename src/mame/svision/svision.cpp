@@ -13,7 +13,7 @@
 
 #include "bus/generic/carts.h"
 #include "bus/generic/slot.h"
-#include "cpu/m6502/m65c02.h"
+#include "cpu/m6502/w65c02.h"
 #include "machine/timer.h"
 
 #include "emupal.h"
@@ -25,7 +25,7 @@
 
 
 // configurable logging
-#define LOG_REGS     (1U <<  1)
+#define LOG_REGS     (1U << 1)
 
 //#define VERBOSE (LOG_GENERAL | LOG_REGS)
 
@@ -57,8 +57,8 @@ public:
 	void svisionn(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	required_device<cpu_device> m_maincpu;
 	required_device<svision_sound_device> m_sound;
@@ -85,12 +85,12 @@ protected:
 	uint8_t m_timer_shot = 0;
 	bool m_dma_finished = false;
 
-	DECLARE_WRITE_LINE_MEMBER(sound_irq_w);
+	void sound_irq_w(int state);
 	uint8_t regs_r(offs_t offset);
 	void regs_w(offs_t offset, uint8_t data);
 
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	DECLARE_WRITE_LINE_MEMBER(frame_int_w);
+	void frame_int_w(int state);
 	DECLARE_DEVICE_IMAGE_LOAD_MEMBER(cart_load);
 
 	void svision_palette(palette_device &palette) const;
@@ -106,7 +106,7 @@ protected:
 
 	TIMER_CALLBACK_MEMBER(timer);
 
-	void program_map(address_map &map);
+	void program_map(address_map &map) ATTR_COLD;
 
 	void svision_base(machine_config &config);
 };
@@ -122,7 +122,7 @@ public:
 	void svisions(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	required_ioport m_joy2;
@@ -137,7 +137,7 @@ private:
 	TIMER_CALLBACK_MEMBER(pet_timer);
 	TIMER_DEVICE_CALLBACK_MEMBER(pet_timer_dev);
 
-	void program_map(address_map &map);
+	void program_map(address_map &map) ATTR_COLD;
 };
 
 class tvlink_state : public svision_state
@@ -150,8 +150,8 @@ public:
 	void tvlinkp(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	uint32_t m_tvlink_palette[4]{}; // 0x40? rgb8
@@ -162,7 +162,7 @@ private:
 
 	uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
-	void program_map(address_map &map);
+	void program_map(address_map &map) ATTR_COLD;
 };
 
 TIMER_CALLBACK_MEMBER(svisions_state::pet_timer)
@@ -196,7 +196,7 @@ TIMER_DEVICE_CALLBACK_MEMBER(svisions_state::pet_timer_dev)
 	pet_timer(param);
 }
 
-WRITE_LINE_MEMBER(svision_state::sound_irq_w)
+void svision_state::sound_irq_w(int state)
 {
 	m_dma_finished = true;
 	check_irq();
@@ -207,7 +207,7 @@ void svision_state::check_irq()
 	bool irq = m_timer_shot && BIT(m_reg[BANK], 1);
 	irq = irq || (m_dma_finished && BIT(m_reg[BANK], 2));
 
-	m_maincpu->set_input_line(M65C02_IRQ_LINE, irq ? ASSERT_LINE : CLEAR_LINE);
+	m_maincpu->set_input_line(W65C02_IRQ_LINE, irq ? ASSERT_LINE : CLEAR_LINE);
 }
 
 TIMER_CALLBACK_MEMBER(svision_state::timer)
@@ -603,7 +603,7 @@ uint32_t tvlink_state::screen_update(screen_device &screen, bitmap_rgb32 &bitmap
 	return 0;
 }
 
-WRITE_LINE_MEMBER(svision_state::frame_int_w)
+void svision_state::frame_int_w(int state)
 {
 	if (!state)
 		return;
@@ -712,7 +712,7 @@ void svision_state::svision(machine_config &config)
 {
 	svision_base(config);
 
-	M65C02(config, m_maincpu, 4'000'000);
+	W65C02(config, m_maincpu, 4'000'000);
 	m_maincpu->set_addrmap(AS_PROGRAM, &svision_state::program_map);
 
 	SCREEN(config, m_screen, SCREEN_TYPE_LCD);

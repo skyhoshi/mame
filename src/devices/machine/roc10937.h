@@ -21,9 +21,9 @@ public:
 	virtual void update_display();
 	void shift_clock(int data);
 	void write_char(int data);
-	DECLARE_WRITE_LINE_MEMBER( sclk );
-	DECLARE_WRITE_LINE_MEMBER( data );
-	DECLARE_WRITE_LINE_MEMBER( por );
+	void sclk(int state);
+	void data(int state);
+	void por(int state);
 
 
 protected:
@@ -45,8 +45,8 @@ protected:
 	uint8_t m_cursor;
 	uint32_t m_chars[16];
 
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 	virtual void device_post_load() override;
 
 private:

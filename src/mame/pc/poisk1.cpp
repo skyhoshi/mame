@@ -43,9 +43,8 @@
 #include "speaker.h"
 
 
-//#define LOG_GENERAL (1U <<  0) //defined in logmacro.h already
-#define LOG_KEYBOARD  (1U <<  1)
-#define LOG_DEBUG     (1U <<  2)
+#define LOG_KEYBOARD  (1U << 1)
+#define LOG_DEBUG     (1U << 2)
 
 //#define VERBOSE (LOG_DEBUG)
 //#define LOG_OUTPUT_FUNC osd_printf_info
@@ -92,11 +91,11 @@ public:
 	void fdc_config(device_t *device);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
-	DECLARE_WRITE_LINE_MEMBER(vsync_changed);
+	void vsync_changed(int state);
 	TIMER_DEVICE_CALLBACK_MEMBER(hsync_changed);
 
 private:
@@ -140,8 +139,8 @@ private:
 	POISK1_UPDATE_ROW(cga_gfx_1bpp_update_row);
 	POISK1_UPDATE_ROW(poisk1_gfx_1bpp_update_row);
 
-	DECLARE_WRITE_LINE_MEMBER(p1_pit8253_out2_changed);
-	DECLARE_WRITE_LINE_MEMBER(p1_speaker_set_spkrdata);
+	void p1_pit8253_out2_changed(int state);
+	void p1_speaker_set_spkrdata(int state);
 	uint8_t p1_trap_r(offs_t offset);
 	void p1_trap_w(offs_t offset, uint8_t data);
 	uint8_t p1_cga_r(offs_t offset);
@@ -158,8 +157,8 @@ private:
 	void p1_ppi2_portb_w(uint8_t data);
 	uint8_t p1_ppi2_portc_r();
 
-	void poisk1_io(address_map &map);
-	void poisk1_map(address_map &map);
+	void poisk1_io(address_map &map) ATTR_COLD;
+	void poisk1_map(address_map &map) ATTR_COLD;
 };
 
 /*
@@ -430,7 +429,7 @@ void p1_state::video_start()
 {
 	address_space &space = m_maincpu->space(AS_PROGRAM);
 
-	memset(&m_video, 0, sizeof(m_video));
+	m_video = decltype(m_video)();
 	m_video.videoram_base = std::make_unique<uint8_t[]>(0x8000);
 	m_video.videoram = m_video.videoram_base.get();
 	m_video.stride = 80;
@@ -438,7 +437,7 @@ void p1_state::video_start()
 	space.install_ram(0xb8000, 0xbffff, m_video.videoram);
 }
 
-WRITE_LINE_MEMBER(p1_state::vsync_changed)
+void p1_state::vsync_changed(int state)
 {
 	m_vsync = state ? 9 : 0;
 }
@@ -480,13 +479,13 @@ uint32_t p1_state::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, co
 
 // Timer.  Poisk-1 uses single XTAL for everything? -- check
 
-WRITE_LINE_MEMBER(p1_state::p1_speaker_set_spkrdata)
+void p1_state::p1_speaker_set_spkrdata(int state)
 {
 	m_p1_spkrdata = state ? 1 : 0;
 	m_speaker->level_w(m_p1_spkrdata & m_p1_input);
 }
 
-WRITE_LINE_MEMBER(p1_state::p1_pit8253_out2_changed)
+void p1_state::p1_pit8253_out2_changed(int state)
 {
 	m_p1_input = state ? 1 : 0;
 	m_speaker->level_w(m_p1_spkrdata & m_p1_input);

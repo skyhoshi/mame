@@ -1,8 +1,8 @@
 // license:BSD-3-Clause
 // copyright-holders:AJR
 
-#ifndef MAME_SKELETON_ITT1700_KBD
-#define MAME_SKELETON_ITT1700_KBD
+#ifndef MAME_SKELETON_ITT1700_KBD_H
+#define MAME_SKELETON_ITT1700_KBD_H
 
 #pragma once
 
@@ -20,15 +20,15 @@ public:
 	itt1700_keyboard_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock = 0);
 
 	// host interface
-	DECLARE_WRITE_LINE_MEMBER(line1_w);
-	DECLARE_WRITE_LINE_MEMBER(line2_w);
-	DECLARE_WRITE_LINE_MEMBER(clock_w);
-	DECLARE_READ_LINE_MEMBER(sense_r);
+	void line1_w(int state);
+	void line2_w(int state);
+	void clock_w(int state);
+	int sense_r();
 
 protected:
 	// device-specific overrides
-	virtual void device_start() override;
-	virtual ioport_constructor device_input_ports() const override;
+	virtual void device_start() override ATTR_COLD;
+	virtual ioport_constructor device_input_ports() const override ATTR_COLD;
 
 private:
 	// internal state

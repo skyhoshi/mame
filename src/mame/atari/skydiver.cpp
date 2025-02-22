@@ -125,7 +125,7 @@ public:
 	void skydiver(machine_config &config);
 
 protected:
-	virtual void video_start() override;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -141,12 +141,12 @@ private:
 	tilemap_t *m_bg_tilemap = nullptr;
 	uint8_t m_width = 0;
 
-	DECLARE_WRITE_LINE_MEMBER(nmion_w);
+	void nmion_w(int state);
 	void videoram_w(offs_t offset, uint8_t data);
 	uint8_t wram_r(offs_t offset);
 	void wram_w(offs_t offset, uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(width_w);
-	DECLARE_WRITE_LINE_MEMBER(coin_lockout_w);
+	void width_w(int state);
+	void coin_lockout_w(int state);
 	void latch3_watchdog_w(offs_t offset, uint8_t data);
 
 	TILE_GET_INFO_MEMBER(get_tile_info);
@@ -157,11 +157,9 @@ private:
 	void draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect);
 
 	INTERRUPT_GEN_MEMBER(interrupt);
-	void program_map(address_map &map);
+	void program_map(address_map &map) ATTR_COLD;
 };
 
-
-// video
 
 /***************************************************************************
 
@@ -216,13 +214,13 @@ void skydiver_state::wram_w(offs_t offset, uint8_t data)
 }
 
 
-WRITE_LINE_MEMBER(skydiver_state::width_w)
+void skydiver_state::width_w(int state)
 {
 	m_width = state;
 }
 
 
-WRITE_LINE_MEMBER(skydiver_state::coin_lockout_w)
+void skydiver_state::coin_lockout_w(int state)
 {
 	machine().bookkeeping().coin_lockout_global_w(!state);
 }
@@ -303,8 +301,6 @@ void skydiver_state::palette(palette_device &palette) const
 }
 
 
-// machine
-
 
 /*************************************
  *
@@ -312,7 +308,7 @@ void skydiver_state::palette(palette_device &palette) const
  *
  *************************************/
 
-WRITE_LINE_MEMBER(skydiver_state::nmion_w)
+void skydiver_state::nmion_w(int state)
 {
 	m_nmion = state;
 }
@@ -453,7 +449,7 @@ static INPUT_PORTS_START( skydiver )
 	PORT_START("IN12")
 	PORT_BIT (0x3f, IP_ACTIVE_LOW, IPT_UNUSED )
 	PORT_SERVICE( 0x40, IP_ACTIVE_LOW )
-	PORT_BIT (0x80, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_VBLANK("screen")
+	PORT_BIT (0x80, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("screen", FUNC(screen_device::vblank))
 
 	PORT_START("IN13")
 	PORT_BIT (0x3f, IP_ACTIVE_LOW, IPT_UNUSED )

@@ -19,14 +19,14 @@ DEFINE_DEVICE_TYPE(HPBLP, isa8_hpblp_device, "hpblp", "HP Basic Language Coproce
 
 static INPUT_PORTS_START(hpblp)
 	PORT_START("BLPPORT")
-	PORT_DIPNAME(3, 0, "IO Address") PORT_DIPLOCATION("SW2:0,1")
+	PORT_DIPNAME(3, 0, "IO Address") PORT_DIPLOCATION("SW2:1,2")
 	PORT_DIPSETTING(0, "250h-257h")
 	PORT_DIPSETTING(1, "280h-287h")
 	PORT_DIPSETTING(2, "330h-337h")
 	PORT_DIPSETTING(3, "390h-397h")
 
 	PORT_START("BLPIRQ")
-	PORT_DIPNAME(7, 3, "Interrupt") PORT_DIPLOCATION("SW3:0,1,2")
+	PORT_DIPNAME(7, 3, "Interrupt") PORT_DIPLOCATION("SW3:1,2,3")
 	PORT_DIPSETTING(0x0, "IRQ 3")
 	PORT_DIPSETTING(0x1, "IRQ 4")
 	PORT_DIPSETTING(0x2, "IRQ 5")
@@ -258,7 +258,7 @@ void isa8_hpblp_device::update_gpib_irq()
 		m_maincpu->set_input_line(M68K_IRQ_3, CLEAR_LINE);
 }
 
-WRITE_LINE_MEMBER(isa8_hpblp_device::gpib_irq)
+void isa8_hpblp_device::gpib_irq(int state)
 {
 	if (state) {
 		m_gpib_reg1 |= 0x40;
@@ -276,7 +276,7 @@ void isa8_hpblp_device::m68map(address_map &map)
 	map(0xc00000, 0xffffff).ram();
 }
 
-WRITE_LINE_MEMBER(isa8_hpblp_device::hpblp_interrupt)
+void isa8_hpblp_device::hpblp_interrupt(int state)
 {
 	switch(m_irq) {
 	case 0:

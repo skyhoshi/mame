@@ -92,9 +92,9 @@ protected:
 	};
 	keyb_t m_keyb;
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 	void palette_init(palette_device &palette) const;
 
 private:
@@ -138,9 +138,9 @@ private:
 	TIMER_CALLBACK_MEMBER(pc88va_fdc_timer);
 	TIMER_CALLBACK_MEMBER(pc88va_fdc_motor_start_0);
 	TIMER_CALLBACK_MEMBER(pc88va_fdc_motor_start_1);
-	DECLARE_WRITE_LINE_MEMBER(tc_w);
+	void tc_w(int state);
 
-	DECLARE_WRITE_LINE_MEMBER(fdc_irq);
+	void fdc_irq(int state);
 	static void floppy_formats(format_registration &fr);
 	void pc88va_fdc_update_ready(floppy_image_device *, int);
 	uint8_t fake_subfdc_r();
@@ -249,12 +249,12 @@ private:
 	void execute_sprsw_cmd();
 	void execute_spwr_cmd(u8 data);
 
-	void main_map(address_map &map);
-	void io_map(address_map &map);
-	void sysbank_map(address_map &map);
-	void opna_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void io_map(address_map &map) ATTR_COLD;
+	void sysbank_map(address_map &map) ATTR_COLD;
+	void opna_map(address_map &map) ATTR_COLD;
 
-	void sgp_map(address_map &map);
+	void sgp_map(address_map &map) ATTR_COLD;
 
 protected:
 	required_device<gfxdecode_device> m_gfxdecode;
@@ -275,7 +275,7 @@ private:
 	u8 m_misc_ctrl = 0x80;
 	bool m_sound_irq_enable = false;
 	bool m_sound_irq_pending = false;
-	DECLARE_WRITE_LINE_MEMBER(int4_irq_w);
+	void int4_irq_w(int state);
 };
 
 

@@ -3,8 +3,8 @@
 /*******************************************************************************
 
 Hegener + Glaser Mephisto Display Module for modular chesscomputers, the 2nd
-version with 2 LCD lines. The 16/32bit module also includes 8KB NVRAM, but that
-part is emulated in the driver.
+version with 2 LCD lines (HD44780A00 + HD44100H or Sanyo LC7930). The 16/32bit
+module also includes 8KB NVRAM, but that part is emulated in the driver.
 
 *******************************************************************************/
 
@@ -46,15 +46,13 @@ void mephisto_display2_device::device_add_mconfig(machine_config &config)
 
 	PALETTE(config, "palette", FUNC(mephisto_display2_device::lcd_palette), 3);
 
-	HD44780(config, m_lcd, 0);
+	HD44780(config, m_lcd, 270'000); // OSC = 91K resistor
 	m_lcd->set_lcd_size(2, 16);
 	m_lcd->set_pixel_update_cb(FUNC(mephisto_display2_device::lcd_pixel_update));
 
-	// sound hardware (using filtered dac because of aliasing)
+	// sound hardware
 	SPEAKER(config, "speaker").front_center();
-	static const double speaker_levels[4] = { 0.0, 1.0, -1.0, 0.0 };
-	SPEAKER_SOUND(config, m_dac).add_route(ALL_OUTPUTS, "speaker", 0.25);
-	m_dac->set_levels(4, speaker_levels);
+	DAC_2BIT_ONES_COMPLEMENT(config, m_dac).add_route(ALL_OUTPUTS, "speaker", 0.125);
 }
 
 void mephisto_display2_device::lcd_palette(palette_device &palette) const
@@ -107,7 +105,7 @@ void mephisto_display2_device::io_w(u8 data)
 	if (BIT(data, 1) && !BIT(m_ctrl, 1))
 		m_lcd->write(BIT(data, 0), m_latch);
 
-	m_dac->level_w(data >> 2 & 3);
+	m_dac->write(data >> 2 & 3);
 
 	m_ctrl = data;
 }

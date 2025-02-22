@@ -428,7 +428,7 @@
 
 
 // configurable logging
-#define LOG_PPIOUT     (1U <<  1)
+#define LOG_PPIOUT     (1U << 1)
 
 //#define VERBOSE (LOG_GENERAL | LOG_PPIOUT)
 
@@ -466,8 +466,8 @@ public:
 	void init_am_mg5hu();
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	required_shared_ptr<uint8_t> m_attr;
@@ -495,14 +495,14 @@ private:
 	void amaticmg2_palette(palette_device &palette) const;
 	uint32_t screen_update_amaticmg(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	uint32_t screen_update_amaticmg2(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
-	DECLARE_WRITE_LINE_MEMBER(amaticmg2_irq);
+	void amaticmg2_irq(int state);
 	void encf(uint8_t ciphertext, int address, uint8_t &plaintext, int &newaddress);
 	void decrypt(int key1, int key2);
 
-	void amaticmg2_portmap(address_map &map);
-	void amaticmg4_portmap(address_map &map);
-	void amaticmg_map(address_map &map);
-	void amaticmg_portmap(address_map &map);
+	void amaticmg2_portmap(address_map &map) ATTR_COLD;
+	void amaticmg4_portmap(address_map &map) ATTR_COLD;
+	void amaticmg_map(address_map &map) ATTR_COLD;
+	void amaticmg_portmap(address_map &map) ATTR_COLD;
 };
 
 
@@ -922,7 +922,7 @@ void amaticmg_state::amaticmg(machine_config &config)
 }
 
 
-WRITE_LINE_MEMBER(amaticmg_state::amaticmg2_irq)
+void amaticmg_state::amaticmg2_irq(int state)
 {
 	if (state && m_nmi_mask)
 		m_maincpu->pulse_input_line(INPUT_LINE_NMI, attotime::zero);

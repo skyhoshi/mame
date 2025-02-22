@@ -57,7 +57,7 @@ public:
 	void rzindy500(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	output_finder<> m_led_out;
@@ -68,11 +68,11 @@ private:
 	int m_sclock = 0;
 
 	TIMER_DEVICE_CALLBACK_MEMBER(led_off_callback) { m_led_out = m_led_pin ? 1 : 0; }
-	DECLARE_WRITE_LINE_MEMBER(led_w);
-	DECLARE_WRITE_LINE_MEMBER(audio_w);
-	DECLARE_WRITE_LINE_MEMBER(sctrl_w);
-	DECLARE_WRITE_LINE_MEMBER(sclock_w);
-	DECLARE_READ_LINE_MEMBER(sdata_r);
+	void led_w(int state);
+	void audio_w(int state);
+	void sctrl_w(int state);
+	void sclock_w(int state);
+	int sdata_r();
 
 	void t1_write_r(u8 data);
 	void t1_write_s(u8 data);
@@ -90,7 +90,7 @@ void rzone_state::machine_start()
 {
 	hh_sm510_state::machine_start();
 
-	// resolve handlers
+	// resolve outputs
 	m_led_out.resolve();
 
 	// register for savestates
@@ -107,7 +107,7 @@ void rzone_state::machine_start()
 
 // console
 
-WRITE_LINE_MEMBER(rzone_state::led_w)
+void rzone_state::led_w(int state)
 {
 	// LED: enable backlight
 	if (state)
@@ -120,13 +120,13 @@ WRITE_LINE_MEMBER(rzone_state::led_w)
 	m_led_pin = state;
 }
 
-WRITE_LINE_MEMBER(rzone_state::audio_w)
+void rzone_state::audio_w(int state)
 {
 	// Audio: speaker out
 	m_speaker->level_w(state ? 1 : 0);
 }
 
-WRITE_LINE_MEMBER(rzone_state::sctrl_w)
+void rzone_state::sctrl_w(int state)
 {
 	// SCTRL: 74165 SH/LD: reload inputs while low
 	if (!state || !m_sctrl)
@@ -135,7 +135,7 @@ WRITE_LINE_MEMBER(rzone_state::sctrl_w)
 	m_sctrl = state;
 }
 
-WRITE_LINE_MEMBER(rzone_state::sclock_w)
+void rzone_state::sclock_w(int state)
 {
 	// SCLOCK: 74165 CLK: shift inputs on rising edge when 74165 SH/LD is high
 	if (m_sctrl && !m_sclock && state)
@@ -144,7 +144,7 @@ WRITE_LINE_MEMBER(rzone_state::sclock_w)
 	m_sclock = state;
 }
 
-READ_LINE_MEMBER(rzone_state::sdata_r)
+int rzone_state::sdata_r()
 {
 	// SDATA: 74165 Q
 	sctrl_w(m_sctrl); // reload inputs if needed
@@ -352,6 +352,6 @@ ROM_END
 *******************************************************************************/
 
 //    YEAR  NAME       PARENT  COMPAT  MACHINE    INPUT  CLASS        INIT        COMPANY, FULLNAME, FLAGS
-SYST( 1995, rzbatfor,  0,      0,      rzbatfor,  rzone, rzone_state, empty_init, "Tiger Electronics", "R-Zone: Batman Forever", MACHINE_SUPPORTS_SAVE )
-SYST( 1996, rztoshden, 0,      0,      rztoshden, rzone, rzone_state, empty_init, "Tiger Electronics (licensed from Takara)", "R-Zone: Battle Arena Toshinden", MACHINE_SUPPORTS_SAVE )
-SYST( 1996, rzindy500, 0,      0,      rzindy500, rzone, rzone_state, empty_init, "Tiger Electronics (licensed from Sega)", "R-Zone: Indy 500", MACHINE_SUPPORTS_SAVE )
+SYST( 1995, rzbatfor,  0,      0,      rzbatfor,  rzone, rzone_state, empty_init, "Tiger Electronics", "R-Zone: Batman Forever", MACHINE_SUPPORTS_SAVE ) // licensed from DC Comics
+SYST( 1996, rztoshden, 0,      0,      rztoshden, rzone, rzone_state, empty_init, "Tiger Electronics", "R-Zone: Battle Arena Toshinden", MACHINE_SUPPORTS_SAVE ) // licensed from Takara
+SYST( 1996, rzindy500, 0,      0,      rzindy500, rzone, rzone_state, empty_init, "Tiger Electronics", "R-Zone: Indy 500", MACHINE_SUPPORTS_SAVE ) // licensed from Sega

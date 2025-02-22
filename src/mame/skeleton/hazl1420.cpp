@@ -40,7 +40,7 @@ public:
 	void hazl1420(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	void p1_w(u8 data);
@@ -53,12 +53,12 @@ private:
 
 	u8 key_r();
 
-	DECLARE_WRITE_LINE_MEMBER(crtc_lbre_w);
-	DECLARE_WRITE_LINE_MEMBER(crtc_vblank_w);
+	void crtc_lbre_w(int state);
+	void crtc_vblank_w(int state);
 
-	void prog_map(address_map &map);
-	void io_map(address_map &map);
-	void bank_map(address_map &map);
+	void prog_map(address_map &map) ATTR_COLD;
+	void io_map(address_map &map) ATTR_COLD;
+	void bank_map(address_map &map) ATTR_COLD;
 
 	u32 screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
@@ -144,13 +144,13 @@ void hazl1420_state::machine_start()
 {
 }
 
-WRITE_LINE_MEMBER(hazl1420_state::crtc_lbre_w)
+void hazl1420_state::crtc_lbre_w(int state)
 {
 	if (!state && !m_crtc->vblank_r() && !BIT(m_maincpu->p1_r(), 4))
 		m_mainint->in_w<0>(1);
 }
 
-WRITE_LINE_MEMBER(hazl1420_state::crtc_vblank_w)
+void hazl1420_state::crtc_vblank_w(int state)
 {
 	if (state && !BIT(m_maincpu->p1_r(), 4))
 		m_mainint->in_w<0>(1);

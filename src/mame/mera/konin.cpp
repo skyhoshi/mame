@@ -43,19 +43,19 @@ public:
 	void konin(machine_config &config);
 
 private:
-	DECLARE_WRITE_LINE_MEMBER(picu_r3_w);
+	void picu_r3_w(int state);
 
-	void io_map(address_map &map);
-	void mem_map(address_map &map);
+	void io_map(address_map &map) ATTR_COLD;
+	void mem_map(address_map &map) ATTR_COLD;
 
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 	required_device<cpu_device> m_maincpu;
 	required_device<i8214_device> m_picu;
 	required_device<i8255_device> m_ioppi;
 	required_device<pit8253_device> m_iopit;
 };
 
-WRITE_LINE_MEMBER(konin_state::picu_r3_w)
+void konin_state::picu_r3_w(int state)
 {
 	m_picu->r_w(4, !state);
 }
@@ -158,4 +158,4 @@ ROM_END
 /* Driver */
 
 //    YEAR  NAME   PARENT  COMPAT  MACHINE  INPUT  CLASS        INIT        COMPANY       FULLNAME  FLAGS
-COMP( 198?, konin, 0,      0,      konin,   konin, konin_state, empty_init, "Mera-Elzab", "Konin",  MACHINE_IS_SKELETON | MACHINE_SUPPORTS_SAVE )
+COMP( 198?, konin, 0,      0,      konin,   konin, konin_state, empty_init, "Mera-Elzab", "Konin",  MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )

@@ -32,11 +32,11 @@ public:
 	uint8_t read(int xramsel, offs_t offset);
 	void write(int xramsel, offs_t offset, uint8_t data);
 
-	DECLARE_READ_LINE_MEMBER(intrq_r);
+	int intrq_r();
 
 protected:
 	// device-level overrides
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	// device_nvram_interface overrides
 	virtual void nvram_default() override;

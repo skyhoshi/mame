@@ -37,6 +37,8 @@ TODO:
 #include "machine/pckeybrd.h"
 #include "machine/spi_sdcard.h"
 #include "machine/timer.h"
+#include "sound/ay8910.h"
+#include "speaker.h"
 
 #define LOG_MEM   (1U << 1)
 #define LOG_VIDEO (1U << 2)
@@ -63,18 +65,20 @@ public:
 		, m_sdcard(*this, "sdcard")
 		, m_keyboard(*this, "pc_keyboard")
 		, m_io_mouse(*this, "mouse_input%u", 1U)
+		, m_ay(*this, "ay%u", 0U)
+		, m_mod_ay(*this, "MOD_AY")
 	{ }
 
 	void pentevo(machine_config &config);
 
 protected:
-	void machine_start() override;
-	void machine_reset() override;
-	void video_start() override;
+	void machine_start() override ATTR_COLD;
+	void machine_reset() override ATTR_COLD;
+	void video_start() override ATTR_COLD;
 
 private:
 	void init_mem_write();
-	void pentevo_io(address_map &map);
+	void pentevo_io(address_map &map) ATTR_COLD;
 
 	void atm_port_ff_w(offs_t offset, u8 data) override;
 	void pentevo_port_7f7_w(offs_t offset, u8 data);
@@ -86,6 +90,7 @@ private:
 	u8 pentevo_port_1nbd_r(offs_t offset);
 	void pentevo_port_1nbd_w(offs_t offset, u8 data);
 
+	void ay_address_w(u8 data);
 	void spi_port_77_w(offs_t offset, u8 data);
 	u8 spi_port_57_r(offs_t offset);
 	void spi_port_57_w(offs_t offset, u8 data);
@@ -116,9 +121,13 @@ private:
 	memory_view m_io_dos_view;
 
 	required_device<glukrs_device> m_glukrs;
-	required_device<spi_sdcard_sdhc_device> m_sdcard;
+	required_device<spi_sdcard_device> m_sdcard;
 	required_device<at_keyboard_device> m_keyboard;
 	required_ioport_array<3> m_io_mouse;
+	required_device_array<ym2149_device, 2> m_ay;
+
+	u8 m_ay_selected;
+	required_ioport m_mod_ay;
 
 	u8 m_port_bf_data;
 	u8 m_port_eff7_data;
@@ -185,7 +194,7 @@ void pentevo_state::atm_port_ff_w(offs_t offset, u8 data)
 {
 	if (BIT(m_port_bf_data, 5) && !m_pen2)
 	{
-		u8 pen = get_border_color(m_screen->hpos(), m_screen->vpos());
+		u8 pen = 0x0f & get_border_color(m_screen->hpos(), m_screen->vpos());
 		m_palette_data[pen] = data;
 		m_palette->set_pen_color(pen,
 			(BIT(~data, 1) * 0x88) | (BIT(~data, 6) * 0x44) | (BIT(~offset,  9) * 0x22) | (BIT(~offset, 14) * 0x11),
@@ -336,6 +345,14 @@ void pentevo_state::pentevo_port_1nbd_w(offs_t offset, u8 data)
 	}
 	else if (opt == 0x03)
 		m_beta_drive_virtual = data & 0x0f;
+}
+
+void pentevo_state::ay_address_w(u8 data)
+{
+	if ((m_mod_ay->read() == 1) && ((data & 0xfe) == 0xfe))
+		m_ay_selected = data & 1;
+	else
+		m_ay[m_ay_selected]->address_w(data);
 }
 
 INTERRUPT_GEN_MEMBER(pentevo_state::pentevo_interrupt)
@@ -584,8 +601,9 @@ void pentevo_state::pentevo_io(address_map &map)
 	map(0x00be, 0x00be).select(0xff00).lw8(NAME([this](offs_t offset) { m_nmi_active_flip_countdown = 2; }));
 
 	// AY
-	map(0x8000, 0x8000).mirror(0x3ffd).w("ay8912", FUNC(ay8910_device::data_w));
-	map(0xc000, 0xc000).mirror(0x3ffd).rw("ay8912", FUNC(ay8910_device::data_r), FUNC(ay8910_device::address_w));
+	map(0x8000, 0x8000).mirror(0x3ffd).lw8(NAME([this](u8 data) { return m_ay[m_ay_selected]->data_w(data); }));
+	map(0xc000, 0xc000).mirror(0x3ffd).lr8(NAME([this]() { return m_ay[m_ay_selected]->data_r(); }))
+		.w(FUNC(pentevo_state::ay_address_w));
 
 	// HDD: NEMO
 	map(0x0010, 0x0010).select(0xffe0).lrw8(NAME([this](offs_t offset) { return nemo_ata_r(offset >> 5); })
@@ -600,10 +618,10 @@ void pentevo_state::pentevo_io(address_map &map)
 	map(0x0057, 0x0057).select(0xff00).rw(FUNC(pentevo_state::spi_port_57_r), FUNC(pentevo_state::spi_port_57_w));
 
 	// Mouse
-	map(0xfadf, 0xfadf).lr8(NAME([this]() { return 0x80 | (m_io_mouse[2]->read() & 0x07); }));
-	map(0xfbdf, 0xfbdf).lr8(NAME([this]() { return  m_io_mouse[0]->read(); }));
-	map(0xffdf, 0xffdf).lr8(NAME([this]() { return ~m_io_mouse[1]->read(); }));
-	map(0x001f, 0x001f).mirror(0xff00).lr8(NAME([]() { return 0x00; })); // TODO Kepmston Joystick
+	map(0xfadf, 0xfadf).lr8(NAME([this]() -> u8 { return 0x80 | (m_io_mouse[2]->read() & 0x07); }));
+	map(0xfbdf, 0xfbdf).lr8(NAME([this]() -> u8 { return  m_io_mouse[0]->read(); }));
+	map(0xffdf, 0xffdf).lr8(NAME([this]() -> u8 { return ~m_io_mouse[1]->read(); }));
+	map(0x001f, 0x001f).mirror(0xff00).lr8(NAME([]() -> u8 { return 0x00; })); // TODO Kepmston Joystick
 
 	// PORTS: Shadow
 	map(0x0000, 0xffff).view(m_io_view);
@@ -681,6 +699,7 @@ void pentevo_state::machine_start()
 	save_item(NAME(m_nmi_active_flip_countdown));
 	save_item(NAME(m_zctl_di));
 	save_item(NAME(m_zctl_cs));
+	save_item(NAME(m_ay_selected));
 
 	init_mem_write();
 }
@@ -699,6 +718,7 @@ void pentevo_state::machine_reset()
 	m_gluk_ext = 0xff;
 	m_zctl_cs = 1;
 	m_zctl_di = 0xff;
+	m_ay_selected = 0;
 
 	m_keyboard->write(0xff);
 	while (m_keyboard->read() != 0) { /* invalidate buffer */ }
@@ -725,6 +745,10 @@ INPUT_PORTS_START( pentevo )
 	PORT_BIT(0x02, IP_ACTIVE_LOW, IPT_BUTTON5) PORT_NAME("Right mouse button") PORT_CODE(MOUSECODE_BUTTON2)
 	PORT_BIT(0x04, IP_ACTIVE_LOW, IPT_BUTTON6) PORT_NAME("Middle mouse button") PORT_CODE(MOUSECODE_BUTTON3)
 
+	PORT_START("MOD_AY")
+	PORT_CONFNAME(0x01, 0x00, "AY MOD")
+	PORT_CONFSETTING(0x00, "Single")
+	PORT_CONFSETTING(0x01, "TurboSound")
 INPUT_PORTS_END
 
 void pentevo_state::pentevo(machine_config &config)
@@ -741,7 +765,23 @@ void pentevo_state::pentevo(machine_config &config)
 
 	GLUKRS(config, m_glukrs);
 	SPI_SDCARD(config, m_sdcard, 0);
+	m_sdcard->set_prefer_sdhc();
 	m_sdcard->spi_miso_callback().set(FUNC(pentevo_state::spi_miso_w));
+
+	SPEAKER(config, "lspeaker").front_left();
+	SPEAKER(config, "rspeaker").front_right();
+
+	config.device_remove("ay8912");
+	YM2149(config, m_ay[0], 14_MHz_XTAL / 8)
+		.add_route(0, "lspeaker", 0.50)
+		.add_route(1, "lspeaker", 0.25)
+		.add_route(1, "rspeaker", 0.25)
+		.add_route(2, "rspeaker", 0.50);
+	YM2149(config, m_ay[1], 14_MHz_XTAL / 8)
+		.add_route(0, "lspeaker", 0.50)
+		.add_route(1, "lspeaker", 0.25)
+		.add_route(1, "rspeaker", 0.25)
+		.add_route(2, "rspeaker", 0.50);
 
 	AT_KEYB(config, m_keyboard, pc_keyboard_device::KEYBOARD_TYPE::AT, 3);
 
@@ -753,17 +793,21 @@ void pentevo_state::pentevo(machine_config &config)
 
 ROM_START( pentevo )
 	ROM_REGION(0x090000, "maincpu", ROMREGION_ERASEFF)
-	ROM_DEFAULT_BIOS("v0.59.12")
+	ROM_DEFAULT_BIOS("v0.59.13")
 
-	// http://svn.zxevo.ru/revision.php?repname=pentevo&path=%2From%2Fzxevo_fe.rom&rev=1012&peg=1021
-	ROM_SYSTEM_BIOS(0, "v0.59.12", "ERS v0.59.12, NEO-DOS v0.57")
-	ROMX_LOAD( "zxevo_05912.rom", 0x010000, 0x80000, CRC(e0e95f9f) SHA1(b27b9d61aaf47a73bdd07027df0aad5b88be0fb9), ROM_BIOS(0))
-	ROM_SYSTEM_BIOS(1, "v0.59.12fe", "ERS v0.59.12 (FE), NEO-DOS v0.57")
-	ROMX_LOAD( "zxevo_05912fe.rom", 0x010000, 0x80000, CRC(4c9300b1) SHA1(b6511f1c24a094930a559f3673b322b24b848a03), ROM_BIOS(1))
-	ROM_SYSTEM_BIOS(2, "v0.59.04", "ERS v0.59.04, NEO-DOS v0.53")
-	ROMX_LOAD( "zxevo_05904.rom", 0x010000, 0x80000, CRC(8cae52eb) SHA1(992a0dc17fc7283bbfad5c5ebe254cab68bf0d9a), ROM_BIOS(2))
-	ROM_SYSTEM_BIOS(3, "v0.59.02fe", "ERS v0.59.02 (FE), NEO-DOS v0.53")
-	ROMX_LOAD( "zxevo_05902fe.rom", 0x010000, 0x80000, CRC(df144c82) SHA1(e48b8a95576e0123764ff8cc34d9373dc95159bf), ROM_BIOS(3))
+	// http://svn.zxevo.ru/revision.php?repname=pentevo&path=%2From%2Fzxevo_fe.rom
+	ROM_SYSTEM_BIOS(0, "v0.59.02fe", "ERS v0.59.02 (FE), NEO-DOS v0.53")
+	ROMX_LOAD( "zxevo_05902fe.rom", 0x010000, 0x80000, CRC(df144c82) SHA1(e48b8a95576e0123764ff8cc34d9373dc95159bf), ROM_BIOS(0))
+	ROM_SYSTEM_BIOS(1, "v0.59.04", "ERS v0.59.04, NEO-DOS v0.53")
+	ROMX_LOAD( "zxevo_05904.rom", 0x010000, 0x80000, CRC(8cae52eb) SHA1(992a0dc17fc7283bbfad5c5ebe254cab68bf0d9a), ROM_BIOS(1))
+	ROM_SYSTEM_BIOS(2, "v0.59.12", "ERS v0.59.12, NEO-DOS v0.57")
+	ROMX_LOAD( "zxevo_05912.rom", 0x010000, 0x80000, CRC(e0e95f9f) SHA1(b27b9d61aaf47a73bdd07027df0aad5b88be0fb9), ROM_BIOS(2))
+	ROM_SYSTEM_BIOS(3, "v0.59.12fe", "ERS v0.59.12 (FE), NEO-DOS v0.57")
+	ROMX_LOAD( "zxevo_05912fe.rom", 0x010000, 0x80000, CRC(4c9300b1) SHA1(b6511f1c24a094930a559f3673b322b24b848a03), ROM_BIOS(3))
+	ROM_SYSTEM_BIOS(4, "v0.59.13", "ERS v0.59.13, NEO-DOS v0.58")
+	ROMX_LOAD( "zxevo_05913.rom", 0x010000, 0x80000, CRC(b75bf957) SHA1(6880493ee248cad1f82683f8b9cc69fb78fe5682), ROM_BIOS(4))
+	ROM_SYSTEM_BIOS(5, "v0.59.13fe", "ERS v0.59.13 (FE), NEO-DOS v0.58")
+	ROMX_LOAD( "zxevo_05913fe.rom", 0x010000, 0x80000, CRC(a4de8eb8) SHA1(508667d5ef42a1d0353866f3a1de4e61a230fc86), ROM_BIOS(5))
 
 	// http://svn.zxevo.ru/revision.php?repname=pentevo&path=%2Fcfgs%2Fstandalone_base_trdemu%2Ftrunk%2Fzxevo_fw.bin&rev=994&peg=1021
 	ROM_REGION(0x0C280, "fw", ROMREGION_ERASEFF)

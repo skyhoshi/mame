@@ -224,8 +224,8 @@ public:
 	DECLARE_INPUT_CHANGED_MEMBER(z80ne_reset);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	void base_reset();
 	void save_state_vars();
@@ -244,7 +244,7 @@ protected:
 	void lx383_w(offs_t offset, uint8_t data);
 	uint8_t lx385_ctrl_r();
 	void lx385_ctrl_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(lx385_uart_tx_clock_w);
+	void lx385_uart_tx_clock_w(int state);
 
 	TIMER_CALLBACK_MEMBER(cassette_tc);
 	TIMER_CALLBACK_MEMBER(kbd_scan);
@@ -275,8 +275,8 @@ protected:
 	cassette_image_device *cassette_device_image();
 
 private:
-	void mem_map(address_map &map);
-	void io_map(address_map &map);
+	void mem_map(address_map &map) ATTR_COLD;
+	void io_map(address_map &map) ATTR_COLD;
 };
 
 class z80net_state : public z80ne_state
@@ -298,10 +298,10 @@ public:
 	DECLARE_INPUT_CHANGED_MEMBER(z80net_nmi);
 
 protected:
-	virtual void machine_reset() override;
+	virtual void machine_reset() override ATTR_COLD;
 
-	DECLARE_READ_LINE_MEMBER(lx387_shift_r);
-	DECLARE_READ_LINE_MEMBER(lx387_control_r);
+	int lx387_shift_r();
+	int lx387_control_r();
 	uint8_t lx387_data_r();
 	uint8_t lx388_mc6847_videoram_r(offs_t offset);
 	uint8_t lx388_read_field_sync();
@@ -314,10 +314,10 @@ protected:
 
 	void reset_lx387();
 
-	void io_map(address_map &map);
+	void io_map(address_map &map) ATTR_COLD;
 
 private:
-	void mem_map(address_map &map);
+	void mem_map(address_map &map) ATTR_COLD;
 };
 
 class z80netb_state : public z80net_state
@@ -331,10 +331,10 @@ public:
 	void z80netb(machine_config &config);
 
 protected:
-	virtual void machine_reset() override;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
-	void mem_map(address_map &map);
+	void mem_map(address_map &map) ATTR_COLD;
 };
 
 class z80netf_state : public z80netb_state
@@ -352,8 +352,8 @@ public:
 	void z80netf(machine_config &config);
 
 private:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 	virtual void driver_start() override;
 
 	struct wd17xx_state_t
@@ -364,8 +364,8 @@ private:
 		uint8_t head = 0;  /* current head */
 	};
 
-	void mem_map(address_map &map);
-	void io_map(address_map &map);
+	void mem_map(address_map &map) ATTR_COLD;
+	void io_map(address_map &map) ATTR_COLD;
 
 	void lx390_motor_w(uint8_t data);
 	uint8_t lx390_fdc_r(offs_t offset);
@@ -898,18 +898,18 @@ void z80ne_state::lx385_ctrl_w(uint8_t data)
 	}
 }
 
-WRITE_LINE_MEMBER(z80ne_state::lx385_uart_tx_clock_w)
+void z80ne_state::lx385_uart_tx_clock_w(int state)
 {
 	if (BIT(m_lx385_ctrl, 2))
 		m_uart->write_tcp(state);
 }
 
-READ_LINE_MEMBER(z80net_state::lx387_shift_r)
+int z80net_state::lx387_shift_r()
 {
 	return BIT(m_io_modifiers->read(), 0) || BIT(m_io_modifiers->read(), 2);
 }
 
-READ_LINE_MEMBER(z80net_state::lx387_control_r)
+int z80net_state::lx387_control_r()
 {
 	return BIT(m_io_modifiers->read(), 1);
 }
@@ -1173,7 +1173,7 @@ static INPUT_PORTS_START( z80ne )
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_UNUSED )
 
 	PORT_START("RST")           /* RESET key */
-	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("LX.384 Reset")  PORT_CODE(KEYCODE_F3) PORT_CHANGED_MEMBER(DEVICE_SELF, z80ne_state, z80ne_reset, 0) PORT_CHAR('N')
+	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("LX.384 Reset")  PORT_CODE(KEYCODE_F3) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(z80ne_state::z80ne_reset), 0) PORT_CHAR('N')
 
 	/* Settings - need to reboot after altering these */
 	PORT_START("LX.385")
@@ -1192,7 +1192,7 @@ static INPUT_PORTS_START( z80net )
 
 	/* LX.387 Keyboard BREAK key */
 	PORT_START("LX387_BRK")
-	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("Break") PORT_CODE(KEYCODE_END) PORT_CHAR(UCHAR_MAMEKEY(END)) PORT_CHANGED_MEMBER(DEVICE_SELF, z80net_state, z80net_nmi, 0)
+	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("Break") PORT_CODE(KEYCODE_END) PORT_CHAR(UCHAR_MAMEKEY(END)) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(z80net_state::z80net_nmi), 0)
 
 	/* LX.387 Keyboard (Encoded by KR2376) */
 	PORT_START("X0")

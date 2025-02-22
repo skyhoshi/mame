@@ -66,7 +66,7 @@ public:
 	void blockch(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -75,8 +75,13 @@ private:
 	required_shared_ptr<u8> m_vram;
 	required_ioport_array<5> m_inputs;
 
-	void main_map(address_map &map);
-	void io_map(address_map &map);
+	u8 m_sound = 0;
+	u8 m_ball_x = 0;
+	u8 m_ball_y = 0;
+	u8 m_vctrl = 0;
+
+	void main_map(address_map &map) ATTR_COLD;
+	void io_map(address_map &map) ATTR_COLD;
 
 	u32 screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	TIMER_DEVICE_CALLBACK_MEMBER(scanline);
@@ -86,11 +91,6 @@ private:
 	void ppi1_b_w(u8 data);
 	void ppi1_c_w(u8 data);
 	u8 ppi1_c_r();
-
-	u8 m_sound = 0;
-	u8 m_ball_x = 0;
-	u8 m_ball_y = 0;
-	u8 m_vctrl = 0;
 };
 
 void blockch_state::machine_start()

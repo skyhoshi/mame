@@ -71,14 +71,14 @@ public:
 	uint8_t keyboard_r(offs_t offset);
 	DECLARE_INPUT_CHANGED_MEMBER(rst_callback);
 
-	DECLARE_WRITE_LINE_MEMBER(rs232_rx_w);
-	DECLARE_WRITE_LINE_MEMBER(rs232_dcd_w);
+	void rs232_rx_w(int state);
+	void rs232_dcd_w(int state);
 
 	void cgenie(machine_config &config);
-	void cgenie_io(address_map &map);
-	void cgenie_mem(address_map &map);
+	void cgenie_io(address_map &map) ATTR_COLD;
+	void cgenie_mem(address_map &map) ATTR_COLD;
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -219,7 +219,7 @@ static INPUT_PORTS_START( cgenie )
 	PORT_BIT(0x80, IP_ACTIVE_HIGH, IPT_OTHER) PORT_NAME("L.P.") // marked as "L.P." in the manual, lightpen?
 
 	PORT_START("RST")
-	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_OTHER) PORT_CODE(KEYCODE_F5) PORT_NAME("Rst") PORT_CHAR(UCHAR_MAMEKEY(F5)) PORT_CHANGED_MEMBER(DEVICE_SELF, cgenie_state, rst_callback, 0)
+	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_OTHER) PORT_CODE(KEYCODE_F5) PORT_NAME("Rst") PORT_CHAR(UCHAR_MAMEKEY(F5)) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(cgenie_state::rst_callback), 0)
 INPUT_PORTS_END
 
 
@@ -279,12 +279,12 @@ uint8_t cgenie_state::control_r()
 	return data;
 }
 
-WRITE_LINE_MEMBER( cgenie_state::rs232_rx_w )
+void cgenie_state::rs232_rx_w(int state)
 {
 	m_rs232_rx = state;
 }
 
-WRITE_LINE_MEMBER( cgenie_state::rs232_dcd_w )
+void cgenie_state::rs232_dcd_w(int state)
 {
 	m_rs232_dcd = state;
 }

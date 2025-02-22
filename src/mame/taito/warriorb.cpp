@@ -168,7 +168,7 @@ Colscroll effects?
 
 
 // configurable logging
-#define LOG_PANDATA     (1U <<  1)
+#define LOG_PANDATA     (1U << 1)
 
 //#define VERBOSE (LOG_GENERAL | LOG_PANDATA)
 
@@ -199,8 +199,8 @@ public:
 	void darius2d(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	// devices
@@ -229,13 +229,11 @@ private:
 	void draw_sprites(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect, int x_offs, int y_offs, int chip);
 	template <u8 Which> u32 screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	void darius2d_main_map(address_map &map);
-	void warriorb_main_map(address_map &map);
-	void z80_sound_map(address_map &map);
+	void darius2d_main_map(address_map &map) ATTR_COLD;
+	void warriorb_main_map(address_map &map) ATTR_COLD;
+	void z80_sound_map(address_map &map) ATTR_COLD;
 };
 
-
-// video
 
 /************************************************************
             SPRITE DRAW ROUTINE
@@ -338,8 +336,6 @@ u32 warriorb_state::screen_update(screen_device &screen, bitmap_ind16 &bitmap, c
 	return 0;
 }
 
-// machine
-
 void warriorb_state::coin_control_w(u8 data)
 {
 	machine().bookkeeping().coin_lockout_w(0, ~data & 0x01);
@@ -375,7 +371,7 @@ void warriorb_state::pancontrol_w(offs_t offset, u8 data)
 
 	m_pandata[offset] = (data << 1) + data;   // original volume * 3
 	LOGPANDATA("pan %02x %02x %02x %02x", m_pandata[0], m_pandata[1], m_pandata[2], m_pandata[3]);
-	flt->flt_volume_set_volume(m_pandata[offset] / 100.0);
+	flt->set_gain(m_pandata[offset] / 100.0);
 }
 
 
@@ -651,8 +647,8 @@ void warriorb_state::darius2d(machine_config &config)
 	FILTER_VOLUME(config, "2610.2.r").add_route(ALL_OUTPUTS, "rspeaker", 1.0);
 
 	TC0140SYT(config, m_tc0140syt, 0);
-	m_tc0140syt->set_master_tag(m_maincpu);
-	m_tc0140syt->set_slave_tag("audiocpu");
+	m_tc0140syt->nmi_callback().set_inputline("audiocpu", INPUT_LINE_NMI);
+	m_tc0140syt->reset_callback().set_inputline("audiocpu", INPUT_LINE_RESET);
 }
 
 void warriorb_state::warriorb(machine_config &config)
@@ -729,8 +725,8 @@ void warriorb_state::warriorb(machine_config &config)
 	FILTER_VOLUME(config, "2610.2.r").add_route(ALL_OUTPUTS, "rspeaker", 1.0);
 
 	TC0140SYT(config, m_tc0140syt, 0);
-	m_tc0140syt->set_master_tag(m_maincpu);
-	m_tc0140syt->set_slave_tag("audiocpu");
+	m_tc0140syt->nmi_callback().set_inputline("audiocpu", INPUT_LINE_NMI);
+	m_tc0140syt->reset_callback().set_inputline("audiocpu", INPUT_LINE_RESET);
 }
 
 

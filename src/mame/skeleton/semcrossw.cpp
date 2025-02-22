@@ -138,9 +138,9 @@ void semcrossw_state::semcrossw(machine_config &config)
 {
 	M6802(config, m_maincpu, XTAL(4'000'000));
 
-	PIA6821(config, m_pia[0], 0);
+	PIA6821(config, m_pia[0]);
 
-	PIA6821(config, m_pia[1], 0);
+	PIA6821(config, m_pia[1]);
 }
 
 ROM_START(semcrossw)
@@ -155,4 +155,4 @@ ROM_END
 
 
 //   YEAR  NAME       PARENT COMPAT MACHINE    INPUT      CLASS            INIT        COMPANY  FULLNAME                                              FLAGS
-SYST(19??, semcrossw, 0,     0,     semcrossw, semcrossw, semcrossw_state, empty_init, "Etra",  "Crosswalk traffic light controller (unknown model)", MACHINE_IS_SKELETON)
+SYST(19??, semcrossw, 0,     0,     semcrossw, semcrossw, semcrossw_state, empty_init, "Etra",  "Crosswalk traffic light controller (unknown model)", MACHINE_NO_SOUND | MACHINE_NOT_WORKING)

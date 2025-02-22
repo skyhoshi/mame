@@ -27,8 +27,8 @@ public:
 	uint8_t ic4_read(offs_t offset);
 
 protected:
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual void device_start() override;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
 
 private:
 	devcb_write_line m_cb2_handler;
@@ -47,8 +47,8 @@ private:
 	void pia_gb_porta_w(uint8_t data);
 	void pia_gb_portb_w(uint8_t data);
 	uint8_t pia_gb_portb_r();
-	DECLARE_WRITE_LINE_MEMBER(pia_gb_ca2_w);
-	DECLARE_WRITE_LINE_MEMBER(pia_gb_cb2_w);
+	void pia_gb_ca2_w(int state);
+	void pia_gb_cb2_w(int state);
 };
 
 #endif // MAME_BARCREST_MPU4_OKI_SAMPLED_SOUND_H

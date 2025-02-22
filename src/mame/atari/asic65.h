@@ -43,13 +43,13 @@ public:
 	void stat_w(u16 data);
 	u16 stat_r();
 
-	void asic65_io_map(address_map &map);
-	void asic65_program_map(address_map &map);
+	void asic65_io_map(address_map &map) ATTR_COLD;
+	void asic65_program_map(address_map &map) ATTR_COLD;
 protected:
 	// device-level overrides
-	virtual void device_start() override;
-	virtual void device_reset() override;
-	virtual void device_add_mconfig(machine_config &config) override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
 
 	TIMER_CALLBACK_MEMBER(synced_write);
 
@@ -73,7 +73,7 @@ private:
 	u16  m_68data;
 	u16  m_tdata;
 
-	DECLARE_READ_LINE_MEMBER( get_bio );
+	int get_bio();
 };
 
 DECLARE_DEVICE_TYPE(ASIC65, asic65_device)

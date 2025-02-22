@@ -123,9 +123,9 @@ public:
 	void jailbrek(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	// memory pointers
@@ -157,16 +157,14 @@ private:
 	TILE_GET_INFO_MEMBER(get_bg_tile_info);
 	void palette(palette_device &palette) const;
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	DECLARE_WRITE_LINE_MEMBER(vblank_irq);
+	void vblank_irq(int state);
 	INTERRUPT_GEN_MEMBER(interrupt_nmi);
 	void draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	void prg_map(address_map &map);
-	void vlm_map(address_map &map);
+	void prg_map(address_map &map) ATTR_COLD;
+	void vlm_map(address_map &map) ATTR_COLD;
 };
 
-
-// video
 
 void jailbrek_state::palette(palette_device &palette) const
 {
@@ -279,8 +277,6 @@ uint32_t jailbrek_state::screen_update(screen_device &screen, bitmap_ind16 &bitm
 }
 
 
-// machine
-
 void jailbrek_state::ctrl_w(uint8_t data)
 {
 	m_nmi_enable = data & 0x01;
@@ -294,7 +290,7 @@ void jailbrek_state::coin_w(uint8_t data)
 	machine().bookkeeping().coin_counter_w(1, data & 0x02);
 }
 
-WRITE_LINE_MEMBER(jailbrek_state::vblank_irq)
+void jailbrek_state::vblank_irq(int state)
 {
 	if (state && m_irq_enable)
 		m_maincpu->set_input_line(0, HOLD_LINE);
@@ -314,7 +310,7 @@ uint8_t jailbrek_state::speech_r()
 
 void jailbrek_state::speech_w(uint8_t data)
 {
-	// bit 0 could be latch direction like in yiear
+	// bit 0 is latch direction like in yiear
 	m_vlm->st((data >> 1) & 1);
 	m_vlm->rst((data >> 2) & 1);
 }

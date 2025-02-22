@@ -195,9 +195,9 @@ public:
 	{ }
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 protected:
 	// memory pointers
@@ -235,11 +235,11 @@ protected:
 	INTERRUPT_GEN_MEMBER(vblank_irq);
 	void draw_sprites(bitmap_ind16 &dest_bmp, const rectangle &cliprect, gfx_element *gfx, uint8_t *sprite);
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	DECLARE_WRITE_LINE_MEMBER(adpcm_int);
+	void adpcm_int(int state);
 
 	void common(machine_config &config);
-	void main_map(address_map &map);
-	void main_portmap(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void main_portmap(address_map &map) ATTR_COLD;
 };
 
 class appoooh_state : public base_state
@@ -278,7 +278,7 @@ private:
 
 	void palette(palette_device &palette) const;
 
-	void decrypted_opcodes_map(address_map &map);
+	void decrypted_opcodes_map(address_map &map) ATTR_COLD;
 };
 
 
@@ -498,7 +498,7 @@ uint32_t base_state::screen_update(screen_device &screen, bitmap_ind16 &bitmap, 
  *
  *************************************/
 
-WRITE_LINE_MEMBER(base_state::adpcm_int)
+void base_state::adpcm_int(int state)
 {
 	if (!m_adpcm_playing || !state)
 		return;

@@ -74,19 +74,19 @@ private:
 	u8 soundlatch_nmi_r();
 	void resint_w(u8 data);
 	void slalom03_oki_bank_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(vck_w);
+	void vck_w(int state);
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
-	void bldyrolr_maincpu_map(address_map &map);
-	void joctronic_sound_io_map(address_map &map);
-	void joctronic_sound_map(address_map &map);
-	void maincpu_io_map(address_map &map);
-	void maincpu_map(address_map &map);
-	void slalom03_maincpu_map(address_map &map);
-	void slalom03_sound_io_map(address_map &map);
-	void slalom03_sound_map(address_map &map);
+	void bldyrolr_maincpu_map(address_map &map) ATTR_COLD;
+	void joctronic_sound_io_map(address_map &map) ATTR_COLD;
+	void joctronic_sound_map(address_map &map) ATTR_COLD;
+	void maincpu_io_map(address_map &map) ATTR_COLD;
+	void maincpu_map(address_map &map) ATTR_COLD;
+	void slalom03_maincpu_map(address_map &map) ATTR_COLD;
+	void slalom03_sound_io_map(address_map &map) ATTR_COLD;
+	void slalom03_sound_map(address_map &map) ATTR_COLD;
 
 	required_device<z80_device> m_maincpu;
 	required_device<ls259_device> m_mainlatch;
@@ -272,7 +272,7 @@ void joctronic_state::slalom03_oki_bank_w(uint8_t data)
 	m_oki->reset_w(BIT(data, 0));
 }
 
-WRITE_LINE_MEMBER(joctronic_state::vck_w)
+void joctronic_state::vck_w(int state)
 {
 	if (state)
 	{
@@ -512,8 +512,8 @@ ROM_END
 } // anonymous namespace
 
 
-GAME( 1986, jpinball, 0, joctronic, joctronic, joctronic_state, empty_init, ROT0, "Joctronic", "Pin Ball",        MACHINE_IS_SKELETON_MECHANICAL )
-GAME( 1986, punkywil, 0, joctronic, joctronic, joctronic_state, empty_init, ROT0, "Joctronic", "Punky Willy",     MACHINE_IS_SKELETON_MECHANICAL )
-GAME( 1986, walkyria, 0, joctronic, joctronic, joctronic_state, empty_init, ROT0, "Joctronic", "Walkyria",        MACHINE_IS_SKELETON_MECHANICAL )
-GAME( 1987, bldyrolr, 0, bldyrolr,  joctronic, joctronic_state, empty_init, ROT0, "Playbar",   "Bloody Roller",   MACHINE_IS_SKELETON_MECHANICAL )
-GAME( 1988, slalom03, 0, slalom03,  joctronic, joctronic_state, empty_init, ROT0, "Stargame",  "Slalom Code 0.3", MACHINE_IS_SKELETON_MECHANICAL )
+GAME( 1986, jpinball, 0, joctronic, joctronic, joctronic_state, empty_init, ROT0, "Joctronic", "Pin Ball",        MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK )
+GAME( 1986, punkywil, 0, joctronic, joctronic, joctronic_state, empty_init, ROT0, "Joctronic", "Punky Willy",     MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK )
+GAME( 1986, walkyria, 0, joctronic, joctronic, joctronic_state, empty_init, ROT0, "Joctronic", "Walkyria",        MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK )
+GAME( 1987, bldyrolr, 0, bldyrolr,  joctronic, joctronic_state, empty_init, ROT0, "Playbar",   "Bloody Roller",   MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK )
+GAME( 1988, slalom03, 0, slalom03,  joctronic, joctronic_state, empty_init, ROT0, "Stargame",  "Slalom Code 0.3", MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK )

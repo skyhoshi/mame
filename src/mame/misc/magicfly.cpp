@@ -191,7 +191,7 @@
 
         ($0D)            ; Incremented each time a NMI is triggered.
         ($1D)            ; In case of 0x00, NMI do nothing and return.
-        ($11)            ; Store lenghts for text handling.
+        ($11)            ; Store lengths for text handling.
         ($12)            ; Store values to be written in color RAM.
         ($13 - $14)      ; Pointer to text offset.
         ($15 - $16)      ; Pointer to video RAM.
@@ -475,7 +475,7 @@ public:
 	void _7mezzo(machine_config &config);
 
 protected:
-	virtual void video_start() override;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	required_shared_ptr<uint8_t> m_videoram;
@@ -496,7 +496,7 @@ private:
 	void bchance_palette(palette_device &palette) const;
 	DECLARE_VIDEO_START(7mezzo);
 	uint32_t screen_update_magicfly(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
-	void magicfly_map(address_map &map);
+	void magicfly_map(address_map &map) ATTR_COLD;
 };
 
 

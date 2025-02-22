@@ -9,10 +9,12 @@ Progress   (c) 1984 Chuo
 driver by Ernesto Corvi
 
 Notes:
-- Sprite colors are wrong (missing colortable?)
+- sprite colors are wrong (missing colortable?)
 - driver should probably be merged with venture/suprridr.cpp and
   thepit/thepit.cpp
 - unused color bank for tilemaps? (colors 0x10-0x1f & 0x30-0x3f)
+- verify clocks, they're currently borrowed from thepit, maincpu clock
+  used to be 5MHz in older MAME versions but that's doubtful
 
 ***************************************************************************/
 
@@ -50,8 +52,8 @@ public:
 	void timelimt(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -70,8 +72,8 @@ private:
 	tilemap_t *m_bg_tilemap = nullptr;
 	tilemap_t *m_fg_tilemap = nullptr;
 
-	DECLARE_WRITE_LINE_MEMBER(nmi_enable_w);
-	DECLARE_WRITE_LINE_MEMBER(coin_lockout_w);
+	void nmi_enable_w(int state);
+	void coin_lockout_w(int state);
 
 	void videoram_w(offs_t offset, uint8_t data);
 	void bg_videoram_w(offs_t offset, uint8_t data);
@@ -89,14 +91,12 @@ private:
 
 	INTERRUPT_GEN_MEMBER(main_nmi);
 
-	void main_io_map(address_map &map);
-	void main_map(address_map &map);
-	void sound_io_map(address_map &map);
-	void sound_map(address_map &map);
+	void main_io_map(address_map &map) ATTR_COLD;
+	void main_map(address_map &map) ATTR_COLD;
+	void sound_io_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
 };
 
-
-// video
 
 
 /***************************************************************************
@@ -254,8 +254,6 @@ uint32_t timelimt_state::screen_update(screen_device &screen, bitmap_ind16 &bitm
 }
 
 
-// machine
-
 /***************************************************************************/
 
 void timelimt_state::machine_start()
@@ -267,12 +265,12 @@ void timelimt_state::machine_start()
 	save_item(NAME(m_nmi_enabled));
 }
 
-WRITE_LINE_MEMBER(timelimt_state::nmi_enable_w)
+void timelimt_state::nmi_enable_w(int state)
 {
 	m_nmi_enabled = bool(state);
 }
 
-WRITE_LINE_MEMBER(timelimt_state::coin_lockout_w)
+void timelimt_state::coin_lockout_w(int state)
 {
 	machine().bookkeeping().coin_lockout_w(0, !state);
 }
@@ -449,6 +447,7 @@ INTERRUPT_GEN_MEMBER(timelimt_state::main_nmi)
 {
 	m_nmi_state = !m_nmi_state;
 
+	// gameplay pace matches PCB video like this
 	if (m_nmi_enabled && m_nmi_state)
 		m_maincpu->set_input_line(INPUT_LINE_NMI, ASSERT_LINE);
 	else if (!m_nmi_state)
@@ -460,12 +459,12 @@ INTERRUPT_GEN_MEMBER(timelimt_state::main_nmi)
 void timelimt_state::timelimt(machine_config &config)
 {
 	// basic machine hardware
-	Z80(config, m_maincpu, 5'000'000);   // 5.000 MHz
+	Z80(config, m_maincpu, 18'432'000 / 6);
 	m_maincpu->set_addrmap(AS_PROGRAM, &timelimt_state::main_map);
 	m_maincpu->set_addrmap(AS_IO, &timelimt_state::main_io_map);
 	m_maincpu->set_vblank_int("screen", FUNC(timelimt_state::main_nmi));
 
-	Z80(config, m_audiocpu, 18'432'000 / 6);    // 3.072 MHz
+	Z80(config, m_audiocpu, 10'000'000 / 4);
 	m_audiocpu->set_addrmap(AS_PROGRAM, &timelimt_state::sound_map);
 	m_audiocpu->set_addrmap(AS_IO, &timelimt_state::sound_io_map);
 	m_audiocpu->set_vblank_int("screen", FUNC(timelimt_state::irq0_line_hold)); // ?

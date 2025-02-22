@@ -71,12 +71,12 @@ public:
 
 	void starshp1(machine_config &config);
 
-	DECLARE_CUSTOM_INPUT_MEMBER(analog_r);
-	DECLARE_CUSTOM_INPUT_MEMBER(collision_latch_r);
+	ioport_value analog_r();
+	ioport_value collision_latch_r();
 
 protected:
-	virtual void machine_start() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -117,23 +117,23 @@ private:
 
 	void collision_reset_w(uint8_t data);
 	void analog_in_w(offs_t offset, uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(ship_explode_w);
-	DECLARE_WRITE_LINE_MEMBER(circle_mod_w);
-	DECLARE_WRITE_LINE_MEMBER(circle_kill_w);
-	DECLARE_WRITE_LINE_MEMBER(starfield_kill_w);
-	DECLARE_WRITE_LINE_MEMBER(inverse_w);
-	DECLARE_WRITE_LINE_MEMBER(mux_w);
+	void ship_explode_w(int state);
+	void circle_mod_w(int state);
+	void circle_kill_w(int state);
+	void starfield_kill_w(int state);
+	void inverse_w(int state);
+	void mux_w(int state);
 	uint8_t rng_r();
 	void ssadd_w(offs_t offset, uint8_t data);
 	void sspic_w(uint8_t data);
 	void playfield_w(offs_t offset, uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(attract_w);
-	DECLARE_WRITE_LINE_MEMBER(phasor_w);
+	void attract_w(int state);
+	void phasor_w(int state);
 	void analog_out_w(offs_t offset, uint8_t data);
 	TILE_GET_INFO_MEMBER(get_tile_info);
 	void palette(palette_device &palette) const;
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	DECLARE_WRITE_LINE_MEMBER(screen_vblank);
+	void screen_vblank(int state);
 	INTERRUPT_GEN_MEMBER(interrupt);
 	void set_pens();
 	void draw_starfield(bitmap_ind16 &bitmap, const rectangle &cliprect);
@@ -150,11 +150,9 @@ private:
 	int spaceship_collision(bitmap_ind16 &bitmap, const rectangle &rect);
 	int point_in_circle(int x, int y, int center_x, int center_y, int r);
 	int circle_collision(const rectangle &rect);
-	void program_map(address_map &map);
+	void program_map(address_map &map) ATTR_COLD;
 };
 
-
-// video
 
 void starshp1_state::set_pens()
 {
@@ -502,7 +500,7 @@ uint32_t starshp1_state::screen_update(screen_device &screen, bitmap_ind16 &bitm
 }
 
 
-WRITE_LINE_MEMBER(starshp1_state::screen_vblank)
+void starshp1_state::screen_vblank(int state)
 {
 	// rising edge
 	if (state)
@@ -534,8 +532,6 @@ WRITE_LINE_MEMBER(starshp1_state::screen_vblank)
 }
 
 
-// machine
-
 INTERRUPT_GEN_MEMBER(starshp1_state::interrupt)
 {
 	if ((m_system->read() & 0x90) != 0x90)
@@ -543,7 +539,7 @@ INTERRUPT_GEN_MEMBER(starshp1_state::interrupt)
 }
 
 
-WRITE_LINE_MEMBER(starshp1_state::attract_w)
+void starshp1_state::attract_w(int state)
 {
 	m_attract = state;
 	m_discrete->write(STARSHP1_ATTRACT, state);
@@ -553,7 +549,7 @@ WRITE_LINE_MEMBER(starshp1_state::attract_w)
 }
 
 
-WRITE_LINE_MEMBER(starshp1_state::phasor_w)
+void starshp1_state::phasor_w(int state)
 {
 	m_phasor = state;
 	m_discrete->write(STARSHP1_PHASOR_ON, state);
@@ -566,7 +562,7 @@ void starshp1_state::collision_reset_w(uint8_t data)
 }
 
 
-CUSTOM_INPUT_MEMBER(starshp1_state::analog_r)
+ioport_value starshp1_state::analog_r()
 {
 	int val = 0;
 
@@ -590,7 +586,7 @@ CUSTOM_INPUT_MEMBER(starshp1_state::analog_r)
 }
 
 
-CUSTOM_INPUT_MEMBER(starshp1_state::collision_latch_r)
+ioport_value starshp1_state::collision_latch_r()
 {
 	return m_collision_latch & 0x0f;
 }
@@ -631,37 +627,37 @@ void starshp1_state::analog_out_w(offs_t offset, uint8_t data)
 }
 
 
-WRITE_LINE_MEMBER(starshp1_state::ship_explode_w)
+void starshp1_state::ship_explode_w(int state)
 {
 	m_ship_explode = state;
 }
 
 
-WRITE_LINE_MEMBER(starshp1_state::circle_mod_w)
+void starshp1_state::circle_mod_w(int state)
 {
 	m_circle_mod = state;
 }
 
 
-WRITE_LINE_MEMBER(starshp1_state::circle_kill_w)
+void starshp1_state::circle_kill_w(int state)
 {
 	m_circle_kill = !state;
 }
 
 
-WRITE_LINE_MEMBER(starshp1_state::starfield_kill_w)
+void starshp1_state::starfield_kill_w(int state)
 {
 	m_starfield_kill = state;
 }
 
 
-WRITE_LINE_MEMBER(starshp1_state::inverse_w)
+void starshp1_state::inverse_w(int state)
 {
 	m_inverse = state;
 }
 
 
-WRITE_LINE_MEMBER(starshp1_state::mux_w)
+void starshp1_state::mux_w(int state)
 {
 	m_mux = state;
 }
@@ -726,12 +722,12 @@ static INPUT_PORTS_START( starshp1 )
 	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_COIN1 )
 
 	PORT_START("VBLANK")
-	PORT_BIT( 0x3f, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(starshp1_state, analog_r)   // analog in
+	PORT_BIT( 0x3f, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(starshp1_state::analog_r))   // analog in
 	PORT_SERVICE( 0x40, IP_ACTIVE_LOW )
-	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_VBLANK("screen")
+	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("screen", FUNC(screen_device::vblank))
 
 	PORT_START("COINAGE")
-	PORT_BIT( 0x0f, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(starshp1_state, collision_latch_r)   // collision latch
+	PORT_BIT( 0x0f, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(starshp1_state::collision_latch_r))   // collision latch
 	PORT_DIPNAME( 0x70, 0x20, DEF_STR( Coinage ) )
 	PORT_DIPSETTING(    0x10, DEF_STR( 2C_1C ) )
 	PORT_DIPSETTING(    0x20, DEF_STR( 1C_1C ) )

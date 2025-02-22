@@ -36,12 +36,12 @@ public:
 	void micromon(machine_config &config);
 
 private:
-	DECLARE_READ_LINE_MEMBER(clear_r);
+	int clear_r();
 
-	void io_map(address_map &map);
-	void mem_map(address_map &map);
+	void io_map(address_map &map) ATTR_COLD;
+	void mem_map(address_map &map) ATTR_COLD;
 
-	virtual void machine_reset() override;
+	virtual void machine_reset() override ATTR_COLD;
 	uint8_t m_resetcnt = 0U;
 	required_device<cosmac_device> m_maincpu;
 };
@@ -59,7 +59,7 @@ void micromon_state::io_map(address_map &map)
 static INPUT_PORTS_START( micromon )
 INPUT_PORTS_END
 
-READ_LINE_MEMBER( micromon_state::clear_r )
+int micromon_state::clear_r()
 {
 	if (m_resetcnt < 0x10)
 		m_maincpu->set_state_int(cosmac_device::COSMAC_R0, 0x0000);
@@ -98,4 +98,4 @@ ROM_END
 } // anonymous namespace
 
 
-SYST( 1995?, micromon7141, 0, 0, micromon, micromon, micromon_state, empty_init, "Kontron Instruments",  "Micromon 7141 ECG unit",  MACHINE_IS_SKELETON | MACHINE_SUPPORTS_SAVE )
+SYST( 1995?, micromon7141, 0, 0, micromon, micromon, micromon_state, empty_init, "Kontron Instruments",  "Micromon 7141 ECG unit",  MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )

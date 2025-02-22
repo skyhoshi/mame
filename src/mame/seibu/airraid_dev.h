@@ -13,8 +13,7 @@
 
 DECLARE_DEVICE_TYPE(AIRRAID_VIDEO, airraid_video_device)
 
-class airraid_video_device :  public device_t
-/*  public device_video_interface */
+class airraid_video_device : public device_t
 {
 public:
 	// construction/destruction
@@ -25,9 +24,9 @@ public:
 	void layer_enable_w(uint8_t enable);
 
 protected:
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 private:
 	// devices

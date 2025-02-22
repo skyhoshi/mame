@@ -15,7 +15,7 @@ Actual segment output frequency is divided by number of LCD commons.
 */
 
 #include "emu.h"
-#include "video/pcf2100.h"
+#include "pcf2100.h"
 
 
 DEFINE_DEVICE_TYPE(PCF2100, pcf2100_device, "pcf2100", "Philips PCF2100 LCD Driver")
@@ -55,9 +55,6 @@ pcf2112_device::pcf2112_device(const machine_config &mconfig, const char *tag, d
 
 void pcf2100_device::device_start()
 {
-	// resolve callbacks
-	m_write_segs.resolve_safe();
-
 	// timer
 	m_lcd_timer = timer_alloc(FUNC(pcf2100_device::update_output_latches), this);
 	attotime period = attotime::from_hz(clock());
@@ -94,7 +91,7 @@ TIMER_CALLBACK_MEMBER(pcf2100_device::update_output_latches)
 	m_bpout = (m_bpout + 1) % m_bpmax;
 }
 
-WRITE_LINE_MEMBER(pcf2100_device::clb_w)
+void pcf2100_device::clb_w(int state)
 {
 	state = (state) ? 1 : 0;
 	bool rise = state && !m_clb;

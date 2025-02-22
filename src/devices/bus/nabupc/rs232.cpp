@@ -34,10 +34,10 @@ public:
 
 protected:
 	// device_t implementation
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual void device_start() override;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual void device_start() override ATTR_COLD;
 
-	DECLARE_WRITE_LINE_MEMBER(rxrdy_w);
+	void rxrdy_w(int state);
 
 private:
 	required_device<i8251_device> m_i8251;
@@ -92,7 +92,7 @@ void rs232_device::device_start()
 {
 }
 
-WRITE_LINE_MEMBER(rs232_device::rxrdy_w)
+void rs232_device::rxrdy_w(int state)
 {
 	get_slot()->int_w(!state);
 }

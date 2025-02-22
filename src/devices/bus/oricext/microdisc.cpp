@@ -20,6 +20,7 @@ void oric_microdisc_device::floppy_formats(format_registration &fr)
 static void microdisc_floppies(device_slot_interface &device)
 {
 	device.option_add("3dsdd", FLOPPY_3_DSDD);
+	device.option_add("3dsqd", FLOPPY_3_DSQD);
 }
 
 void oric_microdisc_device::map_io(address_space_installer &space)
@@ -79,7 +80,7 @@ void oric_microdisc_device::device_add_mconfig(machine_config &config)
 	fdc->hld_wr_callback().set(FUNC(oric_microdisc_device::fdc_hld_w));
 	fdc->set_force_ready(true);
 
-	FLOPPY_CONNECTOR(config, "fdc:0", microdisc_floppies, "3dsdd", oric_microdisc_device::floppy_formats);
+	FLOPPY_CONNECTOR(config, "fdc:0", microdisc_floppies, "3dsqd", oric_microdisc_device::floppy_formats);
 	FLOPPY_CONNECTOR(config, "fdc:1", microdisc_floppies, nullptr, oric_microdisc_device::floppy_formats);
 	FLOPPY_CONNECTOR(config, "fdc:2", microdisc_floppies, nullptr, oric_microdisc_device::floppy_formats);
 	FLOPPY_CONNECTOR(config, "fdc:3", microdisc_floppies, nullptr, oric_microdisc_device::floppy_formats);
@@ -115,18 +116,18 @@ uint8_t oric_microdisc_device::port_318_r()
 	return drq_state ? 0x7f : 0xff;
 }
 
-WRITE_LINE_MEMBER(oric_microdisc_device::fdc_irq_w)
+void oric_microdisc_device::fdc_irq_w(int state)
 {
 	intrq_state = state;
 	irq_w(intrq_state && (port_314 & P_IRQEN));
 }
 
-WRITE_LINE_MEMBER(oric_microdisc_device::fdc_drq_w)
+void oric_microdisc_device::fdc_drq_w(int state)
 {
 	drq_state = state;
 }
 
-WRITE_LINE_MEMBER(oric_microdisc_device::fdc_hld_w)
+void oric_microdisc_device::fdc_hld_w(int state)
 {
 	hld_state = state;
 	floppy_image_device *floppy = floppies[(port_314 >> 5) & 3]->get_device();

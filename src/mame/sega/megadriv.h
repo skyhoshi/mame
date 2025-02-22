@@ -36,7 +36,7 @@ protected:
 	{
 	}
 
-	virtual void machine_reset() override;
+	virtual void machine_reset() override ATTR_COLD;
 
 	void md_core_ntsc(machine_config &config);
 	void md_core_pal(machine_config &config);
@@ -44,7 +44,7 @@ protected:
 	void megadriv_tas_callback(offs_t offset, uint8_t data);
 
 	uint32_t screen_update_megadriv(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
-	DECLARE_WRITE_LINE_MEMBER(screen_vblank_megadriv);
+	void screen_vblank_megadriv(int state);
 
 	required_device<m68000_device> m_maincpu;
 	required_device<timer_device> m_scan_timer;
@@ -56,8 +56,8 @@ protected:
 private:
 	IRQ_CALLBACK_MEMBER(genesis_int_callback);
 
-	WRITE_LINE_MEMBER(vdp_lv6irqline_callback_genesis_68k);
-	WRITE_LINE_MEMBER(vdp_lv4irqline_callback_genesis_68k);
+	void vdp_lv6irqline_callback_genesis_68k(int state);
+	void vdp_lv4irqline_callback_genesis_68k(int state);
 
 	void megadriv_timers(machine_config &config);
 };
@@ -108,7 +108,7 @@ protected:
 	uint8_t megadriv_z80_unmapped_read();
 	TIMER_CALLBACK_MEMBER(megadriv_z80_run_state);
 
-	WRITE_LINE_MEMBER(vdp_sndirqline_callback_genesis_z80);
+	void vdp_sndirqline_callback_genesis_z80(int state);
 
 	void megadriv_stop_scanline_timer();
 
@@ -118,13 +118,13 @@ protected:
 	void md2_pal(machine_config &config);
 	void md_bootleg(machine_config &config);
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
-	void megadriv_68k_base_map(address_map &map);
-	void megadriv_68k_map(address_map &map);
-	void megadriv_z80_io_map(address_map &map);
-	void megadriv_z80_map(address_map &map);
+	void megadriv_68k_base_map(address_map &map) ATTR_COLD;
+	void megadriv_68k_map(address_map &map) ATTR_COLD;
+	void megadriv_z80_io_map(address_map &map) ATTR_COLD;
+	void megadriv_z80_map(address_map &map) ATTR_COLD;
 
 	required_device<cpu_device> m_z80snd;
 	required_device<ym_generic_device> m_ymsnd;
@@ -166,7 +166,7 @@ protected:
 	void ctrl1_6button(machine_config &config);
 	void ctrl2_6button(machine_config &config);
 
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	template <unsigned N> uint8_t ioport_in_3button();

@@ -25,12 +25,12 @@ public:
 		, m_maincpu(*this, "maincpu")
 	{ }
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	required_device<cpu_device> m_maincpu;
 	void clowndwn(machine_config &config);
-	void clowndwn_map(address_map &map);
+	void clowndwn_map(address_map &map) ATTR_COLD;
 };
 
 void clowndwn_state::clowndwn_map(address_map &map)
@@ -64,11 +64,11 @@ void clowndwn_state::clowndwn(machine_config &config)
 	M6808(config, m_maincpu, 8000000); // unknown type and clock
 	m_maincpu->set_addrmap(AS_PROGRAM, &clowndwn_state::clowndwn_map);
 
-	PIA6821(config, "pia0", 0);
-	PIA6821(config, "pia1", 0);
-	PIA6821(config, "pia2", 0);
-	PIA6821(config, "pia3", 0);
-	PIA6821(config, "pia4", 0);
+	PIA6821(config, "pia0");
+	PIA6821(config, "pia1");
+	PIA6821(config, "pia2");
+	PIA6821(config, "pia3");
+	PIA6821(config, "pia4");
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
@@ -88,4 +88,4 @@ ROM_END
 } // anonymous namespace
 
 
-GAME( 1987, clowndwn, 0, clowndwn, clowndwn, clowndwn_state, empty_init, ROT0, "Elwood Electronics", "Clown Roll Down (Elwood)", MACHINE_IS_SKELETON_MECHANICAL )
+GAME( 1987, clowndwn, 0, clowndwn, clowndwn, clowndwn_state, empty_init, ROT0, "Elwood Electronics", "Clown Roll Down (Elwood)", MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK )

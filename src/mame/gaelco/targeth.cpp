@@ -101,13 +101,13 @@ public:
 	void targeth(machine_config &config);
 
 protected:
-	virtual void video_start() override;
-	virtual void machine_start() override;
+	virtual void video_start() override ATTR_COLD;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	void oki_bankswitch_w(uint8_t data);
 	void output_latch_w(offs_t offset, uint16_t data);
-	template <uint8_t Which> DECLARE_WRITE_LINE_MEMBER(coin_counter_w);
+	template <uint8_t Which> void coin_counter_w(int state);
 	void shareram_w(offs_t offset, uint8_t data);
 	uint8_t shareram_r(offs_t offset);
 
@@ -120,9 +120,9 @@ private:
 
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	void main_map(address_map &map);
-	void mcu_hostmem_map(address_map &map);
-	void oki_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void mcu_hostmem_map(address_map &map) ATTR_COLD;
+	void oki_map(address_map &map) ATTR_COLD;
 
 	void draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect);
 
@@ -144,8 +144,6 @@ private:
 	tilemap_t *m_pant[2]{};
 };
 
-
-// video
 
 /***************************************************************************
 
@@ -272,8 +270,6 @@ uint32_t targeth_state::screen_update(screen_device &screen, bitmap_ind16 &bitma
 }
 
 
-// machine
-
 static const gfx_layout tilelayout =
 {
 	16,16,                                                          // 16x16 tiles
@@ -314,7 +310,7 @@ void targeth_state::output_latch_w(offs_t offset, uint16_t data)
 }
 
 template <uint8_t Which>
-WRITE_LINE_MEMBER(targeth_state::coin_counter_w)
+void targeth_state::coin_counter_w(int state)
 {
 	machine().bookkeeping().coin_counter_w(Which, state);
 }

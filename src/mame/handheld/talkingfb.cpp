@@ -50,7 +50,7 @@ public:
 	void talkingfb(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	// devices/pointers
@@ -58,11 +58,11 @@ private:
 	required_region_ptr<u8> m_rom;
 	required_ioport_array<5> m_inputs;
 
-	void main_map(address_map &map);
-	void main_io(address_map &map);
-
 	u8 m_bank = 0;
 	u8 m_inp_mux = 0;
+
+	void main_map(address_map &map) ATTR_COLD;
+	void main_io(address_map &map) ATTR_COLD;
 
 	// I/O handlers
 	void bank_w(u8 data);

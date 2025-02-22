@@ -106,8 +106,8 @@ private:
 	required_device<abcbus_slot_device> m_bus2;
 	required_device<abc_keyboard_port_device> m_kb;
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	static void floppy_formats(format_registration &fr);
 
@@ -122,15 +122,15 @@ private:
 	void fw0_w(uint8_t data);
 	void fw1_w(uint8_t data);
 
-	DECLARE_WRITE_LINE_MEMBER(cs7_w);
-	DECLARE_WRITE_LINE_MEMBER(btce_w);
-	DECLARE_WRITE_LINE_MEMBER(atce_w);
-	DECLARE_WRITE_LINE_MEMBER(dmadis_w);
-	DECLARE_WRITE_LINE_MEMBER(sysscc_w);
-	DECLARE_WRITE_LINE_MEMBER(sysfs_w);
-	DECLARE_WRITE_LINE_MEMBER(dbrq0_w) { m_dbrq0 = state; update_br(); }
-	DECLARE_WRITE_LINE_MEMBER(dbrq1_w) { m_dbrq1 = state; update_br(); }
-	DECLARE_WRITE_LINE_MEMBER(dbrq2_w) { m_dbrq2 = state; update_br(); }
+	void cs7_w(int state);
+	void btce_w(int state);
+	void atce_w(int state);
+	void dmadis_w(int state);
+	void sysscc_w(int state);
+	void sysfs_w(int state);
+	void dbrq0_w(int state) { m_dbrq0 = state; update_br(); }
+	void dbrq1_w(int state) { m_dbrq1 = state; update_br(); }
+	void dbrq2_w(int state) { m_dbrq2 = state; update_br(); }
 
 	uint8_t cio_pa_r();
 	uint8_t cio_pb_r();
@@ -140,7 +140,7 @@ private:
 
 	void nmi_w(int state);
 
-	void cpu_space_map(address_map &map);
+	void cpu_space_map(address_map &map) ATTR_COLD;
 
 	void update_br();
 	void update_pren0(int state);
@@ -160,8 +160,8 @@ private:
 	int m_dbrq1 = CLEAR_LINE;
 	int m_dbrq2 = CLEAR_LINE;
 
-	void abc1600_mem(address_map &map);
-	void mac_mem(address_map &map);
+	void abc1600_mem(address_map &map) ATTR_COLD;
+	void mac_mem(address_map &map) ATTR_COLD;
 
 	// peripherals
 	int m_cs7 = 0;                  // card select address bit 7

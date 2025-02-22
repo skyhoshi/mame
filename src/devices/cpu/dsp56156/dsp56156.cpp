@@ -269,9 +269,6 @@ void dsp56156_device::device_start()
 	m_core.modC_state = false;
 	m_core.reset_state = false;
 
-	/* Resolve line callbacks */
-	portC_cb.resolve_safe();
-
 	/* save states - dsp56156_core members */
 	save_item(NAME(m_core.modA_state));
 	save_item(NAME(m_core.modB_state));
@@ -468,6 +465,7 @@ void dsp56156_device::execute_run()
 	/* If reset line is asserted, do nothing */
 	if (m_core.reset_state)
 	{
+		debugger_wait_hook();
 		m_core.icount = 0;
 		return;
 	}
@@ -475,6 +473,7 @@ void dsp56156_device::execute_run()
 	/* HACK - if you're in bootstrap mode, simply pretend you ate up all your cycles waiting for data. */
 	if (m_core.bootstrap_mode != BOOTSTRAP_OFF)
 	{
+		debugger_wait_hook();
 		m_core.icount = 0;
 		return;
 	}

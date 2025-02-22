@@ -32,16 +32,16 @@ public:
 	void kiwame(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	void row_select_w(u16 data);
 	u16 input_r(offs_t offset);
-	DECLARE_WRITE_LINE_MEMBER(kiwame_vblank);
+	void kiwame_vblank(int state);
 
 	u32 screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	void kiwame_map(address_map &map);
+	void kiwame_map(address_map &map) ATTR_COLD;
 
 	required_device<tmp68301_device> m_maincpu;
 	required_device<x1_001_device> m_spritegen;

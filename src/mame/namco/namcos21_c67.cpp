@@ -263,7 +263,7 @@ Namco System 21 Video Hardware
 #include "namco_c139.h"
 #include "namco_c148.h"
 #include "namco68.h"
-#include "namco_c67.h"
+#include "namco_dsp.h"
 #include "namcos21_dsp_c67.h"
 #include "namco_c355spr.h"
 #include "namcos21_3d.h"
@@ -309,8 +309,8 @@ public:
 	void init_solvalou();
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -353,18 +353,18 @@ private:
 
 	TIMER_DEVICE_CALLBACK_MEMBER(screen_scanline);
 
-	DECLARE_WRITE_LINE_MEMBER(yield_hack);
+	void yield_hack(int state);
 
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
 	void configure_c68_namcos21(machine_config &config);
 
-	void common_map(address_map &map);
-	void master_map(address_map &map);
-	void slave_map(address_map &map);
+	void common_map(address_map &map) ATTR_COLD;
+	void master_map(address_map &map) ATTR_COLD;
+	void slave_map(address_map &map) ATTR_COLD;
 
-	void sound_map(address_map &map);
-	void c140_map(address_map &map);
+	void sound_map(address_map &map) ATTR_COLD;
+	void c140_map(address_map &map) ATTR_COLD;
 };
 
 
@@ -870,7 +870,7 @@ void namcos21_c67_state::cybsled(machine_config &config)
 	m_namcos21_dsp_c67->set_gametype(namcos21_dsp_c67_device::NAMCOS21_CYBERSLED);
 }
 
-WRITE_LINE_MEMBER(namcos21_c67_state::yield_hack)
+void namcos21_c67_state::yield_hack(int state)
 {
 	m_maincpu->yield();
 }

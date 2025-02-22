@@ -71,11 +71,11 @@ private:
 	uint8_t ay8912_1_r();
 	TIMER_DEVICE_CALLBACK_MEMBER(keyboard_callback);
 	TIMER_DEVICE_CALLBACK_MEMBER(kansas_r);
-	DECLARE_WRITE_LINE_MEMBER(kansas_w);
+	void kansas_w(int state);
 	MC6845_UPDATE_ROW(crtc_update_row);
 
-	void io_map(address_map &map);
-	void mem_map(address_map &map);
+	void io_map(address_map &map) ATTR_COLD;
+	void mem_map(address_map &map) ATTR_COLD;
 
 	uint8_t *m_p_vram = nullptr;
 	uint8_t *m_p_wram = nullptr;
@@ -91,9 +91,9 @@ private:
 	uint16_t m_knj_addr = 0;
 	u8 m_cass_data[4]{};
 	bool m_cassbit = 0, m_cassold = 0;
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 	required_device<cpu_device> m_maincpu;
 	required_region_ptr<u8> m_p_chargen;
 	required_device<i8255_device> m_ppi;
@@ -303,7 +303,7 @@ void multi8_state::kanji_w(offs_t offset, uint8_t data)
 	m_knj_addr = (offset == 0) ? (m_knj_addr & 0xff00) | (data & 0xff) : (m_knj_addr & 0x00ff) | (data << 8);
 }
 
-WRITE_LINE_MEMBER( multi8_state::kansas_w )
+void multi8_state::kansas_w(int state)
 {
 	// incoming @19200Hz
 	u8 twobit = m_cass_data[3] & 3;
@@ -372,7 +372,7 @@ void multi8_state::io_map(address_map &map)
 /* Input ports */
 static INPUT_PORTS_START( multi8 )
 	PORT_START("VBLANK")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_VBLANK("screen")
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_DEVICE_MEMBER("screen", FUNC(screen_device::vblank))
 
 	PORT_START("key1") //0x00-0x1f
 	PORT_BIT(0x00000001,IP_ACTIVE_HIGH,IPT_UNUSED) //0x00 null

@@ -103,15 +103,11 @@
 #include "machine/input_merger.h"
 
 #include "imagedev/floppy.h"
-#include "formats/pc_dsk.h"
 
-#define LOG_GENERAL (1U << 0)
 #define LOG_KLS     (1U << 1)
 
 //#define VERBOSE (LOG_GENERAL|LOG_KLS)
 #include "logmacro.h"
-
-#include "debugger.h"
 
 #include "rtpc.lh"
 
@@ -145,12 +141,12 @@ public:
 
 protected:
 	// driver_device overrides
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	void iocc_mem_map(address_map &map) { map.unmap_value_high(); }
-	template <bool SCC> void iocc_pio_map(address_map &map);
-	void mcu_pgm_map(address_map &map);
+	template <bool SCC> void iocc_pio_map(address_map &map) ATTR_COLD;
+	void mcu_pgm_map(address_map &map) ATTR_COLD;
 
 	void common(machine_config &config);
 
@@ -767,7 +763,7 @@ void rtpc_state::ibm6150(machine_config &config)
 	common(config);
 	m_iocc->set_addrmap(2, &rtpc_state::iocc_pio_map<true>);
 
-	SCC8530N(config, m_scc, 3'580'000);
+	SCC8530(config, m_scc, 3'580'000);
 	m_scc->configure_channels(3'072'000, 3'072'000, 3'072'000, 3'072'000);
 	m_scc->out_int_callback().set(m_pic[0], FUNC(pic8259_device::ir6_w));
 

@@ -265,7 +265,7 @@ public:
 protected:
 	device_nes_cart_interface(const machine_config &mconfig, device_t &device);
 
-	DECLARE_WRITE_LINE_MEMBER(set_irq_line);
+	void set_irq_line(int state);
 
 	// internal state
 	uint8_t *m_prg;
@@ -439,7 +439,7 @@ public:
 
 protected:
 	// device_t implementation
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	const char * get_default_card_ines(get_default_card_software_hook &hook, const uint8_t *ROM, uint32_t len) const;
 	static const char * get_default_card_unif(const uint8_t *ROM, uint32_t len);

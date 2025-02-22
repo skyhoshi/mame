@@ -29,11 +29,11 @@ public:
 
 protected:
 	// device_t implementation
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 	virtual void device_reset_after_children() override;
-	virtual void device_add_mconfig(machine_config &config) override;
-	virtual const tiny_rom_entry *device_rom_region() const override;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+	virtual const tiny_rom_entry *device_rom_region() const override ATTR_COLD;
 
 private:
 	required_device<tms5220_device>         m_lpc;
@@ -44,11 +44,11 @@ private:
 	required_device<speaker_device>         m_speaker;
 	required_region_ptr<uint8_t>            m_rom;
 
-	DECLARE_WRITE_LINE_MEMBER(cvsd_clock_w);        // PIT CH0
-	DECLARE_WRITE_LINE_MEMBER(cvsd_frame_w);        // PIT CH1
-	DECLARE_WRITE_LINE_MEMBER(int_clock_w);         // PIT CH2
-	DECLARE_WRITE_LINE_MEMBER(lpc_interrupt_w);     // 5220 INT#
-	DECLARE_WRITE_LINE_MEMBER(cvsd_shiftreg_clk_w); // SRCLK
+	void cvsd_clock_w(int state);        // PIT CH0
+	void cvsd_frame_w(int state);        // PIT CH1
+	void int_clock_w(int state);         // PIT CH2
+	void lpc_interrupt_w(int state);     // 5220 INT#
+	void cvsd_shiftreg_clk_w(int state); // SRCLK
 
 	uint8_t porta_r();
 	uint8_t portc_r();

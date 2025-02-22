@@ -1,31 +1,35 @@
 // license:BSD-3-Clause
 // copyright-holders:Curt Coder
-#ifndef MAME_LUXOR_ABC800_H
-#define MAME_LUXOR_ABC800_H
+#ifndef MAME_LUXOR_ABC80X_H
+#define MAME_LUXOR_ABC80X_H
 
 #pragma once
 
-#include "bus/abcbus/abcbus.h"
-#include "bus/rs232/rs232.h"
-#include "cpu/z80/z80.h"
-#include "machine/z80daisy.h"
-#include "cpu/mcs48/mcs48.h"
-#include "imagedev/cassette.h"
-#include "imagedev/snapquik.h"
-#include "bus/abckb/abckb.h"
-#include "bus/abckb/abc800kb.h"
-#include "machine/74259.h"
-#include "machine/e0516.h"
-#include "machine/z80ctc.h"
-#include "machine/z80sio.h"
-#include "machine/ram.h"
-#include "machine/timer.h"
-#include "sound/discrete.h"
-#include "video/mc6845.h"
-#include "video/saa5050.h"
 #include "emupal.h"
 #include "softlist.h"
 #include "speaker.h"
+#include "bus/abcbus/abcbus.h"
+#include "bus/abckb/abc800kb.h"
+#include "bus/abckb/abckb.h"
+#include "bus/rs232/printer.h"
+#include "bus/rs232/rs232.h"
+#include "bus/rs232/teletex800.h"
+#include "cpu/mcs48/mcs48.h"
+#include "cpu/z80/z80.h"
+#include "imagedev/cassette.h"
+#include "imagedev/snapquik.h"
+#include "machine/74259.h"
+#include "machine/e0516.h"
+#include "machine/ram.h"
+#include "machine/timer.h"
+#include "machine/z80ctc.h"
+#include "machine/z80daisy.h"
+#include "machine/z80sio.h"
+#include "sound/discrete.h"
+#include "video/mc6845.h"
+#include "video/saa5050.h"
+
+
 
 //**************************************************************************
 //  MACROS / CONSTANTS
@@ -59,9 +63,9 @@
 #define Z80SIO_TAG          "z80sio"
 #define Z80DART_TAG         "z80dart"
 #define DISCRETE_TAG        "discrete"
-#define CASSETTE_TAG        "cassette"
-#define RS232_A_TAG         "rs232a"
-#define RS232_B_TAG         "rs232b"
+#define CASSETTE_TAG        "cas"
+#define RS232_A_TAG         "pr"
+#define RS232_B_TAG         "v24"
 #define ABC_KEYBOARD_PORT_TAG   "kb"
 #define TIMER_CTC_TAG       "timer_ctc"
 #define TIMER_CASSETTE_TAG  "timer_cass"
@@ -113,9 +117,9 @@ public:
 	memory_share_creator<uint8_t> m_char_ram;
 	required_ioport m_io_sb;
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 	void cassette_output_tick(int state);
 
@@ -125,12 +129,12 @@ public:
 	uint8_t pling_r();
 	void hrs_w(uint8_t data);
 	void hrc_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER( ctc_z0_w );
-	DECLARE_WRITE_LINE_MEMBER( ctc_z1_w );
-	DECLARE_WRITE_LINE_MEMBER( sio_txdb_w );
-	DECLARE_WRITE_LINE_MEMBER( sio_dtrb_w );
-	DECLARE_WRITE_LINE_MEMBER( sio_rtsb_w );
-	DECLARE_WRITE_LINE_MEMBER( keydtr_w );
+	void ctc_z0_w(int state);
+	void ctc_z1_w(int state);
+	void sio_txdb_w(int state);
+	void sio_dtrb_w(int state);
+	void sio_rtsb_w(int state);
+	void keydtr_w(int state);
 	TIMER_DEVICE_CALLBACK_MEMBER( ctc_tick );
 	TIMER_DEVICE_CALLBACK_MEMBER( cassette_input_tick );
 
@@ -158,11 +162,11 @@ public:
 	// timers
 	emu_timer *m_cassette_timer;
 	void common(machine_config &config);
-	void abc800_m1(address_map &map);
-	void abc800_mem(address_map &map);
-	void abc800_io(address_map &map);
-	void abc800m_io(address_map &map);
-	void abc800c_io(address_map &map);
+	void abc800_m1(address_map &map) ATTR_COLD;
+	void abc800_mem(address_map &map) ATTR_COLD;
+	void abc800_io(address_map &map) ATTR_COLD;
+	void abc800m_io(address_map &map) ATTR_COLD;
+	void abc800c_io(address_map &map) ATTR_COLD;
 };
 
 
@@ -239,15 +243,15 @@ public:
 	required_memory_region m_char_rom;
 	required_ioport m_config;
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 	uint8_t read(offs_t offset);
 	void write(offs_t offset, uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER( lrs_w );
-	DECLARE_WRITE_LINE_MEMBER( mux80_40_w );
-	DECLARE_WRITE_LINE_MEMBER( vs_w );
+	void lrs_w(int state);
+	void mux80_40_w(int state);
+	void vs_w(int state);
 	MC6845_UPDATE_ROW( abc802_update_row );
 
 	// cpu state
@@ -260,9 +264,9 @@ public:
 
 	void abc802(machine_config &config);
 	void abc802_video(machine_config &config);
-	void abc802_m1(address_map &map);
-	void abc802_mem(address_map &map);
-	void abc802_io(address_map &map);
+	void abc802_m1(address_map &map) ATTR_COLD;
+	void abc802_mem(address_map &map) ATTR_COLD;
+	void abc802_io(address_map &map) ATTR_COLD;
 };
 
 
@@ -292,9 +296,9 @@ public:
 	required_memory_region m_char_rom;
 	memory_share_creator<uint8_t> m_attr_ram;
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 	uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
@@ -316,14 +320,14 @@ public:
 	void sso_w(uint8_t data);
 	uint8_t sti_r();
 	void sto_w(uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER( eme_w );
-	DECLARE_WRITE_LINE_MEMBER( _40_w );
-	DECLARE_WRITE_LINE_MEMBER( hru2_a8_w );
-	DECLARE_WRITE_LINE_MEMBER( prot_ini_w );
-	DECLARE_WRITE_LINE_MEMBER( txoff_w );
-	DECLARE_WRITE_LINE_MEMBER( prot_din_w );
-	DECLARE_WRITE_LINE_MEMBER( hs_w );
-	DECLARE_WRITE_LINE_MEMBER( vs_w );
+	void eme_w(int state);
+	void _40_w(int state);
+	void hru2_a8_w(int state);
+	void prot_ini_w(int state);
+	void txoff_w(int state);
+	void prot_din_w(int state);
+	void hs_w(int state);
+	void vs_w(int state);
 	void abc806_palette(palette_device &palette) const;
 	MC6845_UPDATE_ROW( abc806_update_row );
 
@@ -347,8 +351,8 @@ public:
 
 	void abc806(machine_config &config);
 	void abc806_video(machine_config &config);
-	void abc806_io(address_map &map);
-	void abc806_mem(address_map &map);
+	void abc806_io(address_map &map) ATTR_COLD;
+	void abc806_mem(address_map &map) ATTR_COLD;
 };
 
-#endif // MAME_LUXOR_ABC800_H
+#endif // MAME_LUXOR_ABC80X_H

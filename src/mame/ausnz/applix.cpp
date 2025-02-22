@@ -29,7 +29,7 @@
     - Audio: it could be better
     - DAC output is used to compare against analog inputs; core doesn't permit
       audio outputs to be used for non-speaker purposes.
-    - Bios 5 crashes MAME after scrolling about half a screen
+    - BIOS 5 crashes MAME after scrolling about half a screen
 
 ****************************************************************************/
 
@@ -89,8 +89,8 @@ public:
 	void init_applix();
 
 private:
-	virtual void machine_reset() override;
-	virtual void machine_start() override;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void machine_start() override ATTR_COLD;
 	u16 applix_inputs_r();
 	void palette_w(offs_t offset, u16 data, u16 mem_mask = ~0);
 	void analog_latch_w(u16 data);
@@ -99,7 +99,7 @@ private:
 	u8 applix_pb_r();
 	void applix_pa_w(u8 data);
 	void applix_pb_w(u8 data);
-	DECLARE_WRITE_LINE_MEMBER(vsync_w);
+	void vsync_w(int state);
 	u8 port00_r();
 	u8 port08_r();
 	u8 port10_r();
@@ -135,11 +135,11 @@ private:
 	u8 m_palette_latch[4]{};
 	required_shared_ptr<u16> m_base;
 
-	void main_mem(address_map &map);
-	void keytronic_pc3270_io(address_map &map);
-	void keytronic_pc3270_program(address_map &map);
-	void sub_io(address_map &map);
-	void sub_mem(address_map &map);
+	void main_mem(address_map &map) ATTR_COLD;
+	void keytronic_pc3270_io(address_map &map) ATTR_COLD;
+	void keytronic_pc3270_program(address_map &map) ATTR_COLD;
+	void sub_io(address_map &map) ATTR_COLD;
+	void sub_mem(address_map &map) ATTR_COLD;
 
 	u8 m_pb = 0U;
 	u8 m_analog_latch = 0U;
@@ -818,7 +818,7 @@ MC6845_BEGIN_UPDATE( applix_state::crtc_update_border )
 	bitmap.fill(m_palette->pen(m_video_latch >> 4), cliprect);
 }
 
-WRITE_LINE_MEMBER( applix_state::vsync_w )
+void applix_state::vsync_w(int state)
 {
 	m_via->write_ca2(state);
 }
@@ -909,7 +909,7 @@ void applix_state::applix(machine_config &config)
 	FLOPPY_CONNECTOR(config, m_floppy[1], applix_floppies, "35dd", applix_state::floppy_formats).enable_sound(true);
 	TIMER(config, "applix_c").configure_periodic(FUNC(applix_state::cass_timer), attotime::from_hz(100000));
 
-	scc8530_device &scc(SCC8530N(config, "scc", 30_MHz_XTAL / 8));
+	scc8530_device &scc(SCC8530(config, "scc", 30_MHz_XTAL / 8));
 	scc.out_txda_callback().set("serial_a", FUNC(rs232_port_device::write_txd));
 	scc.out_rtsa_callback().set("serial_a", FUNC(rs232_port_device::write_rts));
 	scc.out_dtra_callback().set("serial_a", FUNC(rs232_port_device::write_dtr));

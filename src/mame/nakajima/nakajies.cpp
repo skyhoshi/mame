@@ -325,8 +325,8 @@ public:
 	DECLARE_INPUT_CHANGED_MEMBER(trigger_irq);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
@@ -343,8 +343,8 @@ private:
 
 	void nakajies_palette(palette_device &palette) const;
 	TIMER_DEVICE_CALLBACK_MEMBER(kb_timer);
-	void nakajies_io_map(address_map &map);
-	void nakajies_map(address_map &map);
+	void nakajies_io_map(address_map &map) ATTR_COLD;
+	void nakajies_map(address_map &map) ATTR_COLD;
 
 	required_device<cpu_device> m_maincpu;
 	required_device<rp5c01_device> m_rtc;
@@ -517,14 +517,14 @@ INPUT_CHANGED_MEMBER(nakajies_state::trigger_irq)
 
 static INPUT_PORTS_START(nakajies)
 	PORT_START("debug")
-	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_CODE(KEYCODE_F1) PORT_NAME("irq 0xff") PORT_CHANGED_MEMBER(DEVICE_SELF, nakajies_state, trigger_irq, 0)
-	PORT_BIT(0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_CODE(KEYCODE_F2) PORT_NAME("irq 0xfe") PORT_CHANGED_MEMBER(DEVICE_SELF, nakajies_state, trigger_irq, 0)
-	PORT_BIT(0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_CODE(KEYCODE_F3) PORT_NAME("irq 0xfd") PORT_CHANGED_MEMBER(DEVICE_SELF, nakajies_state, trigger_irq, 0)
-	PORT_BIT(0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_CODE(KEYCODE_F4) PORT_NAME("irq 0xfc") PORT_CHANGED_MEMBER(DEVICE_SELF, nakajies_state, trigger_irq, 0)
-	PORT_BIT(0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_CODE(KEYCODE_F5) PORT_NAME("irq 0xfb") PORT_CHANGED_MEMBER(DEVICE_SELF, nakajies_state, trigger_irq, 0)
-	PORT_BIT(0x20, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_CODE(KEYCODE_F6) PORT_NAME("irq 0xfa") PORT_CHANGED_MEMBER(DEVICE_SELF, nakajies_state, trigger_irq, 0)
-	PORT_BIT(0x40, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_CODE(KEYCODE_F7) PORT_NAME("irq 0xf9") PORT_CHANGED_MEMBER(DEVICE_SELF, nakajies_state, trigger_irq, 0)
-	PORT_BIT(0x80, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_CODE(KEYCODE_F8) PORT_NAME("irq 0xf8") PORT_CHANGED_MEMBER(DEVICE_SELF, nakajies_state, trigger_irq, 0)
+	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_CODE(KEYCODE_F1) PORT_NAME("irq 0xff") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(nakajies_state::trigger_irq), 0)
+	PORT_BIT(0x02, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_CODE(KEYCODE_F2) PORT_NAME("irq 0xfe") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(nakajies_state::trigger_irq), 0)
+	PORT_BIT(0x04, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_CODE(KEYCODE_F3) PORT_NAME("irq 0xfd") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(nakajies_state::trigger_irq), 0)
+	PORT_BIT(0x08, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_CODE(KEYCODE_F4) PORT_NAME("irq 0xfc") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(nakajies_state::trigger_irq), 0)
+	PORT_BIT(0x10, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_CODE(KEYCODE_F5) PORT_NAME("irq 0xfb") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(nakajies_state::trigger_irq), 0)
+	PORT_BIT(0x20, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_CODE(KEYCODE_F6) PORT_NAME("irq 0xfa") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(nakajies_state::trigger_irq), 0)
+	PORT_BIT(0x40, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_CODE(KEYCODE_F7) PORT_NAME("irq 0xf9") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(nakajies_state::trigger_irq), 0)
+	PORT_BIT(0x80, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_CODE(KEYCODE_F8) PORT_NAME("irq 0xf8") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(nakajies_state::trigger_irq), 0)
 
 	PORT_START("ROW0")
 	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_KEYBOARD) PORT_NAME("Left Shift")  PORT_CODE(KEYCODE_LSHIFT)
@@ -813,8 +813,14 @@ ROM_START(wales210)
 	ROM_SYSTEM_BIOS(0, "wales210", "Walther ES-210")
 	ROMX_LOAD("wales210.ic303", 0x00000, 0x80000, CRC(a8e8d991) SHA1(9a133b37b2fbf689ae1c7ab5c7f4e97cd33fd596), ROM_BIOS(0))        /* 27c4001 */
 
-	ROM_SYSTEM_BIOS(1, "drwrtr325", "NTS DreamWriter 325")
+	ROM_SYSTEM_BIOS(1, "drwrtr325_102", "NTS DreamWriter 325 (v1.02)")
 	ROMX_LOAD("dr3_1_02uk.ic303", 0x00000, 0x80000, CRC(027db9fe) SHA1(eb52a30510f2e2924c6dae9bc4348cd3572f4997), ROM_BIOS(1))
+
+	ROM_SYSTEM_BIOS(2, "drwrtr325_103", "NTS DreamWriter 325 (v1.03)")
+	ROMX_LOAD("dr3_1_03.ic303", 0x00000, 0x80000, CRC(21fd074e) SHA1(52cd07527f3ba96b0ce37578996af502db144e80), ROM_BIOS(2)) // label actually DR3 (1.03)
+
+	ROM_SYSTEM_BIOS(3, "drwrtr325_20", "NTS DreamWriter 325 (v2.0)")
+	ROMX_LOAD("nts_325_basic.ic303", 0x00000, 0x80000, CRC(feb40854) SHA1(8838dcbcd7f6be282bb8ed1d7f97187b45f00a58), ROM_BIOS(3))
 ROM_END
 
 

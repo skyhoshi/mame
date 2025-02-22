@@ -39,19 +39,23 @@ public:
 	void set_epoch(int epoch) { m_epoch = epoch; }
 
 	// read/write access
-	uint8_t read(offs_t offset);
-	void write(offs_t offset, uint8_t data);
+	void address_w(uint8_t data);
+	uint8_t data_r();
+	void data_w(uint8_t data);
 
 	// direct-mapped read/write access
 	uint8_t read_direct(offs_t offset);
 	void write_direct(offs_t offset, uint8_t data);
 
+	// FIXME: Addresses are read-only on a standard MC146818. Do some chipsets permit readback?
+	uint8_t get_address() const { return m_index; }
+
 protected:
 	mc146818_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock);
 
 	// device-level overrides
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 	// device_nvram_interface overrides
 	virtual void nvram_default() override;
@@ -186,8 +190,8 @@ class ds1397_device : public mc146818_device
 public:
 	ds1397_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 
 	u8 xram_r(offs_t offset);
 	void xram_w(offs_t offset, u8 data);

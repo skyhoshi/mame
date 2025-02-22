@@ -2,11 +2,11 @@
 // copyright-holders:Raphael Nabet
 /*****************************************************************************
  *
- * includes/pdp1.h
+ * dec/pdp1.h
  *
  ****************************************************************************/
-#ifndef MAME_PDP1_PDP1_H
-#define MAME_PDP1_PDP1_H
+#ifndef MAME_DEC_PDP1_H
+#define MAME_DEC_PDP1_H
 
 #pragma once
 
@@ -189,8 +189,7 @@ public:
 
 protected:
 	// device_t implementation
-	virtual void device_resolve_objects() override;
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	// device_image_interface implementation
 	virtual const char *file_extensions() const noexcept override { return "tap,rim"; }
@@ -235,8 +234,7 @@ public:
 
 protected:
 	// device_t implementation
-	virtual void device_resolve_objects() override;
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	// device_image_interface implementation
 	virtual bool is_readable()  const noexcept override { return false; }
@@ -278,8 +276,7 @@ public:
 
 protected:
 	// device_t implementation
-	virtual void device_resolve_objects() override;
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	// device_image_interface implementation
 	virtual bool is_readable()  const noexcept override { return false; }
@@ -336,7 +333,7 @@ public:
 
 protected:
 	// device_t implementation
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	// device_image_interface implementation
 	virtual bool is_readable()  const noexcept override { return true; }
@@ -417,12 +414,12 @@ public:
 	emu_timer *m_dpy_timer;
 	lightpen_t m_lightpen;
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 	void pdp1_palette(palette_device &palette) const;
 	uint32_t screen_update_pdp1(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	DECLARE_WRITE_LINE_MEMBER(screen_vblank_pdp1);
+	void screen_vblank_pdp1(int state);
 	INTERRUPT_GEN_MEMBER(pdp1_interrupt);
 	TIMER_CALLBACK_MEMBER(dpy_callback);
 	void pdp1_machine_stop();
@@ -442,10 +439,10 @@ public:
 	void pdp1_draw_lightpen(bitmap_ind16 &bitmap);
 	void pdp1_lightpen();
 
-	template <int Mask> DECLARE_WRITE_LINE_MEMBER(io_status_w);
+	template <int Mask> void io_status_w(int state);
 
 	void pdp1(machine_config &config);
-	void pdp1_map(address_map &map);
+	void pdp1_map(address_map &map) ATTR_COLD;
 private:
 	void iot_dpy(int op2, int nac, int mb, int &io, int ac);
 
@@ -480,4 +477,4 @@ public:
 	required_ioport m_lighty;
 };
 
-#endif // MAME_PDP1_PDP1_H
+#endif // MAME_DEC_PDP1_H

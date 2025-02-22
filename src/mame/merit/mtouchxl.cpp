@@ -30,24 +30,28 @@
 //#define REAL_PCI_CHIPSET
 
 #include "emu.h"
+
+#include "microtouchlayout.h"
+
 #include "bus/ata/atapicdr.h"
-#include "bus/ata/idehd.h"
+#include "bus/ata/hdd.h"
 #include "bus/isa/isa_cards.h"
 #include "cpu/i386/i386.h"
-#include "machine/at.h"
-#include "machine/ram.h"
 #include "machine/8042kbdc.h"
-#include "machine/nvram.h"
-#include "machine/ins8250.h"
-#include "machine/microtch.h"
+#include "machine/at.h"
 #include "machine/bankdev.h"
-#include "machine/intelfsh.h"
-#include "machine/ds128x.h"
 #include "machine/ds1205.h"
+#include "machine/ds128x.h"
+#include "machine/ins8250.h"
+#include "machine/intelfsh.h"
+#include "machine/microtch.h"
+#include "machine/nvram.h"
+#include "machine/ram.h"
 #ifdef REAL_PCI_CHIPSET
 #include "machine/sis85c496.h"
 #endif
 #include "sound/ad1848.h"
+
 #include "speaker.h"
 
 
@@ -78,17 +82,17 @@ private:
 	required_device<ram_device> m_ram;
 	required_device<address_map_bank_device> m_iocard;
 	optional_device<ds1205_device> m_multikey;
-	void machine_start() override;
-	void machine_reset() override;
+	void machine_start() override ATTR_COLD;
+	void machine_reset() override ATTR_COLD;
 	uint8_t coin_r();
 	void bank_w(uint8_t data);
 	uint8_t key_r();
 	void key_w(uint8_t data);
 	static void cdrom(device_t *device);
 	static void hdd(device_t *device);
-	void at32_io(address_map &map);
-	void at32_map(address_map &map);
-	void dbank_map(address_map &map);
+	void at32_io(address_map &map) ATTR_COLD;
+	void at32_map(address_map &map) ATTR_COLD;
+	void dbank_map(address_map &map) ATTR_COLD;
 };
 
 void mtxl_state::bank_w(uint8_t data)
@@ -134,7 +138,8 @@ void mtxl_state::at32_io(address_map &map)
 	map(0x0040, 0x005f).rw("mb:pit8254", FUNC(pit8254_device::read), FUNC(pit8254_device::write));
 	map(0x0060, 0x0067).rw("kbdc", FUNC(kbdc8042_device::data_r), FUNC(kbdc8042_device::data_w));
 	map(0x0061, 0x0061).rw("mb", FUNC(at_mb_device::portb_r), FUNC(at_mb_device::portb_w));
-	map(0x0070, 0x007f).rw("mb:rtc", FUNC(mc146818_device::read), FUNC(mc146818_device::write));
+	map(0x0070, 0x007f).w("mb:rtc", FUNC(mc146818_device::address_w)).umask32(0x00ff00ff);
+	map(0x0070, 0x007f).rw("mb:rtc", FUNC(mc146818_device::data_r), FUNC(mc146818_device::data_w)).umask32(0xff00ff00);
 	map(0x0080, 0x009f).rw("mb", FUNC(at_mb_device::page8_r), FUNC(at_mb_device::page8_w));
 	map(0x00a0, 0x00bf).rw("mb:pic8259_slave", FUNC(pic8259_device::read), FUNC(pic8259_device::write));
 	map(0x00c0, 0x00df).rw("mb:dma8237_2", FUNC(am9517a_device::read), FUNC(am9517a_device::write)).umask32(0x00ff00ff);
@@ -198,7 +203,7 @@ void mtxl_state::machine_reset()
 #ifndef REAL_PCI_CHIPSET
 static void mt6k_ata_devices(device_slot_interface &device)
 {
-	device.option_add("cdrom", ATAPI_FIXED_CDROM);
+	device.option_add("cdrom", ATAPI_CDROM);
 	device.option_add("hdd", IDE_HARDDISK);
 }
 
@@ -208,11 +213,6 @@ void mtxl_state::cdrom(device_t *device)
 	ide0->option_reset();
 	mt6k_ata_devices(*ide0);
 	ide0->set_default_option("cdrom");
-	ide0->set_fixed(true);
-
-	auto ide1 = dynamic_cast<device_slot_interface *>(device->subdevice("ide:1"));
-	ide1->set_default_option("hdd");
-	ide1->set_fixed(true);
 }
 
 void mtxl_state::hdd(device_t *device)
@@ -221,11 +221,6 @@ void mtxl_state::hdd(device_t *device)
 	ide0->option_reset();
 	mt6k_ata_devices(*ide0);
 	ide0->set_default_option("hdd");
-	ide0->set_fixed(true);
-
-	auto ide1 = dynamic_cast<device_slot_interface *>(device->subdevice("ide:1"));
-	ide1->set_default_option("cdrom");
-	ide1->set_fixed(true);
 }
 #endif
 
@@ -242,7 +237,8 @@ void mtxl_state::at486(machine_config &config)
 
 	// on board devices
 	ISA16_SLOT(config, "board1", 0, "mb:isabus", pc_isa16_cards, "ide", true).set_option_machine_config("ide", cdrom); // FIXME: determine ISA bus clock
-	ISA16_SLOT(config, "isa1", 0, "mb:isabus", pc_isa16_cards, "svga_dm", true); // original is a gd-5440
+	// TODO: original is a gd-5440, PCI only (svga_dm is '30)
+	ISA16_SLOT(config, "isa1", 0, "mb:isabus", pc_isa16_cards, "svga_dm", true);
 
 	ns16550_device &uart(NS16550(config, "ns16550", XTAL(1'843'200)));
 	uart.out_tx_callback().set("microtouch", FUNC(microtouch_device::rx));
@@ -286,6 +282,8 @@ void mtxl_state::at486(machine_config &config)
 	// FIXME: This MCFG fragment does not compile. -R
 	//MCFG_SIS85C496_ADD(":pci:05.0", ":maincpu", 32*1024*1024)
 #endif
+
+	config.set_default_layout(layout_microtouch);
 }
 
 void mtxl_state::at486hd(machine_config &config)
@@ -345,6 +343,8 @@ void mtxl_state::at486hd(machine_config &config)
 	// FIXME: This MCFG fragment does not compile. -R
 	//MCFG_SIS85C496_ADD(":pci:05.0", ":maincpu", 32*1024*1024)
 #endif
+
+	config.set_default_layout(layout_microtouch);
 }
 
 #ifdef REAL_PCI_CHIPSET
@@ -356,7 +356,7 @@ void mtxl_state::at486hd(machine_config &config)
 	ROM_REGION32_LE(0x20000, "bios", 0) \
 	ROM_LOAD("prom.mb", 0x10000, 0x10000, BAD_DUMP CRC(e44bfd3c) SHA1(c07ec94e11efa30e001f39560010112f73cc0016) ) \
 	ROM_REGION(0x80, "mb:rtc", 0) \
-	ROM_LOAD("mb_rtc", 0, 0x80, BAD_DUMP CRC(b724e5d3) SHA1(45a19ec4201d2933d033689b7a01a0260962fb0b))
+	ROM_LOAD("mb_rtc", 0, 0x80, BAD_DUMP CRC(ac77f726) SHA1(e6ae2010d8cebb82d0414c70e41ae9dbcbc460e4))
 #endif
 
 ROM_START( mtouchxl )

@@ -49,9 +49,9 @@ public:
 	void superdq(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	required_device<pioneer_ldv1000_device> m_laserdisc;
@@ -74,8 +74,8 @@ private:
 	void superdq_palette(palette_device &palette) const;
 	uint32_t screen_update_superdq(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	INTERRUPT_GEN_MEMBER(superdq_vblank);
-	void superdq_io(address_map &map);
-	void superdq_map(address_map &map);
+	void superdq_io(address_map &map) ATTR_COLD;
+	void superdq_map(address_map &map) ATTR_COLD;
 };
 
 TILE_GET_INFO_MEMBER(superdq_state::get_tile_info)
@@ -155,7 +155,7 @@ INTERRUPT_GEN_MEMBER(superdq_state::superdq_vblank)
 	/* status is read when the STATUS line from the laserdisc
 	   toggles (600usec after the vblank). We could set up a
 	   timer to do that, but this works as well */
-	m_ld_in_latch = m_laserdisc->status_r();
+	m_ld_in_latch = m_laserdisc->data_r();
 
 	/* command is written when the COMMAND line from the laserdisc
 	   toggles (680usec after the vblank). We could set up a

@@ -73,7 +73,7 @@ public:
 	void smiconk(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -84,10 +84,12 @@ private:
 	required_ioport_array<5> m_inputs;
 	output_finder<2> m_lamps;
 
-	void main_map(address_map &map);
-	void io_map(address_map &map);
-	void smiconk_main_map(address_map &map);
-	void smiconk_io_map(address_map &map);
+	u8 m_select = 0;
+
+	void main_map(address_map &map) ATTR_COLD;
+	void io_map(address_map &map) ATTR_COLD;
+	void smiconk_main_map(address_map &map) ATTR_COLD;
+	void smiconk_io_map(address_map &map) ATTR_COLD;
 
 	u32 screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
@@ -96,8 +98,6 @@ private:
 	u8 vblank_r();
 	void select_w(u8 data);
 	u8 input_r();
-
-	u8 m_select = 0;
 };
 
 void miconkit_state::machine_start()

@@ -13,6 +13,9 @@
 
 using namespace asmjit;
 
+namespace {
+
+#if !defined(ASMJIT_NO_X86)
 static char accessLetter(bool r, bool w) noexcept {
   return r && w ? 'X' : r ? 'R' : w ? 'W' : '_';
 }
@@ -140,6 +143,7 @@ static void printInfoExtra(Arch arch, InstId instId, InstOptions options, const 
   Operand_ opArray[] = { std::forward<Args>(args)... };
   printInfo(arch, inst, opArray, sizeof...(args));
 }
+#endif // !ASMJIT_NO_X86
 
 static void testX86Arch() {
 #if !defined(ASMJIT_NO_X86)
@@ -147,6 +151,7 @@ static void testX86Arch() {
   Arch arch = Arch::kX64;
 
   printInfoSimple(arch, Inst::kIdAdd, InstOptions::kNone, eax, ebx);
+  printInfoSimple(arch, Inst::kIdXor, InstOptions::kNone, eax, eax);
   printInfoSimple(arch, Inst::kIdLods, InstOptions::kNone, eax, dword_ptr(rsi));
 
   printInfoSimple(arch, Inst::kIdPshufd, InstOptions::kNone, xmm0, xmm1, imm(0));
@@ -163,10 +168,15 @@ static void testX86Arch() {
   printInfoSimple(arch, Inst::kIdVaddpd, InstOptions::kNone, ymm0, ymm30, ymm31);
   printInfoSimple(arch, Inst::kIdVaddpd, InstOptions::kNone, zmm0, zmm1, zmm2);
 
+  printInfoSimple(arch, Inst::kIdVpternlogd, InstOptions::kNone, zmm0, zmm0, zmm0, imm(0xFF));
+  printInfoSimple(arch, Inst::kIdVpternlogq, InstOptions::kNone, zmm0, zmm1, zmm2, imm(0x33));
+
   printInfoExtra(arch, Inst::kIdVaddpd, InstOptions::kNone, k1, zmm0, zmm1, zmm2);
   printInfoExtra(arch, Inst::kIdVaddpd, InstOptions::kX86_ZMask, k1, zmm0, zmm1, zmm2);
-#endif
+#endif // !ASMJIT_NO_X86
 }
+
+} // {anonymous}
 
 int main() {
   printf("AsmJit Instruction Info Test-Suite v%u.%u.%u\n",

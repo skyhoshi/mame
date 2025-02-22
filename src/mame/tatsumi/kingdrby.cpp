@@ -111,7 +111,7 @@ public:
 	void kingdrby(machine_config &config);
 
 protected:
-	virtual void video_start() override;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	void sc0_vram_w(offs_t offset, uint8_t data);
@@ -133,15 +133,15 @@ private:
 	uint32_t screen_update_kingdrby(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	void draw_sprites(bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
-	void cowrace_sound_io(address_map &map);
-	void cowrace_sound_map(address_map &map);
-	void master_io_map(address_map &map);
-	void master_map(address_map &map);
-	void slave_1986_map(address_map &map);
-	void slave_io_map(address_map &map);
-	void slave_map(address_map &map);
-	void sound_io_map(address_map &map);
-	void sound_map(address_map &map);
+	void cowrace_sound_io(address_map &map) ATTR_COLD;
+	void cowrace_sound_map(address_map &map) ATTR_COLD;
+	void master_io_map(address_map &map) ATTR_COLD;
+	void master_map(address_map &map) ATTR_COLD;
+	void slave_1986_map(address_map &map) ATTR_COLD;
+	void slave_io_map(address_map &map) ATTR_COLD;
+	void slave_map(address_map &map) ATTR_COLD;
+	void sound_io_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
 
 	uint8_t m_sound_cmd = 0;
 	required_shared_ptr<uint8_t> m_vram;
@@ -560,7 +560,7 @@ static INPUT_PORTS_START( kingdrby )
 	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_CUSTOM ) //2p hopper i/o
 
 	PORT_START("IN1")   // ppi0 (5001)
-	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_VBLANK("screen") //?
+	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("screen", FUNC(screen_device::vblank)) //?
 	PORT_DIPNAME( 0x02, 0x02, "IN1" )
 	PORT_DIPSETTING(    0x02, DEF_STR( Off ) )
 	PORT_DIPSETTING(    0x00, DEF_STR( On ) )
@@ -743,7 +743,7 @@ static INPUT_PORTS_START( kingdrbb )
 	PORT_DIPSETTING(    0x00, DEF_STR( On ) )
 
 	PORT_START("IN1")   // ppi0 (5001)
-	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_VBLANK("screen") //?
+	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("screen", FUNC(screen_device::vblank)) //?
 	PORT_DIPNAME( 0x02, 0x02, "IN1" )
 	PORT_DIPSETTING(    0x02, DEF_STR( Off ) )
 	PORT_DIPSETTING(    0x00, DEF_STR( On ) )
@@ -1244,4 +1244,4 @@ ROM_END
 GAMEL( 1981, kingdrby,  0,        kingdrby, kingdrby, kingdrby_state, empty_init, ROT0, "Tazmi",                        "King Derby (1981)",           MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_COLORS | MACHINE_IMPERFECT_SOUND, layout_kingdrby )
 GAME(  1986, kingdrbb,  kingdrby, kingdrbb, kingdrbb, kingdrby_state, empty_init, ROT0, "bootleg (Casino Electronics)", "King Derby (Taiwan bootleg)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_COLORS )
 GAMEL( 198?, kingdrbb2, kingdrby, kingdrby, kingdrby, kingdrby_state, empty_init, ROT0, "bootleg",                      "King Derby (bootleg set 2)",  MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_COLORS | MACHINE_IMPERFECT_SOUND, layout_kingdrby )
-GAME(  2000, cowrace,   kingdrby, cowrace,  kingdrbb, kingdrby_state, empty_init, ROT0, "bootleg (Gate In)",            "Cow Race (King Derby hack)",  MACHINE_NOT_WORKING | MACHINE_WRONG_COLORS )
+GAME(  2000, cowrace,   kingdrby, cowrace,  kingdrbb, kingdrby_state, empty_init, ROT0, "bootleg (Gate In)",            "Cow Race (hack of King Derby)", MACHINE_NOT_WORKING | MACHINE_WRONG_COLORS )

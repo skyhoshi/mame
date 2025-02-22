@@ -47,7 +47,7 @@ ioport_constructor rbv_device::device_input_ports() const
 void rbv_device::map(address_map &map)
 {
 	map(0x00000000, 0x00000007).rw(FUNC(rbv_device::dac_r), FUNC(rbv_device::dac_w)).mirror(0x00f00000);
-	map(0x00002000, 0x00003fff).rw(FUNC(rbv_device::pseudovia_r), FUNC(rbv_device::pseudovia_w)).mirror(0x00f00000);
+	map(0x00002000, 0x00003fff).rw(m_pseudovia, FUNC(pseudovia_device::read), FUNC(pseudovia_device::write)).mirror(0x00f00000);
 }
 
 //-------------------------------------------------
@@ -61,23 +61,29 @@ void rbv_device::device_add_mconfig(machine_config &config)
 	m_screen->set_size(1024, 768);
 	m_screen->set_visarea(0, 640 - 1, 0, 480 - 1);
 	m_screen->set_screen_update(FUNC(rbv_device::screen_update));
-	m_screen->screen_vblank().set(FUNC(rbv_device::vbl_w));
+	m_screen->screen_vblank().set(m_pseudovia, FUNC(pseudovia_device::slot_irq_w<0x40>));
 	config.set_default_layout(layout_monitors);
 
 	PALETTE(config, m_palette).set_entries(256);
+
+	APPLE_PSEUDOVIA(config, m_pseudovia, C15M);
+	m_pseudovia->readvideo_handler().set(FUNC(rbv_device::via2_video_config_r));
+	m_pseudovia->writevideo_handler().set(FUNC(rbv_device::via2_video_config_w));
+	m_pseudovia->irq_callback().set(FUNC(rbv_device::via2_irq_w));
 }
 
 //-------------------------------------------------
 //  rbv_device - constructor
 //-------------------------------------------------
 
-rbv_device::rbv_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
-	: device_t(mconfig, RBV, tag, owner, clock),
-	  write_6015(*this),
-	  write_irq(*this),
-	  m_montype(*this, "MONTYPE"),
-	  m_screen(*this, "screen"),
-	  m_palette(*this, "palette")
+rbv_device::rbv_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
+	device_t(mconfig, RBV, tag, owner, clock),
+	write_6015(*this),
+	write_irq(*this),
+	m_montype(*this, "MONTYPE"),
+	m_screen(*this, "screen"),
+	m_palette(*this, "palette"),
+	m_pseudovia(*this, "pseudovia")
 {
 }
 
@@ -87,19 +93,12 @@ rbv_device::rbv_device(const machine_config &mconfig, const char *tag, device_t 
 
 void rbv_device::device_start()
 {
-	write_6015.resolve_safe();
-	write_irq.resolve_safe();
-
 	m_6015_timer = timer_alloc(FUNC(rbv_device::mac_6015_tick), this);
 	m_6015_timer->adjust(attotime::never);
 
-	save_item(NAME(m_pseudovia_regs));
-	save_item(NAME(m_pseudovia_ier));
-	save_item(NAME(m_pseudovia_ifr));
 	save_item(NAME(m_pal_address));
 	save_item(NAME(m_pal_idx));
 
-	m_pseudovia_ier = m_pseudovia_ifr = 0;
 	m_pal_address = m_pal_idx = 0;
 }
 
@@ -111,16 +110,6 @@ void rbv_device::device_reset()
 {
 	// start 60.15 Hz timer
 	m_6015_timer->adjust(attotime::from_hz(60.15), 0, attotime::from_hz(60.15));
-
-	std::fill_n(m_pseudovia_regs, 256, 0);
-	m_pseudovia_regs[0] = 0x4f;
-	m_pseudovia_regs[1] = 0x06;
-	m_pseudovia_regs[2] = 0x7f;
-	m_pseudovia_regs[3] = 0;
-	m_pseudovia_ier = 0;
-	m_pseudovia_ifr = 0;
-
-	m_pseudovia_regs[0x10] = 0x40;  // video off
 }
 
 void rbv_device::set_ram_info(u32 *ram, u32 size)
@@ -135,74 +124,23 @@ TIMER_CALLBACK_MEMBER(rbv_device::mac_6015_tick)
 	write_6015(ASSERT_LINE);
 }
 
-WRITE_LINE_MEMBER(rbv_device::vbl_w)
+template <u8 mask>
+void rbv_device::slot_irq_w(int state)
 {
-	if (!state)
-	{
-		m_pseudovia_regs[2] |= 0x40;
-	}
-	else
-	{
-		m_pseudovia_regs[2] &= ~0x40; // set vblank signal
-	}
-
-	pseudovia_recalc_irqs();
+	m_pseudovia->slot_irq_w<mask>(state);
 }
 
-WRITE_LINE_MEMBER(rbv_device::slot0_irq_w)
+template void rbv_device::slot_irq_w<0x40>(int state);
+template void rbv_device::slot_irq_w<0x20>(int state);
+template void rbv_device::slot_irq_w<0x10>(int state);
+template void rbv_device::slot_irq_w<0x08>(int state);
+template void rbv_device::slot_irq_w<0x04>(int state);
+template void rbv_device::slot_irq_w<0x02>(int state);
+template void rbv_device::slot_irq_w<0x01>(int state);
+
+void rbv_device::asc_irq_w(int state)
 {
-	if (state)
-	{
-		m_pseudovia_regs[2] &= ~0x08;
-	}
-	else
-	{
-		m_pseudovia_regs[2] |= 0x08;
-	}
-
-	pseudovia_recalc_irqs();
-}
-
-WRITE_LINE_MEMBER(rbv_device::slot1_irq_w)
-{
-	if (state)
-	{
-		m_pseudovia_regs[2] &= ~0x10;
-	}
-	else
-	{
-		m_pseudovia_regs[2] |= 0x10;
-	}
-
-	pseudovia_recalc_irqs();
-}
-
-WRITE_LINE_MEMBER(rbv_device::slot2_irq_w)
-{
-	if (state)
-	{
-		m_pseudovia_regs[2] &= ~0x20;
-	}
-	else
-	{
-		m_pseudovia_regs[2] |= 0x20;
-	}
-
-	pseudovia_recalc_irqs();
-}
-
-WRITE_LINE_MEMBER(rbv_device::asc_irq_w)
-{
-	if (state == ASSERT_LINE)
-	{
-		m_pseudovia_regs[3] |= 0x10; // any VIA 2 interrupt | sound interrupt
-		pseudovia_recalc_irqs();
-	}
-	else
-	{
-		m_pseudovia_regs[3] &= ~0x10;
-		pseudovia_recalc_irqs();
-	}
+	m_pseudovia->asc_irq_w(state);
 }
 
 void rbv_device::pseudovia_recalc_irqs()
@@ -233,6 +171,21 @@ void rbv_device::pseudovia_recalc_irqs()
 	{
 		write_irq(CLEAR_LINE);
 	}
+}
+
+u8 rbv_device::via2_video_config_r()
+{
+	return m_montype->read() << 3;
+}
+
+void rbv_device::via2_video_config_w(u8 data)
+{
+	m_video_config = data;
+}
+
+void rbv_device::via2_irq_w(int state)
+{
+	write_irq(state);
 }
 
 uint8_t rbv_device::pseudovia_r(offs_t offset)
@@ -439,7 +392,7 @@ u32 rbv_device::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const
 	}
 
 	// video disabled?
-	if (m_pseudovia_regs[0x10] & 0x40)
+	if (m_video_config & 0x40)
 	{
 		bitmap.fill(0, cliprect);
 		return 0;
@@ -447,7 +400,7 @@ u32 rbv_device::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const
 
 	const pen_t *pens = m_palette->pens();
 
-	switch (m_pseudovia_regs[0x10] & 7)
+	switch (m_video_config & 7)
 	{
 	case 0: // 1bpp
 	{

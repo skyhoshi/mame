@@ -47,8 +47,8 @@ public:
 	void dss1(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	u8 klm782_ga1_r(offs_t offset);
 	void klm782_ga1_w(offs_t offset, u8 data);
@@ -75,8 +75,8 @@ private:
 
 	void bank_switch_w(u8 data);
 	void panel_led_w(u8 data);
-	DECLARE_WRITE_LINE_MEMBER(fdc_tc_w);
-	DECLARE_WRITE_LINE_MEMBER(sed9420c_trgin_w);
+	void fdc_tc_w(int state);
+	void sed9420c_trgin_w(int state);
 	u8 fdc_r(offs_t offset);
 	void fdc_w(offs_t offset, u8 data);
 
@@ -88,8 +88,8 @@ private:
 	u8 kbd_r();
 	void kbd_w(u8 data);
 
-	void cpu1_map(address_map &map);
-	void cpu2_map(address_map &map);
+	void cpu1_map(address_map &map) ATTR_COLD;
+	void cpu2_map(address_map &map) ATTR_COLD;
 
 	void palette_init_dss1(palette_device &palette);
 
@@ -118,8 +118,8 @@ public:
 	void dssmsrk(machine_config &config);
 
 private:
-	void msrk_map(address_map &map);
-	void msrk_io_map(address_map &map);
+	void msrk_map(address_map &map) ATTR_COLD;
+	void msrk_io_map(address_map &map) ATTR_COLD;
 
 	u8 fdc_r(offs_t offset);
 	void fdc_w(offs_t offset, u8 data);
@@ -158,7 +158,7 @@ void korg_dss1_state::panel_led_w(u8 data)
 	// TODO
 }
 
-WRITE_LINE_MEMBER(korg_dss1_state::fdc_tc_w)
+void korg_dss1_state::fdc_tc_w(int state)
 {
 	if (m_cpu1.found())
 		m_fdc->tc_w(state);
@@ -168,7 +168,7 @@ WRITE_LINE_MEMBER(korg_dss1_state::fdc_tc_w)
 	}
 }
 
-WRITE_LINE_MEMBER(korg_dss1_state::sed9420c_trgin_w)
+void korg_dss1_state::sed9420c_trgin_w(int state)
 {
 	// TODO
 }
@@ -401,8 +401,6 @@ void korg_dssmsrk_state::msrk_io_map(address_map &map)
 
 void korg_dss1_state::cpu2_map(address_map &map)
 {
-	map(0x0000, 0x001f).m(m_cpu2, FUNC(hd6303x_cpu_device::hd6301x_io)); // FIXME: internalize this
-	map(0x0040, 0x00ff).ram(); // FIXME: internalize this
 	map(0x0100, 0x0100).mirror(0x3cff).w(FUNC(korg_dss1_state::da_lsb_w));
 	map(0x0200, 0x0200).mirror(0x3cff).w(FUNC(korg_dss1_state::da_msb_w));
 	map(0x0300, 0x0300).mirror(0x3cff).r(m_latch[0], FUNC(generic_latch_8_device::read));
@@ -468,7 +466,7 @@ void korg_dss1_state::klm780(machine_config &config)
 
 	PALETTE(config, "palette", FUNC(korg_dss1_state::palette_init_dss1), 2);
 
-	HD44780(config, m_lcdc, 0);
+	HD44780(config, m_lcdc, 270'000); // TODO: clock not measured, datasheet typical clock used
 	m_lcdc->set_lcd_size(2, 20);
 	m_lcdc->set_pixel_update_cb(FUNC(korg_dss1_state::lcd_pixel_update));
 }
@@ -583,5 +581,5 @@ ROM_END
 } // anonymous namespace
 
 
-SYST(1986, dss1,    0,    0, dss1,    dss1, korg_dss1_state,    empty_init, "Korg",               "DSS-1 Digital Sampling Synthesizer",                        MACHINE_IS_SKELETON)
-SYST(1987, dssmsrk, dss1, 0, dssmsrk, dss1, korg_dssmsrk_state, empty_init, "Korg / Sound Logic", "DSS-1 Digital Sampling Synthesizer (Memory/SCSI Retrofit)", MACHINE_IS_SKELETON)
+SYST(1986, dss1,    0,    0, dss1,    dss1, korg_dss1_state,    empty_init, "Korg",               "DSS-1 Digital Sampling Synthesizer",                        MACHINE_NO_SOUND | MACHINE_NOT_WORKING)
+SYST(1987, dssmsrk, dss1, 0, dssmsrk, dss1, korg_dssmsrk_state, empty_init, "Korg / Sound Logic", "DSS-1 Digital Sampling Synthesizer (Memory/SCSI Retrofit)", MACHINE_NO_SOUND | MACHINE_NOT_WORKING)

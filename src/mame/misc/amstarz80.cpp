@@ -76,7 +76,7 @@ private:
 
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	void prg_map(address_map &map);
+	void prg_map(address_map &map) ATTR_COLD;
 };
 
 
@@ -112,8 +112,16 @@ static INPUT_PORTS_START( holddraw )
 INPUT_PORTS_END
 
 
+// TODO: not right, just to get a decode
 static const gfx_layout charlayout =
 {
+	8,8,
+	RGN_FRAC(1,1),
+	1,
+	{ 0 },
+	{ STEP8(0, 1) },
+	{ STEP8(0, 1*8) },
+	8*8*1
 };
 
 static GFXDECODE_START( gfx_amstarz80 )
@@ -170,4 +178,4 @@ ROM_END
 } // anonymous namespace
 
 
-GAME( 1981, holddraw, 0, amstarz80, holddraw, amstarz80_state, empty_init, ROT0, "Amstar", "Hold & Draw", MACHINE_IS_SKELETON ) // supposedly, but might actually be another similar game
+GAME( 1981, holddraw, 0, amstarz80, holddraw, amstarz80_state, empty_init, ROT0, "Amstar", "Hold & Draw", MACHINE_NO_SOUND | MACHINE_NOT_WORKING ) // supposedly, but might actually be another similar game

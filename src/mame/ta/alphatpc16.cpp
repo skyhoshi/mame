@@ -63,8 +63,6 @@ via the PC 16 Terminal, operates independently after programming), connects to t
 #include "screen.h"
 #include "speaker.h"
 
-#include "utf8.h"
-
 
 namespace {
 
@@ -88,14 +86,14 @@ public:
 	void alphatpc16(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
-	void apc16_io(address_map &map);
-	void apc16_map(address_map &map);
-	void apc16_z80_io(address_map &map);
-	void apc16_z80_map(address_map &map);
-	void ef9345(address_map &map);
+	void apc16_io(address_map &map) ATTR_COLD;
+	void apc16_map(address_map &map) ATTR_COLD;
+	void apc16_z80_io(address_map &map) ATTR_COLD;
+	void apc16_z80_map(address_map &map) ATTR_COLD;
+	void ef9345(address_map &map) ATTR_COLD;
 
 	u8 p1_r();
 	void p1_w(u8 data);
@@ -393,7 +391,7 @@ static INPUT_PORTS_START( alphatpc16 )
 	PORT_START("KEYS.3")
 	PORT_BIT( 0x0001, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_NAME("GRAPH")
 	PORT_BIT( 0x0002, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_ESC) PORT_CHAR(UCHAR_MAMEKEY(ESC))
-	PORT_BIT( 0x0004, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_NAME(U_UMLAUT)
+	PORT_BIT( 0x0004, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_NAME(u8"Ü")
 	PORT_BIT( 0x0008, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_TAB) PORT_CHAR(9)
 	PORT_BIT( 0x0010, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_NAME("# ^") PORT_CHAR('#') PORT_CHAR('^')
 	PORT_BIT( 0x0020, IP_ACTIVE_HIGH, IPT_UNUSED )
@@ -409,7 +407,7 @@ static INPUT_PORTS_START( alphatpc16 )
 	PORT_BIT( 0x8000, IP_ACTIVE_HIGH, IPT_UNUSED )
 	PORT_START("KEYS.4")
 	PORT_BIT( 0x0001, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_3_PAD) PORT_CHAR('3')
-	PORT_BIT( 0x0002, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_NAME(O_UMLAUT)
+	PORT_BIT( 0x0002, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_NAME(u8"Ö")
 	PORT_BIT( 0x0004, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_NAME("Unknown 0x7f")
 	PORT_BIT( 0x0008, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_UP) PORT_CHAR(UCHAR_MAMEKEY(UP))
 	PORT_BIT( 0x0010, IP_ACTIVE_HIGH, IPT_KEYBOARD ) PORT_CODE(KEYCODE_DEL_PAD) PORT_CHAR('.')

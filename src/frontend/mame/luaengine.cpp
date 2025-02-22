@@ -445,8 +445,8 @@ int sol_lua_push(sol::types<screen_type_enum>, lua_State *L, screen_type_enum &&
 	case SCREEN_TYPE_INVALID:   return sol::stack::push(L, "invalid");
 	case SCREEN_TYPE_RASTER:    return sol::stack::push(L, "raster");
 	case SCREEN_TYPE_VECTOR:    return sol::stack::push(L, "vector");
-	case SCREEN_TYPE_LCD:       return sol::stack::push(L, "svg");
-	case SCREEN_TYPE_SVG:       return sol::stack::push(L, "none");
+	case SCREEN_TYPE_LCD:       return sol::stack::push(L, "lcd");
+	case SCREEN_TYPE_SVG:       return sol::stack::push(L, "svg");
 	}
 	return sol::stack::push(L, "unknown");
 }
@@ -679,8 +679,7 @@ void lua_engine::on_machine_frame()
 {
 	std::vector<int> tasks = std::move(m_frame_tasks);
 	m_frame_tasks.clear();
-	for (int ref : tasks)
-		resume(ref);
+	resume_tasks(m_lua_state, tasks, true); // TODO: doesn't need to return anything
 
 	m_notifiers->on_frame();
 
@@ -890,6 +889,7 @@ void lua_engine::initialize()
 	// TODO: stuff below here needs to be rationalised
 	emu["app_name"] = &emulator_info::get_appname_lower;
 	emu["app_version"] = &emulator_info::get_bare_build_version;
+	emu["app_build"] = &emulator_info::get_build_version;
 	emu["gamename"] = [this] () { return machine().system().type.fullname(); };
 	emu["romname"] = [this] () { return machine().basename(); };
 	emu["softname"] = [this] () { return machine().options().software_name(); };
@@ -1462,6 +1462,19 @@ void lua_engine::initialize()
 	machine_type["cassettes"] = sol::property([] (running_machine &m) { return devenum<cassette_device_enumerator>(m.root_device()); });
 	machine_type["images"] = sol::property([] (running_machine &m) { return devenum<image_interface_enumerator>(m.root_device()); });
 	machine_type["slots"] = sol::property([](running_machine &m) { return devenum<slot_interface_enumerator>(m.root_device()); });
+	machine_type["phase"] = sol::property(
+			[] (running_machine const &m) -> char const *
+			{
+				switch (m.phase())
+				{
+				case machine_phase::PREINIT:    return "preinit";
+				case machine_phase::INIT:       return "init";
+				case machine_phase::RESET:      return "reset";
+				case machine_phase::RUNNING:    return "running";
+				case machine_phase::EXIT:       return "exit";
+				}
+				return nullptr;
+			});
 
 
 	auto game_driver_type = sol().registry().new_usertype<game_driver>("game_driver", sol::no_constructor);
@@ -1503,7 +1516,6 @@ void lua_engine::initialize()
 	game_driver_type["no_cocktail"] = sol::property([] (game_driver const &driver) { return (driver.flags & machine_flags::NO_COCKTAIL) != 0; });
 	game_driver_type["is_bios_root"] = sol::property([] (game_driver const &driver) { return (driver.flags & machine_flags::IS_BIOS_ROOT) != 0; });
 	game_driver_type["requires_artwork"] = sol::property([] (game_driver const &driver) { return (driver.flags & machine_flags::REQUIRES_ARTWORK) != 0; });
-	game_driver_type["clickable_artwork"] = sol::property([] (game_driver const &driver) { return (driver.flags & machine_flags::CLICKABLE_ARTWORK) != 0; });
 	game_driver_type["unofficial"] = sol::property([] (game_driver const &driver) { return (driver.flags & machine_flags::UNOFFICIAL) != 0; });
 	game_driver_type["no_sound_hw"] = sol::property([] (game_driver const &driver) { return (driver.flags & machine_flags::NO_SOUND_HW) != 0; });
 	game_driver_type["mechanical"] = sol::property([] (game_driver const &driver) { return (driver.flags & machine_flags::MECHANICAL) != 0; });
@@ -1799,8 +1811,8 @@ void lua_engine::initialize()
 	screen_dev_type["height"] = sol::property([] (screen_device &sdev) { return sdev.visible_area().height(); });
 	screen_dev_type["refresh"] = sol::property([] (screen_device &sdev) { return ATTOSECONDS_TO_HZ(sdev.refresh_attoseconds()); });
 	screen_dev_type["refresh_attoseconds"] = sol::property([] (screen_device &sdev) { return sdev.refresh_attoseconds(); });
-	screen_dev_type["xofffset"] = sol::property(&screen_device::xoffset);
-	screen_dev_type["yofffset"] = sol::property(&screen_device::yoffset);
+	screen_dev_type["xoffset"] = sol::property(&screen_device::xoffset);
+	screen_dev_type["yoffset"] = sol::property(&screen_device::yoffset);
 	screen_dev_type["xscale"] = sol::property(&screen_device::xscale);
 	screen_dev_type["yscale"] = sol::property(&screen_device::yscale);
 	screen_dev_type["pixel_period"] = sol::property([] (screen_device &sdev) { return sdev.pixel_period().as_double(); });
@@ -1866,6 +1878,30 @@ void lua_engine::initialize()
 					return sol::make_object(s, err.message());
 			});
 	image_type.set_function("display", &device_image_interface::call_display);
+	image_type.set_function("add_media_change_notifier",
+			[this] (device_image_interface &di, sol::protected_function cb)
+			{
+				return di.add_media_change_notifier(
+						[this, cbfunc = sol::protected_function(m_lua_state, cb)] (device_image_interface::media_change_event ev)
+						{
+							char const *evstr(nullptr);
+							switch (ev)
+							{
+							case device_image_interface::media_change_event::LOADED:
+								evstr = "loaded";
+								break;
+							case device_image_interface::media_change_event::UNLOADED:
+								evstr = "unloaded";
+								break;
+							}
+							auto status(invoke(cbfunc, evstr));
+							if (!status.valid())
+							{
+								auto err(status.template get<sol::error>());
+								osd_printf_error("[LUA ERROR] error in media change callback: %s\n", err.what());
+							}
+						});
+			});
 	image_type["is_readable"] = sol::property(&device_image_interface::is_readable);
 	image_type["is_writeable"] = sol::property(&device_image_interface::is_writeable);
 	image_type["is_creatable"] = sol::property(&device_image_interface::is_creatable);
@@ -2076,6 +2112,9 @@ void lua_engine::initialize()
 	ui_type["show_profiler"] = sol::property(&mame_ui_manager::show_profiler, &mame_ui_manager::set_show_profiler);
 	ui_type["image_display_enabled"] = sol::property(&mame_ui_manager::image_display_enabled, &mame_ui_manager::set_image_display_enabled);
 
+	// undocumented/unsupported
+	ui_type["show_menu"] = &mame_ui_manager::show_menu; // FIXME: this is dangerous - it doesn't give a proper chance for the current UI handler to clean up
+
 
 /* rom_entry library
  *
@@ -2144,8 +2183,7 @@ bool lua_engine::frame_hook()
 {
 	std::vector<int> tasks = std::move(m_update_tasks);
 	m_update_tasks.clear();
-	for (int ref : tasks)
-		resume(ref);
+	resume_tasks(m_lua_state, tasks, true); // TODO: doesn't need to return anything
 
 	return execute_function("LUA_ON_FRAME_DONE");
 }

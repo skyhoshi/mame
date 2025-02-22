@@ -23,9 +23,6 @@
 *             A0 switches the ACIA between status/command, and data in/out.
 *
 *
-*  ToDo:
-*  - Votrax device needs considerable improvement in sound quality.
-*
 ******************************************************************************/
 
 /* Core includes */
@@ -55,9 +52,9 @@ public:
 	void votrtnt(machine_config &config);
 
 private:
-	virtual void machine_reset() override;
+	virtual void machine_reset() override ATTR_COLD;
 
-	void mem_map(address_map &map);
+	void mem_map(address_map &map) ATTR_COLD;
 
 	required_device<m6802_cpu_device> m_maincpu;
 	required_device<votrax_sc01_device> m_votrax;
@@ -163,7 +160,7 @@ void votrtnt_state::votrtnt(machine_config &config)
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
-	VOTRAX_SC01(config, m_votrax, 720000); // 720kHz? needs verify
+	VOTRAX_SC01A(config, m_votrax, 720000); // 720kHz? needs verify
 	m_votrax->ar_callback().set_inputline(m_maincpu, INPUT_LINE_IRQ0);
 	m_votrax->add_route(ALL_OUTPUTS, "mono", 1.00);
 }

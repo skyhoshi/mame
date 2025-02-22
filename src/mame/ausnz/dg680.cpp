@@ -97,14 +97,14 @@ private:
 	void port08_w(u8 data);
 	u8 mem_r(offs_t offset);
 	void mem_w(offs_t offset, u8 data);
-	DECLARE_WRITE_LINE_MEMBER(kansas_w);
+	void kansas_w(int state);
 	TIMER_DEVICE_CALLBACK_MEMBER(kansas_r);
 	void kbd_put(u8 data);
 
-	void io_map(address_map &map);
-	void mem_map(address_map &map);
-	void machine_reset() override;
-	void machine_start() override;
+	void io_map(address_map &map) ATTR_COLD;
+	void mem_map(address_map &map) ATTR_COLD;
+	void machine_reset() override ATTR_COLD;
+	void machine_start() override ATTR_COLD;
 
 	u8 m_pio_b = 0U;
 	u8 m_term_data = 0U;
@@ -120,7 +120,7 @@ private:
 	required_device<s100_bus_device> m_s100;
 };
 
-WRITE_LINE_MEMBER( dg680_state::kansas_w )
+void dg680_state::kansas_w(int state)
 {
 	if ((m_cass->get_state() & CASSETTE_MASK_UISTATE) != CASSETTE_RECORD)
 		return;

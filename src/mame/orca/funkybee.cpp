@@ -34,10 +34,12 @@ f800      watchdog
 
 I/0 ports:
 write
-00        8910  control
-01        8910  write
+00        8912  control
+01        8912  write
 
-AY8910 Port A = DSW
+AY-3-8912 Port A = DSW
+
+The Sky Lancer PCB has an unpopulated space for a second AY-3-8912.
 
 
 Stephh's notes (based on the games Z80 code and some tests) :
@@ -106,8 +108,8 @@ public:
 	void funkybee(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	// memory pointers
@@ -127,10 +129,10 @@ private:
 	tilemap_t *m_bg_tilemap = nullptr;
 	uint8_t m_gfx_bank = 0U;
 	uint8_t input_port_0_r();
-	template <uint8_t Which> DECLARE_WRITE_LINE_MEMBER(coin_counter_w);
+	template <uint8_t Which> void coin_counter_w(int state);
 	void videoram_w(offs_t offset, uint8_t data);
 	void colorram_w(offs_t offset, uint8_t data);
-	DECLARE_WRITE_LINE_MEMBER(gfx_bank_w);
+	void gfx_bank_w(int state);
 	void scroll_w(uint8_t data);
 	TILE_GET_INFO_MEMBER(get_bg_tile_info);
 	TILEMAP_MAPPER_MEMBER(tilemap_scan);
@@ -139,12 +141,10 @@ private:
 	void draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect);
 	void draw_columns(bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	void prg_map(address_map &map);
-	void io_map(address_map &map);
+	void prg_map(address_map &map) ATTR_COLD;
+	void io_map(address_map &map) ATTR_COLD;
 };
 
-
-// video
 
 void funkybee_state::palette(palette_device &palette) const
 {
@@ -188,7 +188,7 @@ void funkybee_state::colorram_w(offs_t offset, uint8_t data)
 	m_bg_tilemap->mark_tile_dirty(offset);
 }
 
-WRITE_LINE_MEMBER(funkybee_state::gfx_bank_w)
+void funkybee_state::gfx_bank_w(int state)
 {
 	m_gfx_bank = state;
 	machine().tilemap().mark_all_dirty();
@@ -282,20 +282,21 @@ uint32_t funkybee_state::screen_update(screen_device &screen, bitmap_ind16 &bitm
 	m_bg_tilemap->draw(screen, bitmap, cliprect, 0, 0);
 	draw_sprites(bitmap, cliprect);
 	draw_columns(bitmap, cliprect);
+
 	return 0;
 }
 
 
-// machine
-
 uint8_t funkybee_state::input_port_0_r()
 {
-	m_watchdog->watchdog_reset();
+	if (!machine().side_effects_disabled())
+		m_watchdog->watchdog_reset();
+
 	return m_in0->read();
 }
 
 template <uint8_t Which>
-WRITE_LINE_MEMBER(funkybee_state::coin_counter_w)
+void funkybee_state::coin_counter_w(int state)
 {
 	machine().bookkeeping().coin_counter_w(Which, state);
 }
@@ -383,6 +384,8 @@ static INPUT_PORTS_START( funkybeeb )
 	PORT_DIPSETTING(    0x00, "4" )
 INPUT_PORTS_END
 
+// NOTE: available manual claims Lives 3-6 as per skylancre set, without an explicit mention to Esco Trading.
+// Is current skylancr set an earlier/location test rev? Also cfr. arguably worse enemy colors right off the bat.
 static INPUT_PORTS_START( skylancr )
 	PORT_START("IN0")
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_COIN1 )
@@ -420,7 +423,7 @@ static INPUT_PORTS_START( skylancr )
 	PORT_DIPSETTING(    0x0c, DEF_STR( 1C_1C ) )
 	PORT_DIPSETTING(    0x04, DEF_STR( 2C_3C ) )
 	PORT_DIPSETTING(    0x00, DEF_STR( 1C_6C ) )
-	PORT_DIPNAME( 0x30, 0x30, DEF_STR( Lives ) )        PORT_DIPLOCATION("SW1:4,3") // Also affects bonus life
+	PORT_DIPNAME( 0x30, 0x10, DEF_STR( Lives ) )        PORT_DIPLOCATION("SW1:4,3") // Also affects bonus life
 	PORT_DIPSETTING(    0x30, "1" )             // Bonus life at 20000 and 50000
 	PORT_DIPSETTING(    0x20, "2" )             // Bonus life at 20000 and 50000
 	PORT_DIPSETTING(    0x10, "3" )             // Bonus life at 40000 and 70000
@@ -564,36 +567,6 @@ ROM_START( funkybeeb )
 	ROM_REGION( 0x0020, "proms", 0 )
 	ROM_LOAD( "funkybee.clr",   0x0000, 0x0020, CRC(e2cf5fe2) SHA1(50b293f48f078cbcebccb045aa779ced2fb298c8) )
 ROM_END
-
-
-/*
-Sky Lancer PCB Layout
----------------------
-
-  |--------------------------------------------|
- _|                          ROM.U33           |
-|                                              |
-|                            ROM.U32           |
-|    WF19054                                   |
-|                                              |
-|_                                             |
-  |                                  6264      |
-  |                     |------|     6116      |
- _|           DSW4(8)   |ACTEL |               |
-|             DSW3(8)   |A1010B|               |
-|             DSW2(8)   |      |          6264 |
-|             DSW1(8)   |------|               |
-|                                         6264 |
-|    M5M82C255                                 |
-|                                              |
-|       ROM.U35                                |
-|3.6V_BATT                                     |
-|_          6116              Z80        12MHz |
-  |--------------------------------------------|
-Notes:
-      Z80 @ 3.0MHz [12/4]
-      WF19054 = AY-3-8910 @ 1.5MHz [12/8]
-*/
 
 ROM_START( skylancr )
 	ROM_REGION( 0x10000, "maincpu", 0 )
