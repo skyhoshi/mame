@@ -155,4 +155,14 @@ private:
 	u16 m_track_delta[4];
 };
 
+class alg_gun_state : public _3do_state
+{
+public:
+	alg_gun_state(const machine_config &mconfig, device_type type, const char *tag)
+		: _3do_state(mconfig, type, tag)
+	{ }
+
+	void alg_gun(machine_config &config);
+};
+
 #endif // MAME_MISC_3DO_H

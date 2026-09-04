@@ -248,6 +248,29 @@ static INPUT_PORTS_START( orbatak )
 	PORT_BIT( 0x3ff, 0x00, IPT_TRACKBALL_X) PORT_SENSITIVITY(40) PORT_KEYDELTA(25) PORT_PLAYER(2)
 INPUT_PORTS_END
 
+// both games maps player 2 first then player 1 next
+static INPUT_PORTS_START( alg_gun )
+	PORT_START("P1.0")
+	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_PLAYER(1) // trigger
+	PORT_BIT( 0x40, IP_ACTIVE_HIGH, IPT_SERVICE2 ) // unused in md23do
+	PORT_BIT( 0x20, IP_ACTIVE_HIGH, IPT_COIN1 )
+	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_START1 )
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_BUTTON2 ) PORT_PLAYER(1) // holster
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_UNUSED )
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_UNUSED )
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_UNKNOWN ) // highest bit for counter?
+
+	PORT_START("P1.1")
+	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_PLAYER(2) // trigger
+	PORT_BIT( 0x40, IP_ACTIVE_HIGH, IPT_SERVICE1 )
+	PORT_BIT( 0x20, IP_ACTIVE_HIGH, IPT_COIN2 )
+	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_START2 )
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_BUTTON2 ) PORT_PLAYER(2) // holster
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_UNUSED )
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_UNUSED )
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_UNKNOWN ) // highest bit for counter?
+INPUT_PORTS_END
+
 
 void _3do_state::machine_start()
 {
@@ -481,7 +504,6 @@ void orbatak_state::orbatak(machine_config &config)
 {
 	arcade_ntsc(config);
 	m_madam->playerbus_read_cb().set([this] (offs_t offset) -> u32 {
-
 		switch(offset)
 		{
 			// SILLY_CONTROL_PAD + ID for player 1 trackball
@@ -507,6 +529,23 @@ void orbatak_state::orbatak(machine_config &config)
 	});
 }
 
+void alg_gun_state::alg_gun(machine_config &config)
+{
+	arcade_ntsc(config);
+	m_madam->playerbus_read_cb().set([this] (offs_t offset) -> u32 {
+		switch(offset)
+		{
+			case 0:
+				return (0x4d << 24) | (m_p1_r[1]->read() << 16);
+			case 1:
+				// should be 8 bit of ID and 24 of actual inputs but both games expects an extra byte
+				// to make this other side to work (padding or actual meaning?)
+				return (0x4d << 16) | (m_p1_r[0]->read() << 8);
+		}
+
+		return 0;
+	});
+}
 
 ROM_START(3do_fz1)
 	ROM_REGION32_BE( 0x200000, "bios", 0 )
@@ -682,9 +721,9 @@ CONS( 1994, 3do_hc21,   3do_try,    0,       _3do,       3do,    _3do_state, emp
 // Arcade section
 GAME( 1993, alg3do, 0,       _3do,           3do,   _3do_state, empty_init, ROT0,     "American Laser Games / The 3DO Company", "ALG 3DO BIOS",            MACHINE_NOT_WORKING | MACHINE_UNEMULATED_PROTECTION | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_TIMING | MACHINE_IS_BIOS_ROOT )
 
-GAME( 1995, orbatak, alg3do, orbatak,        orbatak,   orbatak_state, empty_init, ROT0,     "American Laser Games", "Orbatak (USA, prototype)", MACHINE_NOT_WORKING | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_TIMING ) // version 1.0
-GAME( 199?, md23do,  alg3do, arcade_ntsc,    3do,   _3do_state, empty_init, ROT0,     "American Laser Games", "Mad Dog II: The Lost Gold (3DO hardware)", MACHINE_NOT_WORKING  | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_TIMING )
-GAME( 1994, sht3do,  alg3do, arcade_ntsc,    3do,   _3do_state, empty_init, ROT0,     "American Laser Games", "Shootout at Old Tucson (3DO hardware)", MACHINE_NOT_WORKING  | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_TIMING )
+GAME( 1995, orbatak, alg3do, orbatak,  orbatak,   orbatak_state, empty_init, ROT0,     "American Laser Games", "Orbatak (USA, prototype)", MACHINE_NOT_WORKING | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_TIMING ) // v1.0
+GAME( 1994, md23do,  alg3do, alg_gun,  alg_gun,   alg_gun_state, empty_init, ROT0,     "American Laser Games", "Mad Dog II: The Lost Gold (3DO hardware)", MACHINE_NOT_WORKING  | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_TIMING ) // v1.1
+GAME( 1994, sht3do,  alg3do, alg_gun,  alg_gun,   alg_gun_state, empty_init, ROT0,     "American Laser Games", "Shootout at Old Tucson (3DO hardware)", MACHINE_NOT_WORKING  | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_TIMING ) // v1.05
 
 // Beavis and Butthead (prototype), with "proprietary" CD drive according to pitch deck
 // (likely not Jaguar CD derived because seems to work with stock 3do drive anyway)

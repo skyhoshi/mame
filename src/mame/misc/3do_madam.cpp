@@ -1451,7 +1451,8 @@ u16 madam_device::get_pixel_8bpp_coded_lrform0(int x, int y, u16 woffset)
 	plut_data <<= 1;
 
 	// ... then 3 bits that defines highlight/shadow of said PLUT
-	// The algo is not defined by docs, this is guesswork
+	// The algo is not defined by docs, just a sketchy mention of the format in "Cel Engine" Table 2.
+	// Elsewhere it mentions using an "Alternate Multiply" label ...
 	const u8 alt_multiply = ((byte_data & 0xe0) >> 5) + 1;
 
 	u16 src_data = (m_dma8_read_cb(plut_address + plut_data) << 8) + (m_dma8_read_cb(plut_address + plut_data + 1));
