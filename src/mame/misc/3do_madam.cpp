@@ -1109,7 +1109,7 @@ const madam_device::fetch_rle_func madam_device::fetch_rle_table[16] =
 	&madam_device::get_coded_6bpp,  // 4: 6bpp
 	&madam_device::get_unemulated,
 	&madam_device::get_unemulated,  // 5: 8bpp
-	&madam_device::get_unemulated,
+	&madam_device::get_uncoded_8bpp,
 	&madam_device::get_coded_16bpp, // 6: 16bpp
 	&madam_device::get_uncoded_16bpp,
 	&madam_device::get_unemulated,  // 7: illegal
@@ -1152,6 +1152,11 @@ std::tuple<u16, u32> madam_device::get_coded_6bpp(u32 ptr, u8 frac)
 	return std::make_tuple((m_dma8_read_cb(plut_ptr + idx) << 8) | m_dma8_read_cb(plut_ptr + idx + 1), ptr);
 }
 
+std::tuple<u16, u32> madam_device::get_uncoded_8bpp(u32 ptr, u8 frac)
+{
+	return std::make_tuple(m_dma8_read_cb(ptr), ptr + 1);
+}
+
 // - 3do_try on Sanyo 3DO logo
 // A wasteful mode, sets woffset10 and 2 bytes per color fetch for a PLUT lookup trip.
 std::tuple<u16, u32> madam_device::get_coded_16bpp(u32 ptr, u8 frac)
@@ -1187,9 +1192,10 @@ u32 madam_device::cel_decompress()
 		(bpp == 2) ||
 		(bpp == 3 && uncoded) ||
 		(bpp == 4 && uncoded) ||
-		(bpp == 5))
+		(bpp == 5 && !uncoded))
 	{
 		popmessage("3do_madam.cpp: unsupported Packed CEL %d %d %08x", bpp, uncoded, source_ptr);
+		LOGCEL("Unemulated: bpp=%d uncoded=%d!\n", bpp, uncoded);
 		m_statbits |= (1 << 6);
 		cel_stop_w(0, 0, 0xffffffff);
 		return 0;
@@ -1428,6 +1434,8 @@ u16 madam_device::get_pixel_6bpp_coded_lrform0(int x, int y, u16 woffset)
 }
 
 // - fz10 Storage Managers
+// - demoman FMVs (options -> difficulty select)
+// - cfodder gameplay
 u16 madam_device::get_pixel_8bpp_coded_lrform0(int x, int y, u16 woffset)
 {
 	u32 cel_address = m_cel.source_ptr;
@@ -1437,13 +1445,29 @@ u16 madam_device::get_pixel_8bpp_coded_lrform0(int x, int y, u16 woffset)
 	cel_address += ((x) << 0);
 	//u8 src_shift = (x & 3) ^ 3;
 
-	//u16 plut_data = (m_dma32_read_cb(cel_address) >> (src_shift * 8)) & 0xff;
-	u16 plut_data = m_dma8_read_cb(cel_address);
+	// Source contains the lower PLUT ...
+	const u8 byte_data = m_dma8_read_cb(cel_address);
+	u16 plut_data = byte_data & 0x1f;
 	plut_data <<= 1;
+
+	// ... then 3 bits that defines highlight/shadow of said PLUT
+	// The algo is not defined by docs, this is guesswork
+	const u8 alt_multiply = ((byte_data & 0xe0) >> 5) + 1;
 
 	u16 src_data = (m_dma8_read_cb(plut_address + plut_data) << 8) + (m_dma8_read_cb(plut_address + plut_data + 1));
 
-	return src_data;
+	s16 r = (src_data & 0x7c00) >> 10;
+	s16 g = (src_data & 0x03e0) >> 5;
+	s16 b = (src_data & 0x001f) >> 0;
+
+	// >> 1 makes colors too bright in cfodder
+	r = std::min((r * alt_multiply) >> 2, 0x1f);
+	g = std::min((g * alt_multiply) >> 2, 0x1f);
+	b = std::min((b * alt_multiply) >> 2, 0x1f);
+
+	u16 dst_data = (r << 10) | (g << 5) | b;
+
+	return dst_data;
 }
 
 // - megarace "now loading" / "prepare to race"

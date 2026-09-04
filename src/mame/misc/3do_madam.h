@@ -220,6 +220,7 @@ private:
 	std::tuple<u16, u32> get_unemulated(u32 ptr, u8 frac);
 	std::tuple<u16, u32> get_coded_4bpp(u32 ptr, u8 frac);
 	std::tuple<u16, u32> get_coded_6bpp(u32 ptr, u8 frac);
+	std::tuple<u16, u32> get_uncoded_8bpp(u32 ptr, u8 frac);
 	std::tuple<u16, u32> get_coded_16bpp(u32 ptr, u8 frac);
 	std::tuple<u16, u32> get_uncoded_16bpp(u32 ptr, u8 frac);
 
