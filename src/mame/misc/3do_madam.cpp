@@ -428,7 +428,8 @@ void madam_device::mctl_w(offs_t offset, u32 data, u32 mem_mask)
 			// Madam can access Player bus from DMA only, and the port(s) are daisy chained thru
 			// bidirectional serial i/f (which also handle headphone jack and ROM device transfers)
 			// Smells a lot like an internal MCU doing the job ...
-			m_dma32_write_cb(m_dma[DMA_CONTROL_PORT][2] + 0x4, m_playerbus_read_cb(0));
+			for (int i = 0; i < 3; i++)
+				m_dma32_write_cb(m_dma[DMA_CONTROL_PORT][2] + (i + 1) * 4, m_playerbus_read_cb(i));
 		}
 		if (BIT(m_mctl, 15) && !BIT(data, 15))
 		{
@@ -883,7 +884,7 @@ TIMER_CALLBACK_MEMBER(madam_device::cel_tick_cb)
 			m_cel.xpos = (double)xpos / 65536.0;
 			m_cel.ypos = (double)ypos / 65536.0;
 			tick_time += 2;
-			LOGCEL("    xpos=%f ypos=%f\n", xpos, ypos );
+			LOGCEL("    xpos=%f ypos=%f\n", m_cel.xpos, m_cel.ypos );
 
 			const s32 hdx = (s32)m_dma32_read_cb(m_cel.address + 0x18);
 			const s32 hdy = (s32)m_dma32_read_cb(m_cel.address + 0x1c);
@@ -895,8 +896,8 @@ TIMER_CALLBACK_MEMBER(madam_device::cel_tick_cb)
 			m_cel.vdy = (double)vdy / 65536.0;
 			tick_time += 4;
 			LOGCEL("    hdx=%f hdy=%f vdx=%f vdy=%f\n"
-				, (double)m_cel.hdx / 1048576.0, (double)m_cel.hdy / 1048576.0
-				, (double)m_cel.vdx / 65536.0, (double)m_cel.vdy / 65536.0
+				, m_cel.hdx, m_cel.hdy
+				, m_cel.vdx, m_cel.vdy
 			);
 
 			const s32 hddx = (s32)m_dma32_read_cb(m_cel.address + 0x28);
@@ -904,7 +905,7 @@ TIMER_CALLBACK_MEMBER(madam_device::cel_tick_cb)
 			m_cel.hddx = (double)hddx / 1048576.0;
 			m_cel.hddy = (double)hddy / 1048576.0;
 			tick_time += 2;
-			LOGCEL("    hddx=%f hddy=%f\n", (double)m_cel.hddx / 1048576.0, (double)m_cel.hddy / 1048576.0);
+			LOGCEL("    hddx=%f hddy=%f\n", m_cel.hddx, m_cel.hddy);
 
 			m_cel.pixc = m_dma32_read_cb(m_cel.address + 0x30);
 			tick_time += 1;

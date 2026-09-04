@@ -195,6 +195,60 @@ static INPUT_PORTS_START( 3do )
 	PORT_BIT( 0x03, IP_ACTIVE_HIGH, IPT_UNUSED )
 INPUT_PORTS_END
 
+static INPUT_PORTS_START( orbatak )
+	// SILLY_CONTROL_PAD
+	// first two bytes 0xc0 - 0x00 for ID
+	PORT_START("P1.0")
+	PORT_BIT( 0xff, IP_ACTIVE_HIGH, IPT_UNUSED )
+
+	PORT_START("P1.1")
+	PORT_BIT( 0xc0, IP_ACTIVE_HIGH, IPT_UNUSED )
+	// test mode fumbles the assignment of the coin chutes between
+	// input test, bookkeeping, coinage and actual gameplay.
+	// We go at user end, and make '5' / '6' match the in-game behaviour.
+	PORT_BIT( 0x20, IP_ACTIVE_HIGH, IPT_COIN1 )
+	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_COIN2 )
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_START2 )
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_START1 )
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_SERVICE1 )
+
+	// ID = 0x49, same as retail mouse
+	PORT_START("TRACK1.0")
+	PORT_BIT( 0xf0, IP_ACTIVE_HIGH, IPT_UNUSED ) // buttons on retail, N/C from cabinet pic
+	PORT_BIT( 0x0f, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(orbatak_state::analog_0_r<0>));
+
+	PORT_START("TRACK1.1")
+	PORT_BIT( 0xff, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(orbatak_state::analog_1_r<0>));
+
+	PORT_START("TRACK1.2")
+	PORT_BIT( 0xff, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(orbatak_state::analog_2_r<0>));
+
+	PORT_START("TRACK2.0")
+	PORT_BIT( 0xf0, IP_ACTIVE_HIGH, IPT_UNUSED ) // buttons on retail, N/C
+	PORT_BIT( 0x0f, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(orbatak_state::analog_0_r<1>));
+
+	PORT_START("TRACK2.1")
+	PORT_BIT( 0xff, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(orbatak_state::analog_1_r<1>));
+
+	PORT_START("TRACK2.2")
+	PORT_BIT( 0xff, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(FUNC(orbatak_state::analog_2_r<1>));
+
+	// NOTE: retail mouse maps these with reversed direction
+	PORT_START("RAW_ANALOG.0")
+	PORT_BIT( 0x3ff, 0x00, IPT_TRACKBALL_Y) PORT_SENSITIVITY(40) PORT_KEYDELTA(25) PORT_PLAYER(1)
+
+	PORT_START("RAW_ANALOG.1")
+	PORT_BIT( 0x3ff, 0x00, IPT_TRACKBALL_X) PORT_SENSITIVITY(40) PORT_KEYDELTA(25) PORT_PLAYER(1)
+
+	PORT_START("RAW_ANALOG.2")
+	PORT_BIT( 0x3ff, 0x00, IPT_TRACKBALL_Y) PORT_SENSITIVITY(40) PORT_KEYDELTA(25) PORT_PLAYER(2)
+
+	PORT_START("RAW_ANALOG.3")
+	PORT_BIT( 0x3ff, 0x00, IPT_TRACKBALL_X) PORT_SENSITIVITY(40) PORT_KEYDELTA(25) PORT_PLAYER(2)
+INPUT_PORTS_END
+
+
 void _3do_state::machine_start()
 {
 	m_nvram->set_base(&m_nvmem, sizeof(m_nvmem));
@@ -423,6 +477,35 @@ void _3do_state::arcade_ntsc(machine_config &config)
 	m_cdrom->add_region("cdimage");
 }
 
+void orbatak_state::orbatak(machine_config &config)
+{
+	arcade_ntsc(config);
+	m_madam->playerbus_read_cb().set([this] (offs_t offset) -> u32 {
+
+		switch(offset)
+		{
+			// SILLY_CONTROL_PAD + ID for player 1 trackball
+			case 0:
+			{
+				// calculate the deltas here for convenience
+				for (int i = 0; i < 4; i++)
+				{
+					const u16 raw_read = m_raw_analog[i]->read();
+					m_track_delta[i] = (raw_read - m_track_previous[i]) & 0x3ff;
+					m_track_previous[i] = raw_read;
+				}
+
+				return (0xc0 << 24) | (m_p1_r[0]->read() << 16) | (m_p1_r[1]->read() << 8) | (0x49);
+			}
+			// player 1 trackball inputs + player 2 trackball ID
+			case 1: return (m_track_p1_r[0]->read() << 24) | (m_track_p1_r[1]->read() << 16) | (m_track_p1_r[2]->read() << 8) | (0x49);
+			// player 2 trackball inputs
+			case 2: return (m_track_p2_r[0]->read() << 24) | (m_track_p2_r[1]->read() << 16) | (m_track_p2_r[2]->read() << 8);
+		}
+
+		return 0;
+	});
+}
 
 
 ROM_START(3do_fz1)
@@ -599,7 +682,7 @@ CONS( 1994, 3do_hc21,   3do_try,    0,       _3do,       3do,    _3do_state, emp
 // Arcade section
 GAME( 1993, alg3do, 0,       _3do,           3do,   _3do_state, empty_init, ROT0,     "American Laser Games / The 3DO Company", "ALG 3DO BIOS",            MACHINE_NOT_WORKING | MACHINE_UNEMULATED_PROTECTION | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_TIMING | MACHINE_IS_BIOS_ROOT )
 
-GAME( 1995, orbatak, alg3do, arcade_ntsc,    3do,   _3do_state, empty_init, ROT0,     "American Laser Games", "Orbatak (USA, prototype)", MACHINE_NOT_WORKING | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_TIMING )
+GAME( 1995, orbatak, alg3do, orbatak,        orbatak,   orbatak_state, empty_init, ROT0,     "American Laser Games", "Orbatak (USA, prototype)", MACHINE_NOT_WORKING | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_TIMING ) // version 1.0
 GAME( 199?, md23do,  alg3do, arcade_ntsc,    3do,   _3do_state, empty_init, ROT0,     "American Laser Games", "Mad Dog II: The Lost Gold (3DO hardware)", MACHINE_NOT_WORKING  | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_TIMING )
 GAME( 1994, sht3do,  alg3do, arcade_ntsc,    3do,   _3do_state, empty_init, ROT0,     "American Laser Games", "Shootout at Old Tucson (3DO hardware)", MACHINE_NOT_WORKING  | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_TIMING )
 
