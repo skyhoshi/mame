@@ -739,6 +739,9 @@ void arm_iomd_device::sdcr_w(u32 data)
 	// eats samples in ppcar
 //  if (BIT(data, 7))
 //      m_sndbuffer_ok[0] = m_sndbuffer_ok[1] = false;
+
+	// TODO: is dmaid_size settable by base IOMD only?
+	// that would lower the number of enqueued words in sound_drq, TBD
 }
 
 u32 arm_iomd_device::sdst_r()

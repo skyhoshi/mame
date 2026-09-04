@@ -540,34 +540,7 @@ ROM_START(3do_hc21)
 	ROM_REGION32_BE( 0x100000, "kanji", ROMREGION_ERASEFF )
 ROM_END
 
-
-// Arcade section
-// TODO: still using the old BIOS scheme, determine what they actually used for Orbatak
-#define NTSC_BIOS \
-	ROM_REGION32_BE( 0x200000, "bios", 0 ) \
-	ROM_SYSTEM_BIOS( 0, "panafz10", "Panasonic FZ-10 R.E.A.L. 3DO Interactive Multiplayer" ) \
-	ROMX_LOAD( "panafz10.bin", 0x000000, 0x100000, CRC(58242cee) SHA1(3c912300775d1ad730dc35757e279c274c0acaad), ROM_BIOS(0) ) \
-	ROM_SYSTEM_BIOS( 1, "goldstar", "Goldstar 3DO Interactive Multiplayer v1.01m" ) \
-	ROMX_LOAD( "goldstar.bin", 0x000000, 0x100000, CRC(b6f5028b) SHA1(c4a2e5336f77fb5f743de1eea2cda43675ee2de7), ROM_BIOS(1) ) \
-	ROM_SYSTEM_BIOS( 2, "panafz1", "Panasonic FZ-1 R.E.A.L. 3DO Interactive Multiplayer" ) \
-	ROMX_LOAD( "panafz1.bin", 0x000000, 0x100000, CRC(c8c8ff89) SHA1(34bf189111295f74d7b7dfc1f304d98b8d36325a), ROM_BIOS(2) ) \
-	ROM_SYSTEM_BIOS( 3, "sanyotry", "Sanyo TRY 3DO Interactive Multiplayer" ) \
-	ROMX_LOAD( "sanyotry.bin", 0x000000, 0x100000, CRC(d5cbc509) SHA1(b01c53da256dde43ffec4ad3fc3adfa8d635e943), ROM_BIOS(3) ) \
-	ROM_REGION32_BE( 0x100000, "kanji", ROMREGION_ERASEFF )
-
-
-ROM_START(3dobios)
-	NTSC_BIOS
-ROM_END
-
-
-ROM_START(orbatak)
-	NTSC_BIOS
-
-	DISK_REGION( "cdimage" )
-	DISK_IMAGE_READONLY( "orbatak", 0, SHA1(25cb3b889cf09dbe5faf2b0ca4aae5e03453da00) )
-ROM_END
-
+// American Laser Games uses its own BIOS (with additional "FKr-Severe-System-extended-RSA failed in CreateTask")
 #define ALG_BIOS \
 	ROM_REGION32_BE( 0x200000, "bios", 0 ) \
 	/* TC544000AF-150, 1xxxxxxxxxxxxxxxxxx = 0xFF */ \
@@ -578,6 +551,12 @@ ROM_START(alg3do)
 	ALG_BIOS
 ROM_END
 
+ROM_START(orbatak)
+	ALG_BIOS
+
+	DISK_REGION( "cdimage" )
+	DISK_IMAGE_READONLY( "orbatak", 0, SHA1(25cb3b889cf09dbe5faf2b0ca4aae5e03453da00) )
+ROM_END
 
 ROM_START(md23do)
 	ALG_BIOS
@@ -618,15 +597,11 @@ CONS( 1994, 3do_hc21,   3do_try,    0,       _3do,       3do,    _3do_state, emp
 
 
 // Arcade section
-GAME( 1993, 3dobios, 0,       _3do,           3do,   _3do_state, empty_init, ROT0,     "The 3DO Company",      "3DO BIOS",            MACHINE_NOT_WORKING | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_TIMING | MACHINE_IS_BIOS_ROOT )
-
-GAME( 1995, orbatak, 3dobios, arcade_ntsc,    3do,   _3do_state, empty_init, ROT0,     "American Laser Games", "Orbatak (prototype)", MACHINE_NOT_WORKING | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_TIMING )
-// Beavis and Butthead (prototype), with "proprietary" CD drive according to pitch deck
-// (likely not Jaguar CD derived because seems to work with stock 3do drive anyway)
-
-
-// American Laser Games uses its own BIOS (with additional "FKr-Severe-System-extended-RSA failed in CreateTask")
 GAME( 1993, alg3do, 0,       _3do,           3do,   _3do_state, empty_init, ROT0,     "American Laser Games / The 3DO Company", "ALG 3DO BIOS",            MACHINE_NOT_WORKING | MACHINE_UNEMULATED_PROTECTION | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_TIMING | MACHINE_IS_BIOS_ROOT )
 
+GAME( 1995, orbatak, alg3do, arcade_ntsc,    3do,   _3do_state, empty_init, ROT0,     "American Laser Games", "Orbatak (USA, prototype)", MACHINE_NOT_WORKING | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_TIMING )
 GAME( 199?, md23do,  alg3do, arcade_ntsc,    3do,   _3do_state, empty_init, ROT0,     "American Laser Games", "Mad Dog II: The Lost Gold (3DO hardware)", MACHINE_NOT_WORKING  | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_TIMING )
 GAME( 1994, sht3do,  alg3do, arcade_ntsc,    3do,   _3do_state, empty_init, ROT0,     "American Laser Games", "Shootout at Old Tucson (3DO hardware)", MACHINE_NOT_WORKING  | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_TIMING )
+
+// Beavis and Butthead (prototype), with "proprietary" CD drive according to pitch deck
+// (likely not Jaguar CD derived because seems to work with stock 3do drive anyway)
