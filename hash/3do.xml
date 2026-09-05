@@ -51,7 +51,6 @@ Has color bugs on main menu
 		<notes><![CDATA[
 [CD drive] intro FMV stutter frames (note the English text running too fast is a btanb)
 [Madam] Option GFX on main menu has RMW transparency bug
-[Madam] "unsupported Packed CEL 5 0" across the application
 ]]></notes>
 		<!-- NOTE: pressing C will punt to credit screen then back to 3do logo -->
 		<info name="alt_title" value="アクア・ワールド ～海美物語～"/>
@@ -74,9 +73,10 @@ Has color bugs on main menu
 		<publisher>Bandai</publisher>
 		<notes><![CDATA[
 [CD drive] FMVs have skipping artifacts with audio
-[Madam] "Unsupported Packed CEL 2 0" on title + "1 0" on character select + "5 0" in gameplay
+[Madam] "Unsupported Packed CEL 2 0" on title + "1 0" on character select
 No cursor for character select, offset p2 graphics
-[DSPP] BGM too quiet on character select
+No blink on title screen "Press P button"
+[DSPP] ducks BGM volume too much on main menu too much, no speech
 ]]></notes>
 		<info name="alt_title" value="美少女戦士セーラームーンS"/>
 		<info name="barcode" value="T4984824070851"/>
@@ -284,9 +284,8 @@ Hangs on Puzzle, no [Player] input works
 		<notes><![CDATA[
 [DSPP] non FMV portions sounds ugly
 [Madam] "unsupported Packed CEL 1 0" on title
-[Madam] "unsupported Packed CEL 5 0" on versus screen
-"Now Loading" likely enables rotate and zoom features of the CEL
 [Madam] "unsupported Packed CEL 2 0" after loading
+Bonus section (3rd option) is untested
 ]]></notes>
 		<info name="alt_title" value="おやじハンターマージャン"/>
 		<info name="barcode" value="4973934234512"/>

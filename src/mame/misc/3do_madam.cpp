@@ -1100,15 +1100,15 @@ const madam_device::fetch_rle_func madam_device::fetch_rle_table[16] =
 {
 	&madam_device::get_unemulated,  // 0: illegal
 	&madam_device::get_unemulated,
-	&madam_device::get_unemulated,  // 1: 1bpp
+	&madam_device::get_coded_1bpp,  // 1: 1bpp
 	&madam_device::get_unemulated,
-	&madam_device::get_unemulated,  // 2: 2bpp
+	&madam_device::get_coded_2bpp,  // 2: 2bpp
 	&madam_device::get_unemulated,
 	&madam_device::get_coded_4bpp,  // 3: 4bpp
 	&madam_device::get_unemulated,
 	&madam_device::get_coded_6bpp,  // 4: 6bpp
 	&madam_device::get_unemulated,
-	&madam_device::get_unemulated,  // 5: 8bpp
+	&madam_device::get_coded_8bpp,  // 5: 8bpp
 	&madam_device::get_uncoded_8bpp,
 	&madam_device::get_coded_16bpp, // 6: 16bpp
 	&madam_device::get_uncoded_16bpp,
@@ -1117,10 +1117,40 @@ const madam_device::fetch_rle_func madam_device::fetch_rle_table[16] =
 };
 
 // Stub for unemulated/illegal paths
+// bpp = 0 coded: ssf2xj in versus mode
 std::tuple<u16, u32> madam_device::get_unemulated(u32 ptr, u8 frac)
 {
 	return std::make_tuple(0, ptr + 1);
 };
+
+std::tuple<u16, u32> madam_device::get_coded_1bpp(u32 ptr, u8 frac)
+{
+	u8 idx;
+	const u32 plut_ptr = m_cel.plut_ptr;
+	std::tie(idx, ptr) = fetch_byte(ptr, frac);
+
+	// idx >>= 7;
+	// idx &= 0x01;
+	idx >>= 6;
+	idx &= 0x02;
+
+	return std::make_tuple((m_dma8_read_cb(plut_ptr + idx) << 8) | m_dma8_read_cb(plut_ptr + idx + 1), ptr);
+}
+
+// - sailormn cursor in character select (broken)
+std::tuple<u16, u32> madam_device::get_coded_2bpp(u32 ptr, u8 frac)
+{
+	u8 idx;
+	const u32 plut_ptr = m_cel.plut_ptr;
+	std::tie(idx, ptr) = fetch_byte(ptr, frac);
+
+	// idx >>= 6;
+	// idx &= 0x03;
+	idx >>= 5;
+	idx &= 0x06;
+
+	return std::make_tuple((m_dma8_read_cb(plut_ptr + idx) << 8) | m_dma8_read_cb(plut_ptr + idx + 1), ptr);
+}
 
 // - 3do_try "3" charset
 std::tuple<u16, u32> madam_device::get_coded_4bpp(u32 ptr, u8 frac)
@@ -1152,13 +1182,43 @@ std::tuple<u16, u32> madam_device::get_coded_6bpp(u32 ptr, u8 frac)
 	return std::make_tuple((m_dma8_read_cb(plut_ptr + idx) << 8) | m_dma8_read_cb(plut_ptr + idx + 1), ptr);
 }
 
+// - sailormn gameplay
+// - aquawrld
+// - oyajihmj versus screen (zoom letters shrink)
+std::tuple<u16, u32> madam_device::get_coded_8bpp(u32 ptr, u8 frac)
+{
+	const u32 plut_ptr = m_cel.plut_ptr;
+	u8 idx = m_dma8_read_cb(ptr);
+
+	const u8 alt_multiply = ((idx & 0xe0) >> 5) + 1;
+
+	idx <<= 1;
+	idx &= 0x3e;
+
+	const u16 src_data = (m_dma8_read_cb(plut_ptr + idx) << 8) | m_dma8_read_cb(plut_ptr + idx + 1);
+
+	s16 r = (src_data & 0x7c00) >> 10;
+	s16 g = (src_data & 0x03e0) >> 5;
+	s16 b = (src_data & 0x001f) >> 0;
+
+	// TODO: >> 3 may really be a setting (sailormn expect it like this) ...
+	r = std::min((r * alt_multiply) >> 3, 0x1f);
+	g = std::min((g * alt_multiply) >> 3, 0x1f);
+	b = std::min((b * alt_multiply) >> 3, 0x1f);
+
+	const u16 dst_data = (r << 10) | (g << 5) | b;
+
+	return std::make_tuple(dst_data, ptr + 1);
+}
+
 std::tuple<u16, u32> madam_device::get_uncoded_8bpp(u32 ptr, u8 frac)
 {
 	return std::make_tuple(m_dma8_read_cb(ptr), ptr + 1);
 }
 
 // - 3do_try on Sanyo 3DO logo
-// A wasteful mode, sets woffset10 and 2 bytes per color fetch for a PLUT lookup trip.
+// A wasteful use case, sets woffset10 and 2 bytes per color fetch for a PLUT lookup trip.
+// TODO: other things should actually expect 32 PLUTs and the alternate multiply instead
 std::tuple<u16, u32> madam_device::get_coded_16bpp(u32 ptr, u8 frac)
 {
 	const u32 plut_ptr = m_cel.plut_ptr;
@@ -1187,12 +1247,13 @@ u32 madam_device::cel_decompress()
 	const bool uncoded = !!BIT(m_cel.pre0, 4);
 	const u8 bpp = (m_cel.pre0 >> 0) & 0x7;
 
-	if ((bpp == 0 || bpp == 7) ||
-		(bpp == 1) ||
-		(bpp == 2) ||
-		(bpp == 3 && uncoded) ||
-		(bpp == 4 && uncoded) ||
-		(bpp == 5 && !uncoded))
+	if ((bpp == 7)
+		|| (bpp == 1 && uncoded)
+		|| (bpp == 2 && uncoded)
+		|| (bpp == 3 && uncoded)
+		|| (bpp == 4 && uncoded)
+		//|| (bpp == 5 && !uncoded)
+		)
 	{
 		popmessage("3do_madam.cpp: unsupported Packed CEL %d %d %08x", bpp, uncoded, source_ptr);
 		LOGCEL("Unemulated: bpp=%d uncoded=%d!\n", bpp, uncoded);
@@ -1519,7 +1580,12 @@ u16 madam_device::get_pixel_16bpp_uncoded_lrform1(int x, int y, u16 woffset)
 u16 madam_device::get_pixel_packed(int x, int y, u16 woffset)
 {
 	const u16 pitch = 0x1000;
+	const u32 src_address = x + (y * pitch);
 
-	u16 src_data = m_cel.buffer[x + (y * pitch)];
+	u16 src_data = m_cel.buffer[src_address];
+	// Clear after use so that the next CEL won't draw glitchy GFXs due of
+	// PACK_EOL + the calculated tlhpcnt.
+	// Location here is primarily performance oriented, would tank if we 0-fill the full vector stack.
+	m_cel.buffer[src_address] = 0;
 	return src_data;
 }
