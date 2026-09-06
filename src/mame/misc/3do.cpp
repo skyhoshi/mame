@@ -10,6 +10,7 @@ TODO:
 - Incomplete XBus/CD drive semantics;
 \- Audio CD has plenty of Cel, VDLP and sport issues. Also needs support between CD drive and DSPP
    (reads random port, asks for audio tracks *with* subcode);
+\- Photo CD (winsenna): ugly DSPP scratching;
 - Incomplete DSPP mapping (semaphores, audio input, output FIFO flush, FIFO status flags,
   RAM to DSPP N stack DMA);
 - Fix VRAM size (should be 1 MB, but every single BIOS fails to boot with that, possible mirroring?)
@@ -28,8 +29,10 @@ TODO (BIOS programs):
   skipped.
 
 TODO (Arcade variants):
-- All needs actual Player bus hookup;
-- md23do: Eventually throws Madam "unsupported Packed CEL 5 1" after credits in attract;
+- md23do/sht3do: lightgun hookup;
+- orbatak: playable with CEL issues in places, not extensively tested;
+- The actual Player bus hookup will require specific subclasses for all these (namely can't use %p
+  for enumerating p2 then p1);
 
 References:
 - https://wiki.console5.com/wiki/Panasonic_3DO_FZ-1

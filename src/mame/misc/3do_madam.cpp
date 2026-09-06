@@ -731,16 +731,17 @@ void madam_device::regctl0_w(offs_t offset, u32 data, u32 mem_mask)
 
 void madam_device::cel_start_w(offs_t offset, u32 data, u32 mem_mask)
 {
-	LOGCEL("Start CEL engine\n");
 	m_cel.state = FETCH_PARAMS;
 	// 0: control
 	// 1: first CCoB
 	// 2: PIP
 	// 3: data start
 	m_cel.address = m_dma[DMA_CEL_CONTROL][1];
+	LOGCEL("Start CEL engine control %08x first CCoB %08x PIP %08x data start %08x\n", m_dma[DMA_CEL_CONTROL][0], m_dma[DMA_CEL_CONTROL][1], m_dma[DMA_CEL_CONTROL][2], m_dma[DMA_CEL_CONTROL][3]);
 	m_statbits |= 1 << 4;
 	m_statbits &= ~(1 << 6);
-	m_cel.next_ptr = m_cel.source_ptr = m_cel.plut_ptr = 0;
+	// TODO: remove me, cfr. npabs
+	m_cel.next_ptr = 0;
 	m_cel_timer->adjust(attotime::from_ticks(2, this->clock()));
 }
 
@@ -857,20 +858,29 @@ TIMER_CALLBACK_MEMBER(madam_device::cel_tick_cb)
 				, BIT(m_cel.current_ccb, 4)
 				, (m_cel.current_ccb & 0xe) >> 1
 			);
-			// FIXME: relative to what?
-			// - 3do_fz1 / 3do_fz10 RGB dots (scaled by hdx/vdy=8.0) are the first & last entry setup, relative to zero?
-			// - ditto for "Welcome To Photo CD Imaging" app startup
-			if ((!spabs && m_cel.source_ptr) || (!ppabs && m_cel.plut_ptr))
+
+			// relative spabs/ppabs offsets are trusted against orbatak
+			// TODO: negative values, used by bam PLUT entries (can't decode it properly yet)
+			const u32 source_addr = m_dma32_read_cb(m_cel.address + 0x08);
+			if (spabs)
+				m_cel.source_ptr = source_addr;
+			else
 			{
-				popmessage("CEL relative address use at %08x %d|%d|%d", m_cel.address, npabs, spabs, ppabs);
-				m_statbits |= (1 << 6);
-				cel_stop_w(0, 0, 0xffffffff);
-				return;
+				LOGCEL("    RELSOURCE %08x\n", source_addr);
+				m_cel.source_ptr = m_cel.address + (s32)source_addr - 4;
 			}
-			m_cel.source_ptr = m_dma32_read_cb(m_cel.address + 0x08);
-			m_cel.plut_ptr = m_dma32_read_cb(m_cel.address + 0x0c);
+
+			const u32 plut_addr = m_dma32_read_cb(m_cel.address + 0x0c);
+			if (ppabs)
+				m_cel.plut_ptr = plut_addr;
+			else
+			{
+				LOGCEL("    RELPLUT %08x\n", plut_addr);
+				m_cel.plut_ptr = m_cel.address + (s32)plut_addr + 0x10;
+			}
 			tick_time += 2;
 			LOGCEL("    NEXTPTR %08x SOURCEPTR %08x PLUTPTR %08x\n", m_cel.next_ptr, m_cel.source_ptr, m_cel.plut_ptr);
+
 			if (!ldsize || !ldprs || !yoxy || !ldpixc)
 			{
 				popmessage("CEL using existing values at %08x %d|%d|%d|%d", m_cel.address, ldsize, ldprs, yoxy, ldpixc);
@@ -1123,6 +1133,8 @@ std::tuple<u16, u32> madam_device::get_unemulated(u32 ptr, u8 frac)
 	return std::make_tuple(0, ptr + 1);
 };
 
+// - sailormn character select cursor
+// - slayer
 std::tuple<u16, u32> madam_device::get_coded_1bpp(u32 ptr, u8 frac)
 {
 	u8 idx;
@@ -1168,6 +1180,7 @@ std::tuple<u16, u32> madam_device::get_coded_4bpp(u32 ptr, u8 frac)
 }
 
 // - 3do_fz1 / 3do_fz10
+// - orbatak (in particular relative !spabs/!ppabs transitions)
 std::tuple<u16, u32> madam_device::get_coded_6bpp(u32 ptr, u8 frac)
 {
 	u8 idx;
@@ -1175,9 +1188,10 @@ std::tuple<u16, u32> madam_device::get_coded_6bpp(u32 ptr, u8 frac)
 	std::tie(idx, ptr) = fetch_byte(ptr, frac);
 
 	// idx >>= 2;
-	// idx &= 0x3f;
+	// idx &= 0x1f;
 	idx >>= 1;
-	idx &= 0x7e;
+	idx &= 0x3e;
+	// TODO: bit 5 is really p/w selector
 
 	return std::make_tuple((m_dma8_read_cb(plut_ptr + idx) << 8) | m_dma8_read_cb(plut_ptr + idx + 1), ptr);
 }
