@@ -111,7 +111,7 @@ public:
 	required_device<apple2_gameio_device> m_gameio;
 	required_ioport m_sysconfig;
 	required_device<speaker_sound_device> m_speaker;
-	required_device<cassette_image_device> m_cassette;
+	optional_device<cassette_image_device> m_cassette;
 	required_device<addressable_latch_device> m_softlatch;
 	memory_view m_upperbank;
 
@@ -151,6 +151,7 @@ public:
 	void apple2_common(machine_config &config);
 	void apple2jp(machine_config &config);
 	void apple2(machine_config &config);
+	void ace100(machine_config &config);
 	void uniap2(machine_config &config);
 	void am64(machine_config &config);
 	void am100(machine_config &config);
@@ -274,7 +275,8 @@ void apple2_state::machine_start()
 	m_speaker_state = 0;
 	m_speaker->level_w(m_speaker_state);
 	m_cassette_state = 0;
-	m_cassette->output(-1.0f);
+	if (m_cassette.found())
+		m_cassette->output(-1.0f);
 	m_upperbank.select(0);
 	m_inh_slot = -1;
 	m_inh_bank = 0;
@@ -370,7 +372,8 @@ u8 apple2_state::cassette_toggle_r()
 void apple2_state::cassette_toggle_w(u8 data)
 {
 	m_cassette_state ^= 1;
-	m_cassette->output(m_cassette_state ? 1.0f : -1.0f);
+	if (m_cassette.found())
+		m_cassette->output(m_cassette_state ? 1.0f : -1.0f);
 }
 
 u8 apple2_state::speaker_toggle_r()
@@ -416,7 +419,7 @@ u8 apple2_state::flags_r(offs_t offset)
 	switch (offset)
 	{
 	case 0: // cassette in, inverted (accidentally read at $C068 by ProDOS to attempt IIgs STATE register)
-		return (m_cassette->input() > 0.0 ? 0 : 0x80) | uFloatingBus7;
+		return (m_cassette.found() && m_cassette->input() > 0.0 ? 0 : 0x80) | uFloatingBus7;
 
 	case 1:  // button 0 (polls high if not connected, unlike IIe)
 		return (((m_sysconfig->read() & 0x0c) == 0x0c ? m_kbd->shift_r() : !m_gameio->has_sw0() || m_gameio->sw0_r()) ? 0x80 : 0) | uFloatingBus7;
@@ -784,7 +787,6 @@ void apple2_state::apple2_common(machine_config &config)
 	SOFTWARE_LIST(config, "flop_a2_orig").set_compatible("apple2_flop_orig").set_filter("A2");
 	SOFTWARE_LIST(config, "flop_a2_misc").set_compatible("apple2_flop_misc");
 	SOFTWARE_LIST(config, "cass_list").set_original("apple2_cass");
-	//MCFG_SOFTWARE_LIST_ADD("cass_list", "apple2_cass")
 
 	CASSETTE(config, m_cassette);
 	m_cassette->set_default_state(CASSETTE_STOPPED);
@@ -815,6 +817,14 @@ void apple2_state::apple2pe(machine_config &config)
 {
 	apple2p(config);
 	m_kbd->set_default_option("videnh2");
+}
+
+void apple2_state::ace100(machine_config &config)
+{
+	apple2p(config);
+
+	config.device_remove(A2_CASSETTE_TAG);
+	config.device_remove("cass_list");
 }
 
 void apple2_state::uniap2(machine_config &config)
@@ -855,7 +865,7 @@ void apple2_state::albert(machine_config &config)
 
 void apple2_state::ivelultr(machine_config &config)
 {
-	apple2p(config);
+	ace100(config);
 	m_screen->set_screen_update(m_video, NAME((&a2_video_device::screen_update<a2_video_device::model::IVEL_ULTRA, true, false>)));
 
 	m_kbd->set_default_option("ivelultr");
@@ -1259,8 +1269,8 @@ COMP( 198?, elppa,    apple2, 0,      apple2p,  apple2, apple2_state, empty_init
 COMP( 1982, microeng, apple2, 0,      apple2p,  apple2, apple2_state, empty_init, "Spectrum Eletronica (SCOPUS)", "Micro Engenho", MACHINE_SUPPORTS_SAVE )
 COMP( 1982, maxxi,    apple2, 0,      apple2p,  apple2, apple2_state, empty_init, "Polymax",             "Maxxi", MACHINE_SUPPORTS_SAVE )
 COMP( 1982, prav82,   apple2, 0,      apple2p,  apple2, apple2_state, empty_init, "Pravetz",             "Pravetz 82", MACHINE_SUPPORTS_SAVE )
-COMP( 1982, ace100,   apple2, 0,      apple2p,  apple2, apple2_state, empty_init, "Franklin Computer",   "Franklin ACE 100", MACHINE_SUPPORTS_SAVE )
-COMP( 1982, ace1000,  apple2, 0,      apple2p,  apple2, apple2_state, empty_init, "Franklin Computer",   "Franklin ACE 1000", MACHINE_SUPPORTS_SAVE )
+COMP( 1982, ace100,   apple2, 0,      ace100,   apple2, apple2_state, empty_init, "Franklin Computer",   "Franklin ACE 100", MACHINE_SUPPORTS_SAVE )
+COMP( 1982, ace1000,  apple2, 0,      ace100,   apple2, apple2_state, empty_init, "Franklin Computer",   "Franklin ACE 1000", MACHINE_SUPPORTS_SAVE )
 COMP( 1982, uniap2en, apple2, 0,      uniap2,   apple2, apple2_state, empty_init, "Unitron Eletronica",  "Unitron AP II (in English)", MACHINE_SUPPORTS_SAVE )
 COMP( 1982, uniap2pt, apple2, 0,      uniap2,   apple2, apple2_state, empty_init, "Unitron Eletronica",  "Unitron AP II (in Brazilian Portuguese)", MACHINE_SUPPORTS_SAVE )
 COMP( 1982, craft2p,  apple2, 0,      apple2p,  apple2, apple2_state, empty_init, "Microcraft Microcomputadores", "Craft ][+", MACHINE_IMPERFECT_GRAPHICS | MACHINE_SUPPORTS_SAVE ) // inverse/flashing text doesn't look OK
@@ -1269,7 +1279,7 @@ COMP( 1985, prav8m,   apple2, 0,      apple2p,  apple2, apple2_state, empty_init
 COMP( 1985, space84,  apple2, 0,      apple2p,  apple2, apple2_state, empty_init, "ComputerTechnik/IBS", "Space 84",   MACHINE_SUPPORTS_SAVE )
 COMP( 1985, am64,     apple2, 0,      am64,     apple2, apple2_state, empty_init, "ASEM",                "AM 64", MACHINE_SUPPORTS_SAVE )
 COMP( 1985, laser2c,  apple2, 0,      dodo,     apple2, apple2_state, empty_init, "Milmar",              "Laser //c", MACHINE_SUPPORTS_SAVE )
-COMP( 1982, basis108, apple2, 0,      apple2p,  apple2, apple2_state, empty_init, "Basis Microcomputer GmbH", "Basis 108", MACHINE_NOT_WORKING | MACHINE_IMPERFECT_GRAPHICS | MACHINE_SUPPORTS_SAVE )
+COMP( 1982, basis108, apple2, 0,      ace100,   apple2, apple2_state, empty_init, "Basis Microcomputer GmbH", "Basis 108", MACHINE_NOT_WORKING | MACHINE_IMPERFECT_GRAPHICS | MACHINE_SUPPORTS_SAVE ) // needs 128K banking & 80-column mode (different from IIe)
 COMP( 1984, hkc8800a, apple2, 0,      apple2p,  apple2, apple2_state, empty_init, "China HKC",           "HKC 8800A", MACHINE_SUPPORTS_SAVE )
 COMP( 1984, albert,   apple2, 0,      albert,   apple2, apple2_state, empty_init, "Albert Computers, Inc.", "Albert", MACHINE_SUPPORTS_SAVE )
 COMP( 198?, am100,    apple2, 0,      am100,    apple2, apple2_state, empty_init, "ASEM S.p.A.",         "AM100",     MACHINE_SUPPORTS_SAVE )
