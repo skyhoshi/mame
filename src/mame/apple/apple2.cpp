@@ -1250,9 +1250,9 @@ ROM_END
 
 //    YEAR  NAME      PARENT  COMPAT  MACHINE   INPUT   CLASS          INIT        COMPANY                FULLNAME
 COMP( 1977, apple2,   0,      0,      apple2,   apple2, apple2_state, empty_init, "Apple Computer",      "Apple ][", MACHINE_SUPPORTS_SAVE )
-COMP( 1981, a2lca2,   apple2, 0,      apple2,   apple2, apple2_state, empty_init, "hack (Dan Paymar)",   "Apple ][ (with LCA-2 Lowercase Adapter)", MACHINE_SUPPORTS_SAVE )
+COMP( 1981, a2lca2,   apple2, 0,      apple2,   apple2, apple2_state, empty_init, "hack (Dan Paymar)",   "Apple ][ (with LCA-2 Lower Case Adapter)", MACHINE_SUPPORTS_SAVE )
 COMP( 1979, apple2p,  apple2, 0,      apple2p,  apple2, apple2_state, empty_init, "Apple Computer",      "Apple ][+", MACHINE_SUPPORTS_SAVE )
-COMP( 1981, a2plca2,  apple2, 0,      apple2p,  apple2, apple2_state, empty_init, "hack (Dan Paymar)",   "Apple ][+ (with LCA-2 Lowercase Adapter)", MACHINE_SUPPORTS_SAVE )
+COMP( 1981, a2plca2,  apple2, 0,      apple2p,  apple2, apple2_state, empty_init, "hack (Dan Paymar)",   "Apple ][+ (with LCA-2 Lower Case Adapter)", MACHINE_SUPPORTS_SAVE )
 COMP( 1982, apple2pe, apple2, 0,      apple2pe, apple2, apple2_state, empty_init, "hack (Videx)",        "Apple ][+ (with Enhancer ][ lowercase display mod)", MACHINE_SUPPORTS_SAVE )
 COMP( 1980, apple2jp, apple2, 0,      apple2jp, apple2, apple2_state, empty_init, "Apple Computer",      "Apple ][ J-Plus", MACHINE_SUPPORTS_SAVE )
 COMP( 198?, elppa,    apple2, 0,      apple2p,  apple2, apple2_state, empty_init, "Victor do Brasil",    "Elppa II+", MACHINE_SUPPORTS_SAVE )
