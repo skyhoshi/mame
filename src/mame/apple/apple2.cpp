@@ -894,10 +894,27 @@ ROM_START(apple2) /* the classic, non-autoboot apple2 with integer basic in rom.
 	ROM_LOAD ( "341-0001-00.e0", 0x2000, 0x0800, CRC(c0a4ad3b) SHA1(bf32195efcb34b694c893c2d342321ec3a24b98f)) /* Needs verification. From eBay: Label: S7925E // C48077 // 3410001-00 // (C)APPLE78 E0 */
 	ROM_LOAD ( "341-0002-00.e8", 0x2800, 0x0800, CRC(a99c2cf6) SHA1(9767d92d04fc65c626223f25564cca31f5248980)) /* Needs verification. From eBay: Label: S7916E // C48078 // 3410002-00 // (C)APPLE78 E8 */
 	ROM_LOAD ( "341-0003-00.f0", 0x3000, 0x0800, CRC(62230d38) SHA1(f268022da555e4c809ca1ae9e5d2f00b388ff61c)) /* Needs verification. From eBay: Label: S7908E // C48709 // 3410003 // CAPPLE78 F0 */
-	ROM_SYSTEM_BIOS(0, "default", "Original Monitor")
+	ROM_SYSTEM_BIOS(0, "old", "Original Monitor")
 	ROMX_LOAD ( "341-0004-00.f8", 0x3800, 0x0800, CRC(020a86d0) SHA1(52a18bd578a4694420009cad7a7a5779a8c00226), ROM_BIOS(0))
 	ROM_SYSTEM_BIOS(1, "autostart", "Autostart Monitor")
 	ROMX_LOAD ( "341-0020-00.f8", 0x3800, 0x0800, CRC(079589c4) SHA1(a28852ff997b4790e53d8d0352112c4b1a395098), ROM_BIOS(1)) /* 341-0020-00: Autostart Monitor/Applesoft Basic $f800; Label(from Apple Language Card - Front.jpg): S 8115 // C68018 // 341-0020-00 */
+ROM_END
+
+ROM_START(a2lca2)
+	ROM_REGION(0x0800,"gfx1",0)
+	ROM_LOAD ( "lca-2.bin", 0x0000, 0x0800, CRC(df55700a) SHA1(ccf1c8b72ce505c1cd42da4c59a6a818f2d86e95))
+
+	ROM_REGION(0x4000,"maincpu",0)
+	/* 341-0016: Programmer's Aid #1 D0 (optional; see apple2_rom.xml) */
+	ROM_LOAD ( "341-0001-00.e0", 0x2000, 0x0800, CRC(c0a4ad3b) SHA1(bf32195efcb34b694c893c2d342321ec3a24b98f)) /* Needs verification. From eBay: Label: S7925E // C48077 // 3410001-00 // (C)APPLE78 E0 */
+	ROM_LOAD ( "341-0002-00.e8", 0x2800, 0x0800, CRC(a99c2cf6) SHA1(9767d92d04fc65c626223f25564cca31f5248980)) /* Needs verification. From eBay: Label: S7916E // C48078 // 3410002-00 // (C)APPLE78 E8 */
+	ROM_LOAD ( "341-0003-00.f0", 0x3000, 0x0800, CRC(62230d38) SHA1(f268022da555e4c809ca1ae9e5d2f00b388ff61c)) /* Needs verification. From eBay: Label: S7908E // C48709 // 3410003 // CAPPLE78 F0 */
+	ROM_SYSTEM_BIOS(0, "old", "Original Monitor")
+	ROMX_LOAD ( "341-0004-00.f8", 0x3800, 0x0800, CRC(020a86d0) SHA1(52a18bd578a4694420009cad7a7a5779a8c00226), ROM_BIOS(0))
+	ROM_SYSTEM_BIOS(1, "autostart", "Autostart Monitor")
+	ROMX_LOAD ( "341-0020-00.f8", 0x3800, 0x0800, CRC(079589c4) SHA1(a28852ff997b4790e53d8d0352112c4b1a395098), ROM_BIOS(1))
+	ROM_SYSTEM_BIOS(2, "lcapple", "Original Monitor (Ctrl-Z lowercase input modification by Bob Matzinger)") // listed in "The Lower Case Apple" from July 1981 issue of Apple Assembly Line
+	ROMX_LOAD ( "lower_case_f8_rom.bin", 0x3800, 0x0800, CRC(807e4625) SHA1(b5f04e61402abb81975febd30268b22adedfbf2b), ROM_BIOS(2))
 ROM_END
 
 ROM_START(apple2p) /* the autoboot apple2+ with applesoft (microsoft-written) basic in rom; optional card with monitor and integer basic was possible but isn't yet supported */
@@ -913,13 +930,32 @@ ROM_START(apple2p) /* the autoboot apple2+ with applesoft (microsoft-written) ba
 	ROM_LOAD ( "341-0020-00.f8", 0x3800, 0x0800, CRC(079589c4) SHA1(a28852ff997b4790e53d8d0352112c4b1a395098)) /* 341-0020-00: Autostart Monitor/Applesoft Basic $f800; Label(from Apple Language Card - Front.jpg): S 8115 // C68018 // 341-0020-00 */
 ROM_END
 
+ROM_START(a2plca2)
+	ROM_REGION(0x0800,"gfx1",0)
+	ROM_LOAD ( "lca-2.bin", 0x0000, 0x0800, CRC(df55700a) SHA1(ccf1c8b72ce505c1cd42da4c59a6a818f2d86e95))
+
+	ROM_REGION(0x4000, "maincpu", ROMREGION_LE)
+	ROM_SYSTEM_BIOS(0, "autostart", "Autostart Monitor (original)") // some software refuses to run on modified versions
+	ROM_SYSTEM_BIOS(1, "lewis", "Autostart Monitor (J.P. Lewis lowercase input patch)") // from "Lower case on power-up" in October 1982 issue of Windfall; uses PADDL2 = Shift, PADDL3 = Ctrl
+	ROM_LOAD ( "341-0011.d0", 0x1000, 0x0800, CRC(6f05f949) SHA1(0287ebcef2c1ce11dc71be15a99d2d7e0e128b1e))
+	ROM_LOAD ( "341-0012.d8", 0x1800, 0x0800, CRC(1f08087c) SHA1(a75ce5aab6401355bf1ab01b04e4946a424879b5))
+	ROM_LOAD ( "341-0013.e0", 0x2000, 0x0800, CRC(2b8d9a89) SHA1(8d82a1da63224859bd619005fab62c4714b25dd7))
+	ROM_LOAD ( "341-0014.e8", 0x2800, 0x0800, CRC(5719871a) SHA1(37501be96d36d041667c15d63e0c1eff2f7dd4e9))
+	ROM_LOAD ( "341-0015.f0", 0x3000, 0x0800, CRC(9a04eecf) SHA1(e6bf91ed28464f42b807f798fc6422e5948bf581))
+	ROMX_LOAD ( "341-0020-00.f8", 0x3800, 0x0800, CRC(079589c4) SHA1(a28852ff997b4790e53d8d0352112c4b1a395098), ROM_BIOS(0))
+	ROMX_LOAD ( "jpl_lowercase_monitor.bin", 0x3800, 0x0800, CRC(16cec68c) SHA1(f807851ccc7207b3bf2dd9f773de6a36e2b66252), ROM_BIOS(1))
+ROM_END
+
 ROM_START(apple2pe)
 	ROM_REGION(0x0800,"gfx1",0)
 	ROM_LOAD ( "videx lower case chip rom.bin", 0x0000, 0x0800, CRC(00f68076) SHA1(447874fe0850c8add3fd5b13fa98f6648fe6f999))
 
 	ROM_REGION(0x4000, "maincpu", ROMREGION_LE)
 	ROM_SYSTEM_BIOS(0, "autostart", "Autostart Monitor (original)") // some software refuses to run on modified versions
-	ROM_SYSTEM_BIOS(1, "videx", "Autostart Monitor (modified for lowercase input)")
+	ROM_SYSTEM_BIOS(1, "videx", "Autostart Monitor (modified for lowercase input)") // with patches described on p. A-4 of Enhancer ][ manual
+	ROM_SYSTEM_BIOS(2, "knouse", "Autostart Monitor (modifications compiled by Steve Knouse)") // further patched version of above; listed in October 1983 issue of Apple Assembly Line
+	ROM_SYSTEM_BIOS(3, "newf8", "Autostart Monitor (improved by Earl Taylor, with three-way RESET)") // listed in "Towards A Better F8 ROM" in issue 19 of Hardcore Computist
+	ROM_SYSTEM_BIOS(4, "freeze", "The Freeze's Monitor ROM (version 2)")
 	ROM_DEFAULT_BIOS("videx")
 	ROM_LOAD ( "341-0011.d0", 0x1000, 0x0800, CRC(6f05f949) SHA1(0287ebcef2c1ce11dc71be15a99d2d7e0e128b1e))
 	ROM_LOAD ( "341-0012.d8", 0x1800, 0x0800, CRC(1f08087c) SHA1(a75ce5aab6401355bf1ab01b04e4946a424879b5))
@@ -927,7 +963,10 @@ ROM_START(apple2pe)
 	ROM_LOAD ( "341-0014.e8", 0x2800, 0x0800, CRC(5719871a) SHA1(37501be96d36d041667c15d63e0c1eff2f7dd4e9))
 	ROM_LOAD ( "341-0015.f0", 0x3000, 0x0800, CRC(9a04eecf) SHA1(e6bf91ed28464f42b807f798fc6422e5948bf581))
 	ROMX_LOAD ( "341-0020-00.f8", 0x3800, 0x0800, CRC(079589c4) SHA1(a28852ff997b4790e53d8d0352112c4b1a395098), ROM_BIOS(0))
-	ROMX_LOAD ( "monitor.bin", 0x3800, 0x0800, CRC(65d726d3) SHA1(2186b371b96fc279338fe67c5e351438d86f4f7f), ROM_BIOS(1)) // Autostart ROM patched as described on p. A-4 of Enhancer ][ manual
+	ROMX_LOAD ( "monitor.bin", 0x3800, 0x0800, CRC(65d726d3) SHA1(2186b371b96fc279338fe67c5e351438d86f4f7f), ROM_BIOS(1))
+	ROMX_LOAD ( "s.knouse.f8", 0x3800, 0x0800, CRC(ecd1c6ab) SHA1(76cc7735a2ccf60eff0d555865ad8122d533858f), ROM_BIOS(2))
+	ROMX_LOAD ( "new_f8.bin", 0x3800, 0x0800, CRC(2ca0c776) SHA1(c309516e16903b2f8f9b150777dc983c3f162297), ROM_BIOS(3))
+	ROMX_LOAD ( "freezes_non-autostart_f8_rom.rom", 0x3800, 0x0800, CRC(e47e2259) SHA1(3180be6b555ee9ef1f59c4fc3f25c5aab8c39c81), ROM_BIOS(4))
 ROM_END
 
 ROM_START(ace1000)
@@ -1211,7 +1250,9 @@ ROM_END
 
 //    YEAR  NAME      PARENT  COMPAT  MACHINE   INPUT   CLASS          INIT        COMPANY                FULLNAME
 COMP( 1977, apple2,   0,      0,      apple2,   apple2, apple2_state, empty_init, "Apple Computer",      "Apple ][", MACHINE_SUPPORTS_SAVE )
+COMP( 1981, a2lca2,   apple2, 0,      apple2,   apple2, apple2_state, empty_init, "hack (Dan Paymar)",   "Apple ][ (with LCA-2 Lowercase Adapter)", MACHINE_SUPPORTS_SAVE )
 COMP( 1979, apple2p,  apple2, 0,      apple2p,  apple2, apple2_state, empty_init, "Apple Computer",      "Apple ][+", MACHINE_SUPPORTS_SAVE )
+COMP( 1981, a2plca2,  apple2, 0,      apple2p,  apple2, apple2_state, empty_init, "hack (Dan Paymar)",   "Apple ][+ (with LCA-2 Lowercase Adapter)", MACHINE_SUPPORTS_SAVE )
 COMP( 1982, apple2pe, apple2, 0,      apple2pe, apple2, apple2_state, empty_init, "hack (Videx)",        "Apple ][+ (with Enhancer ][ lowercase display mod)", MACHINE_SUPPORTS_SAVE )
 COMP( 1980, apple2jp, apple2, 0,      apple2jp, apple2, apple2_state, empty_init, "Apple Computer",      "Apple ][ J-Plus", MACHINE_SUPPORTS_SAVE )
 COMP( 198?, elppa,    apple2, 0,      apple2p,  apple2, apple2_state, empty_init, "Victor do Brasil",    "Elppa II+", MACHINE_SUPPORTS_SAVE )
