@@ -742,7 +742,7 @@ void madam_device::cel_start_w(offs_t offset, u32 data, u32 mem_mask)
 	m_statbits &= ~(1 << 6);
 	// TODO: remove me, cfr. npabs
 	m_cel.next_ptr = 0;
-	m_cel_timer->adjust(attotime::from_ticks(2, this->clock()));
+	m_cel_timer->adjust(attotime::from_ticks(1, this->clock()));
 }
 
 void madam_device::cel_stop_w(offs_t offset, u32 data, u32 mem_mask)
@@ -764,6 +764,10 @@ void madam_device::cel_continue_w(offs_t offset, u32 data, u32 mem_mask)
 // CEL is paused when any irq is issued at the end of current CEL (so during fetch phase)
 // resumed by triggering SPRCNTU port (manually in SW);
 // cfr. 3do_try alternating Sanyo/3do logos spins (way too fast)
+
+// Test cases for the timings:
+// - ssf2xj (roughly in sync with intro);
+// - bam (seems too fast now);
 TIMER_CALLBACK_MEMBER(madam_device::cel_tick_cb)
 {
 	u32 tick_time;
@@ -803,7 +807,7 @@ TIMER_CALLBACK_MEMBER(madam_device::cel_tick_cb)
 				LOGCEL("Skip, move to next CCB\n");
 				m_cel.state = FETCH_PARAMS;
 				m_cel.address = m_cel.next_ptr;
-				m_cel_timer->adjust(attotime::from_ticks(2 * 2, this->clock()));
+				m_cel_timer->adjust(attotime::from_ticks(1 * 2, this->clock()));
 				return;
 			}
 			else if (!m_cel.last)
@@ -963,7 +967,7 @@ TIMER_CALLBACK_MEMBER(madam_device::cel_tick_cb)
 
 			// ... we have to take an intermediate step in case the CEL is compressed
 			m_cel.state = m_cel.packed ? DECOMPRESS : DRAW;
-			m_cel_timer->adjust(attotime::from_ticks(2 * tick_time, this->clock()));
+			m_cel_timer->adjust(attotime::from_ticks(1 + (tick_time >> 2), this->clock()));
 
 			break;
 		}
@@ -973,7 +977,7 @@ TIMER_CALLBACK_MEMBER(madam_device::cel_tick_cb)
 			if (tick_time)
 			{
 				m_cel.state = DRAW;
-				m_cel_timer->adjust(attotime::from_ticks(2 * tick_time, this->clock()));
+				m_cel_timer->adjust(attotime::from_ticks(1 + (tick_time >> 2), this->clock()));
 			}
 			break;
 		}
@@ -1072,7 +1076,7 @@ TIMER_CALLBACK_MEMBER(madam_device::cel_tick_cb)
 			{
 				m_cel.state = FETCH_PARAMS;
 				m_cel.address = m_cel.next_ptr;
-				m_cel_timer->adjust(attotime::from_ticks(2 * tick_time, this->clock()));
+				m_cel_timer->adjust(attotime::from_ticks(1 + (tick_time >> 2), this->clock()));
 			}
 
 			break;
