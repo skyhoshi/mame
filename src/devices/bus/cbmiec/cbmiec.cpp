@@ -484,6 +484,7 @@ int cbm_iec_device::get_signal(int signal)
 #include "cmdhd.h"
 #include "diag264_lb_iec.h"
 #include "dolphindos.h"
+#include "sd2iec.h"
 #include "fd2000.h"
 #include "interpod.h"
 #include "minichief.h"
@@ -538,4 +539,5 @@ void cbm_iec_devices(device_slot_interface &device)
 	device.option_add("mps1200", MPS1200);
 	device.option_add("mps1250", MPS1250);
 	device.option_add("c5181", XETEC_C5181);
+	device.option_add("sd2iec", SD2IEC);
 }
