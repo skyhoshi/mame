@@ -881,45 +881,54 @@ TIMER_CALLBACK_MEMBER(madam_device::cel_tick_cb)
 			tick_time += 2;
 			LOGCEL("    NEXTPTR %08x SOURCEPTR %08x PLUTPTR %08x\n", m_cel.next_ptr, m_cel.source_ptr, m_cel.plut_ptr);
 
-			if (!ldsize || !ldprs || !yoxy || !ldpixc)
+			// - cpquazar uses all the !ldsize/!ldprs/!ldpixc in gameplay, minus !yoxy
+			if (yoxy)
 			{
-				popmessage("CEL using existing values at %08x %d|%d|%d|%d", m_cel.address, ldsize, ldprs, yoxy, ldpixc);
-				m_statbits |= (1 << 6);
-				cel_stop_w(0, 0, 0xffffffff);
-				return;
+				const s32 xpos = (s32)(m_dma32_read_cb(m_cel.address + 0x10));
+				const s32 ypos = (s32)(m_dma32_read_cb(m_cel.address + 0x14));
+				// TODO: can be in 17.15 format (?)
+				m_cel.xpos = (double)xpos / 65536.0;
+				m_cel.ypos = (double)ypos / 65536.0;
+
+				tick_time += 2;
 			}
-			const s32 xpos = (s32)(m_dma32_read_cb(m_cel.address + 0x10));
-			const s32 ypos = (s32)(m_dma32_read_cb(m_cel.address + 0x14));
-			// TODO: can be in 17.15 format (?)
-			m_cel.xpos = (double)xpos / 65536.0;
-			m_cel.ypos = (double)ypos / 65536.0;
-			tick_time += 2;
 			LOGCEL("    xpos=%f ypos=%f\n", m_cel.xpos, m_cel.ypos );
 
-			const s32 hdx = (s32)m_dma32_read_cb(m_cel.address + 0x18);
-			const s32 hdy = (s32)m_dma32_read_cb(m_cel.address + 0x1c);
-			const s32 vdx = (s32)m_dma32_read_cb(m_cel.address + 0x20);
-			const s32 vdy = (s32)m_dma32_read_cb(m_cel.address + 0x24);
-			m_cel.hdx = (double)hdx / 1048576.0;
-			m_cel.hdy = (double)hdy / 1048576.0;
-			m_cel.vdx = (double)vdx / 65536.0;
-			m_cel.vdy = (double)vdy / 65536.0;
-			tick_time += 4;
+			if (ldsize)
+			{
+				const s32 hdx = (s32)m_dma32_read_cb(m_cel.address + 0x18);
+				const s32 hdy = (s32)m_dma32_read_cb(m_cel.address + 0x1c);
+				const s32 vdx = (s32)m_dma32_read_cb(m_cel.address + 0x20);
+				const s32 vdy = (s32)m_dma32_read_cb(m_cel.address + 0x24);
+				m_cel.hdx = (double)hdx / 1048576.0;
+				m_cel.hdy = (double)hdy / 1048576.0;
+				m_cel.vdx = (double)vdx / 65536.0;
+				m_cel.vdy = (double)vdy / 65536.0;
+
+				tick_time += 4;
+			}
 			LOGCEL("    hdx=%f hdy=%f vdx=%f vdy=%f\n"
 				, m_cel.hdx, m_cel.hdy
 				, m_cel.vdx, m_cel.vdy
 			);
 
-			const s32 hddx = (s32)m_dma32_read_cb(m_cel.address + 0x28);
-			const s32 hddy = (s32)m_dma32_read_cb(m_cel.address + 0x2c);
-			m_cel.hddx = (double)hddx / 1048576.0;
-			m_cel.hddy = (double)hddy / 1048576.0;
-			tick_time += 2;
+			if (ldprs)
+			{
+				const s32 hddx = (s32)m_dma32_read_cb(m_cel.address + 0x28);
+				const s32 hddy = (s32)m_dma32_read_cb(m_cel.address + 0x2c);
+				m_cel.hddx = (double)hddx / 1048576.0;
+				m_cel.hddy = (double)hddy / 1048576.0;
+
+				tick_time += 2;
+			}
 			LOGCEL("    hddx=%f hddy=%f\n", m_cel.hddx, m_cel.hddy);
 
-			m_cel.pixc = m_dma32_read_cb(m_cel.address + 0x30);
-			tick_time += 1;
-			LOGCEL("    pixc=%08x\n", m_cel.pixc);
+			if (ldpixc)
+			{
+				m_cel.pixc = m_dma32_read_cb(m_cel.address + 0x30);
+				tick_time += 1;
+				LOGCEL("    pixc=%08x\n", m_cel.pixc);
+			}
 
 			// fetch the Preamble words
 			// May as well do it here because ...
@@ -1225,9 +1234,13 @@ std::tuple<u16, u32> madam_device::get_coded_8bpp(u32 ptr, u8 frac)
 	return std::make_tuple(dst_data, ptr + 1);
 }
 
+// - shanghtt (title background)
 std::tuple<u16, u32> madam_device::get_uncoded_8bpp(u32 ptr, u8 frac)
 {
-	return std::make_tuple(m_dma8_read_cb(ptr), ptr + 1);
+	const u16 src_idx = m_dma8_read_cb(ptr);
+	const u16 dst_data = (BIT(src_idx, 5, 3) << 12) | (BIT(src_idx, 2, 3) << 7) | (BIT(src_idx, 0, 2) << 3);
+
+	return std::make_tuple(dst_data, ptr + 1);
 }
 
 // - 3do_try on Sanyo 3DO logo

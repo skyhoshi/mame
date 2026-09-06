@@ -16,6 +16,8 @@ TODO:
 - Fix VRAM size (should be 1 MB, but every single BIOS fails to boot with that, possible mirroring?)
 - CEL engine should really halt main CPU when running, paused only when irqs are taken;
 - Fence/MMU?  Games seem to run fine with stock ARM60 semantics.
+- Video CD module under Uncle/Woody (allegedly uses a C-Cube CL-450, also seen in Amiga,
+  x86 ReelMagic card and possibly more);
 
 TODO (BIOS programs):
 - 3do_fz1: DSPP is silent on planet splash screen
