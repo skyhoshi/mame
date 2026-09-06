@@ -1115,6 +1115,10 @@ void avr8_device<NumTimers>::device_start()
 
 	m_adc_timer = timer_alloc(FUNC(avr8_device<NumTimers>::adc_conversion_complete), this);
 
+	// GPIO
+	save_item(NAME(m_gpio_in));
+	save_item(NAME(m_pcint_last));
+
 	// Timers
 	save_item(NAME(m_timer_top));
 	save_item(NAME(m_timer_prescale));
@@ -2617,9 +2621,16 @@ uint8_t avr8_device<NumTimers>::pin_r()
 {
 	static constexpr char PORT_CHARS[GPIO_COUNT] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L' };
 	// TODO: account for DDRH
-	const uint8_t data = m_gpio_in_cb[Port]();
+	const uint8_t data = sample_port<Port>();
 	LOGMASKED(LOG_GPIO, "%s: PIN%c(%d) Read: %02x\n", machine().describe_context(), PORT_CHARS[Port], Port, data);
 	return data;
+}
+
+template <int NumTimers>
+template <int Port>
+uint8_t avr8_device<NumTimers>::sample_port()
+{
+	return m_gpio_in_cb[Port].isunset() ? m_gpio_in[Port] : m_gpio_in_cb[Port]();
 }
 
 template <int NumTimers>
@@ -2968,10 +2979,9 @@ void avr8_device<NumTimers>::check_extint(int line, uint8_t prev, uint8_t state)
 
 template <int NumTimers>
 template <int Port>
-void avr8_device<NumTimers>::pin_change()
+void avr8_device<NumTimers>::latch_pin_change(uint8_t state)
 {
 	const uint8_t prev = m_pcint_last[Port];
-	const uint8_t state = m_gpio_in_cb[Port]();
 	const uint8_t changed = state ^ prev;
 	m_pcint_last[Port] = state;
 	if (!changed)
@@ -2997,6 +3007,18 @@ void avr8_device<NumTimers>::pin_change()
 		if (BIT(changed, 3))
 			check_extint(1, prev, state);
 	}
+}
+
+template <int NumTimers>
+template <int Port>
+void avr8_device<NumTimers>::pin_w(int bit, int state)
+{
+	if (state)
+		m_gpio_in[Port] |= (1 << bit);
+	else
+		m_gpio_in[Port] &= ~(1 << bit);
+
+	latch_pin_change<Port>(sample_port<Port>());
 }
 
 template <int NumTimers>
@@ -3708,7 +3730,7 @@ void avr8_device<NumTimers>::execute_run()
 			m_pc += 2;
 		}
 
-		// pin_change() may have latched a PCIFR/EIFR flag from an arbitrary (possibly mid-instruction)
+		// pin_w() may have latched a PCIFR/EIFR flag from an arbitrary (possibly mid-instruction)
 		// external context; only take the actual interrupt here, at a safe instruction boundary
 		if (m_r[PCIFR])
 		{
@@ -3783,11 +3805,11 @@ template class avr8_device<2>;
 template class avr8_device<3>;
 template class avr8_device<6>;
 
-// explicit instantiations so external devices can call pin_change<Port>() to report input changes
-template void avr8_device<3>::pin_change<avr8_base_device::GPIOA>();
-template void avr8_device<3>::pin_change<avr8_base_device::GPIOB>();
-template void avr8_device<3>::pin_change<avr8_base_device::GPIOC>();
-template void avr8_device<3>::pin_change<avr8_base_device::GPIOD>();
-template void avr8_device<3>::pin_change<avr8_base_device::GPIOE>();
-template void avr8_device<3>::pin_change<avr8_base_device::GPIOF>();
-template void avr8_device<3>::pin_change<avr8_base_device::GPIOG>();
+// explicit instantiations so external devices can call pin_w<Port>() to report input pin changes
+template void avr8_device<3>::pin_w<avr8_base_device::GPIOA>(int, int);
+template void avr8_device<3>::pin_w<avr8_base_device::GPIOB>(int, int);
+template void avr8_device<3>::pin_w<avr8_base_device::GPIOC>(int, int);
+template void avr8_device<3>::pin_w<avr8_base_device::GPIOD>(int, int);
+template void avr8_device<3>::pin_w<avr8_base_device::GPIOE>(int, int);
+template void avr8_device<3>::pin_w<avr8_base_device::GPIOF>(int, int);
+template void avr8_device<3>::pin_w<avr8_base_device::GPIOG>(int, int);
